@@ -1,12 +1,724 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mi primera web</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Horizonte | Tu futuro empieza hoy</title>
+
+    <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-  <h1>¡Hola, mundo!</h1>
-  <p>Esta es nuestra web colaborativa.</p>
+
+    <!-- =========================
+         BARRA DE NAVEGACIÓN
+    ========================== -->
+
+    <header class="navbar">
+
+        <div class="logo">
+            horizonte<span>.</span>
+        </div>
+
+        <nav>
+            <a href="#metas">Mis metas</a>
+            <a href="#circulo">Mi círculo</a>
+            <a href="#datos">Datos reales</a>
+        </nav>
+
+        <button class="profile-button">
+            Mi perfil
+        </button>
+
+    </header>
+
+
+    <!-- =========================
+         HERO / PORTADA
+    ========================== -->
+
+    <main>
+
+        <section class="hero">
+
+            <div class="hero-text">
+
+                <p class="eyebrow">
+                    TU YO DEL FUTURO
+                </p>
+
+                <h1>
+                    ¿Qué vida estás
+                    <br>
+                    <em>financiando hoy?</em>
+                </h1>
+
+                <p class="hero-description">
+                    Elige una meta, descubre cómo podría evolucionar
+                    tu ahorro y comparte el progreso con las personas
+                    que te importan.
+                </p>
+
+                <div class="hero-buttons">
+
+                    <a href="#metas" class="primary-button">
+                        Crear mi meta
+                    </a>
+
+                    <a href="#datos" class="secondary-link">
+                        Ver datos reales →
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- TARJETA DEL YO DEL FUTURO -->
+
+            <div class="future-card">
+
+                <div class="future-card-header">
+
+                    <span>
+                        MENSAJE DEL FUTURO · 2052
+                    </span>
+
+                    <span class="online-dot"></span>
+
+                </div>
+
+                <p class="future-message">
+
+                    “Hola. Soy tú, con 45 años.
+
+                    No puedo decirte exactamente qué va a pasar,
+                    pero sí puedo enseñarte qué diferencias puede
+                    crear lo que haces hoy.”
+
+                </p>
+
+                <div class="future-stats">
+
+                    <div>
+                        <strong>+150 €</strong>
+                        <span>Aportación mensual</span>
+                    </div>
+
+                    <div>
+                        <strong>26 años</strong>
+                        <span>Hasta tu objetivo</span>
+                    </div>
+
+                </div>
+
+                <div class="mini-chart">
+
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+
+                </div>
+
+                <small>
+                    Simulación ilustrativa · no constituye una previsión
+                    ni una garantía
+                </small>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             MIS METAS
+        ========================== -->
+
+        <section id="metas" class="section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <p class="eyebrow">
+                        01 · MIS METAS
+                    </p>
+
+                    <h2>
+                        Tu dinero tiene un porqué.
+                    </h2>
+
+                </div>
+
+                <button class="outline-button">
+                    + Nueva meta
+                </button>
+
+            </div>
+
+
+            <div class="goals-grid">
+
+
+                <!-- META 1 -->
+
+                <article class="goal-card">
+
+                    <div class="goal-icon">
+                        ⌂
+                    </div>
+
+                    <div class="goal-content">
+
+                        <div class="goal-title">
+
+                            <h3>
+                                Mi primera casa
+                            </h3>
+
+                            <span>
+                                2032
+                            </span>
+
+                        </div>
+
+                        <p>
+                            Entrada para una vivienda
+                        </p>
+
+                        <div class="progress-info">
+
+                            <span>
+                                8.450 € de 25.000 €
+                            </span>
+
+                            <strong>
+                                34%
+                            </strong>
+
+                        </div>
+
+                        <div class="progress-bar">
+
+                            <div style="width:34%"></div>
+
+                        </div>
+
+                        <div class="goal-footer">
+
+                            <span>
+                                170 €/mes
+                            </span>
+
+                            <span>
+                                7 años restantes
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+
+                <!-- META 2 -->
+
+                <article class="goal-card">
+
+                    <div class="goal-icon">
+                        ✈
+                    </div>
+
+                    <div class="goal-content">
+
+                        <div class="goal-title">
+
+                            <h3>
+                                Año sabático
+                            </h3>
+
+                            <span>
+                                2030
+                            </span>
+
+                        </div>
+
+                        <p>
+                            12 meses para viajar y explorar
+                        </p>
+
+                        <div class="progress-info">
+
+                            <span>
+                                3.920 € de 12.000 €
+                            </span>
+
+                            <strong>
+                                33%
+                            </strong>
+
+                        </div>
+
+                        <div class="progress-bar">
+
+                            <div style="width:33%"></div>
+
+                        </div>
+
+                        <div class="goal-footer">
+
+                            <span>
+                                120 €/mes
+                            </span>
+
+                            <span>
+                                4 años restantes
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+
+                <!-- META 3 -->
+
+                <article class="goal-card">
+
+                    <div class="goal-icon">
+                        ◈
+                    </div>
+
+                    <div class="goal-content">
+
+                        <div class="goal-title">
+
+                            <h3>
+                                Independencia
+                            </h3>
+
+                            <span>
+                                2040
+                            </span>
+
+                        </div>
+
+                        <p>
+                            Construir un colchón financiero
+                        </p>
+
+                        <div class="progress-info">
+
+                            <span>
+                                6.280 € de 30.000 €
+                            </span>
+
+                            <strong>
+                                21%
+                            </strong>
+
+                        </div>
+
+                        <div class="progress-bar">
+
+                            <div style="width:21%"></div>
+
+                        </div>
+
+                        <div class="goal-footer">
+
+                            <span>
+                                100 €/mes
+                            </span>
+
+                            <span>
+                                14 años restantes
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             MI CÍRCULO
+        ========================== -->
+
+        <section id="circulo" class="section dark-section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <p class="eyebrow">
+                        02 · MI CÍRCULO
+                    </p>
+
+                    <h2>
+                        Compartís la meta.
+                        <br>
+                        <em>No la cartera.</em>
+                    </h2>
+
+                    <p class="section-description">
+
+                        Cada persona invierte individualmente.
+                        Solo compartís el objetivo y el progreso
+                        que decidáis mostrar.
+
+                    </p>
+
+                </div>
+
+                <button class="outline-button light">
+                    + Invitar
+                </button>
+
+            </div>
+
+
+            <div class="circle-layout">
+
+
+                <!-- TARJETA DEL GRUPO -->
+
+                <div class="circle-card">
+
+                    <div class="circle-header">
+
+                        <div class="avatars">
+
+                            <span>AM</span>
+                            <span>LG</span>
+                            <span>CR</span>
+                            <span>+2</span>
+
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Viaje a Japón 🇯🇵
+                            </strong>
+
+                            <small>
+                                Meta conjunta · 18.000 €
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="circle-progress">
+
+                        <div style="width:58%"></div>
+
+                    </div>
+
+
+                    <div class="circle-total">
+
+                        <strong>
+                            10.440 €
+                        </strong>
+
+                        <span>
+                            58% conseguido
+                        </span>
+
+                    </div>
+
+
+                    <div class="friends">
+
+                        <div>
+                            <span>Andrea</span>
+                            <b>3.240 €</b>
+                        </div>
+
+                        <div>
+                            <span>Lucía</span>
+                            <b>2.800 €</b>
+                        </div>
+
+                        <div>
+                            <span>Carlos</span>
+                            <b>2.100 €</b>
+                        </div>
+
+                        <div>
+                            <span>Tú</span>
+                            <b>1.650 €</b>
+                        </div>
+
+                        <div>
+                            <span>María</span>
+                            <b>650 €</b>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- EXPLICACIÓN DE PRIVACIDAD -->
+
+                <div class="privacy-card">
+
+                    <div class="privacy-icon">
+                        ✓
+                    </div>
+
+                    <h3>
+                        Tu cartera sigue siendo tuya.
+                    </h3>
+
+                    <p>
+
+                        Nadie puede decidir sobre las inversiones
+                        de otra persona.
+
+                        El círculo está pensado para compartir
+                        motivación y progreso, no para gestionar
+                        el dinero de los demás.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             DATOS REALES
+        ========================== -->
+
+        <section id="datos" class="section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <p class="eyebrow">
+                        03 · DATOS REALES
+                    </p>
+
+                    <h2>
+                        La realidad detrás
+                        <br>
+                        de las simulaciones.
+                    </h2>
+
+                    <p class="section-description">
+
+                        Diferenciamos claramente los datos observados
+                        de los escenarios utilizados para explicar
+                        cómo podría funcionar una meta.
+
+                    </p>
+
+                </div>
+
+                <span class="live-pill">
+                    ● DATOS REALES
+                </span>
+
+            </div>
+
+
+            <!-- NÚMEROS REALES -->
+
+            <div class="data-grid">
+
+
+                <div class="data-card">
+
+                    <span>
+                        Inflación zona euro
+                    </span>
+
+                    <strong>
+                        3,3%
+                    </strong>
+
+                    <small>
+                        Agosto 2026
+                    </small>
+
+                </div>
+
+
+                <div class="data-card">
+
+                    <span>
+                        Objetivo de inflación BCE
+                    </span>
+
+                    <strong>
+                        2,0%
+                    </strong>
+
+                    <small>
+                        Objetivo a medio plazo
+                    </small>
+
+                </div>
+
+
+                <div class="data-card">
+
+                    <span>
+                        CaixaBank Destino 2026
+                    </span>
+
+                    <strong>
+                        6,54%
+                    </strong>
+
+                    <small>
+                        Rentabilidad histórica · 1 año
+                    </small>
+
+                </div>
+
+
+                <div class="data-card">
+
+                    <span>
+                        CaixaBank Selección Tendencias
+                    </span>
+
+                    <strong>
+                        24,64%
+                    </strong>
+
+                    <small>
+                        Rentabilidad histórica · 1 año
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <!-- GRÁFICA -->
+
+            <div class="chart-card">
+
+                <div class="chart-header">
+
+                    <div>
+
+                        <h3>
+                            Evolución de una meta
+                        </h3>
+
+                        <p>
+                            Ejemplo ilustrativo: 150 €/mes
+                            con una rentabilidad hipotética del 5% anual.
+                        </p>
+
+                    </div>
+
+                    <span>
+                        ILUSTRATIVO
+                    </span>
+
+                </div>
+
+
+                <div class="chart">
+
+                    <div class="chart-line"></div>
+
+                </div>
+
+
+                <div class="chart-legend">
+
+                    <span>
+                        <i class="green-dot"></i>
+                        Valor hipotético
+                    </span>
+
+                    <span>
+                        <i class="grey-dot"></i>
+                        Aportaciones
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <p class="source-note">
+
+                Las rentabilidades pasadas no son un indicador fiable
+                de rentabilidades futuras. Las simulaciones son
+                exclusivamente ilustrativas.
+
+            </p>
+
+        </section>
+
+
+        <!-- =========================
+             CTA FINAL
+        ========================== -->
+
+        <section class="final-cta">
+
+            <p class="eyebrow">
+                TU PRÓXIMO PASO
+            </p>
+
+            <h2>
+                No necesitas saber de fondos.
+                <br>
+                Necesitas saber para qué ahorras.
+            </h2>
+
+            <a href="#metas" class="primary-button">
+                Empezar mi horizonte
+            </a>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================
+         FOOTER
+    ========================== -->
+
+    <footer>
+
+        <span>
+            horizonte. · Prototipo académico
+        </span>
+
+        <span>
+            Datos reales + simulaciones claramente identificadas
+        </span>
+
+    </footer>
+
 </body>
+
 </html>
