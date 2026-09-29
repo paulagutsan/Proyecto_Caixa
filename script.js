@@ -1,19 +1,39 @@
 /* =========================================================
-   HORIZONTE — script.js
+   HORIZONTE · script.js
    =========================================================
-   IMPORTANTE:
-   - Las rentabilidades son SIMULACIONES orientativas.
-   - No representan rentabilidades garantizadas.
-   - Cada usuario mantiene su propia cartera.
-   - El Círculo solo comparte progreso agregado.
+
+   Funcionalidades:
+
+   - Gestión de metas personales
+   - Cálculo de progreso
+   - Cálculo de aportaciones
+   - Simulación de evolución
+   - Gráficas
+   - Comparación de aportaciones
+   - "Tu yo del futuro"
+   - Mi Círculo
+   - Privacidad entre carteras
+
+   NOTA:
+   Las rentabilidades utilizadas son hipotéticas.
+   No representan rentabilidades garantizadas.
    ========================================================= */
 
 
 /* =========================================================
-   1. DATOS INICIALES
+   1. CONFIGURACIÓN
+   ========================================================= */
+
+const RENTABILIDAD_SIMULADA = 0.05;
+const AÑO_ACTUAL = new Date().getFullYear();
+
+
+/* =========================================================
+   2. DATOS INICIALES
    ========================================================= */
 
 let metas = [
+
     {
         id: 1,
         nombre: "Mi primera casa",
@@ -22,6 +42,7 @@ let metas = [
         año: 2032,
         mensual: 170
     },
+
     {
         id: 2,
         nombre: "Año sabático",
@@ -30,6 +51,7 @@ let metas = [
         año: 2030,
         mensual: 120
     },
+
     {
         id: 3,
         nombre: "Independencia",
@@ -38,29 +60,92 @@ let metas = [
         año: 2040,
         mensual: 100
     }
+
 ];
 
 
 /* =========================================================
-   2. CONFIGURACIÓN
+   3. DATOS DEL CÍRCULO
+   =========================================================
+
+   Estos datos son únicamente de demostración.
+
+   Cada persona tiene su propia posición.
+
+   Compartimos:
+   - nombre
+   - meta
+   - progreso
+
+   No compartimos ni modificamos la cartera de otra persona.
    ========================================================= */
 
-const RENTABILIDAD_SIMULADA = 0.05; // 5% anual
-const AÑO_ACTUAL = new Date().getFullYear();
+const circulo = [
+
+    {
+        nombre: "Andrea",
+        meta: "Viaje a Japón 🇯🇵",
+        progreso: 54,
+        aportado: 3240
+    },
+
+    {
+        nombre: "Lucía",
+        meta: "Viaje a Japón 🇯🇵",
+        progreso: 47,
+        aportado: 2800
+    },
+
+    {
+        nombre: "Carlos",
+        meta: "Viaje a Japón 🇯🇵",
+        progreso: 39,
+        aportado: 2100
+    },
+
+    {
+        nombre: "Tú",
+        meta: "Viaje a Japón 🇯🇵",
+        progreso: 30,
+        aportado: 1650
+    },
+
+    {
+        nombre: "María",
+        meta: "Viaje a Japón 🇯🇵",
+        progreso: 14,
+        aportado: 650
+    }
+
+];
+
+const CIRCULO_OBJETIVO = 18000;
 
 
 /* =========================================================
-   3. FUNCIONES MATEMÁTICAS
+   4. FUNCIONES MATEMÁTICAS
    ========================================================= */
 
+
 /**
- * Calcula el porcentaje de progreso de una meta.
+ * Calcula el porcentaje de progreso.
  */
-function calcularProgreso(ahorrado, objetivo) {
-    if (!objetivo || objetivo <= 0) return 0;
+function calcularProgreso(
+    ahorrado,
+    objetivo
+) {
+
+    if (
+        !objetivo ||
+        objetivo <= 0
+    ) {
+        return 0;
+    }
 
     return Math.min(
-        Math.round((ahorrado / objetivo) * 100),
+        Math.round(
+            (ahorrado / objetivo) * 100
+        ),
         100
     );
 }
@@ -69,14 +154,20 @@ function calcularProgreso(ahorrado, objetivo) {
 /**
  * Calcula los años restantes.
  */
-function calcularAñosRestantes(añoObjetivo) {
-    return Math.max(añoObjetivo - AÑO_ACTUAL, 0);
+function calcularAñosRestantes(
+    añoObjetivo
+) {
+
+    return Math.max(
+        añoObjetivo - AÑO_ACTUAL,
+        0
+    );
 }
 
 
 /**
- * Calcula cuánto dinero se tendría aportando una cantidad
- * mensual determinada, con una rentabilidad anual simulada.
+ * Calcula el valor futuro de una cantidad
+ * con aportaciones mensuales.
  */
 function calcularValorFuturo(
     capitalInicial,
@@ -84,282 +175,472 @@ function calcularValorFuturo(
     años,
     rentabilidadAnual = RENTABILIDAD_SIMULADA
 ) {
+
     if (años <= 0) {
         return capitalInicial;
     }
 
     const meses = años * 12;
-    const rentabilidadMensual = rentabilidadAnual / 12;
+
+    const rentabilidadMensual =
+        rentabilidadAnual / 12;
 
     let valor = capitalInicial;
 
-    for (let i = 0; i < meses; i++) {
-        valor = valor * (1 + rentabilidadMensual);
+
+    for (
+        let i = 0;
+        i < meses;
+        i++
+    ) {
+
+        valor =
+            valor *
+            (1 + rentabilidadMensual);
+
         valor += aportacionMensual;
     }
+
 
     return valor;
 }
 
 
 /**
- * Formatea números como euros.
+ * Formatea un número como euros.
  */
-function formatearEuros(valor) {
-    return new Intl.NumberFormat("es-ES", {
-        style: "currency",
-        currency: "EUR",
-        maximumFractionDigits: 0
-    }).format(valor);
+function formatearEuros(
+    valor
+) {
+
+    return new Intl.NumberFormat(
+        "es-ES",
+        {
+            style: "currency",
+            currency: "EUR",
+            maximumFractionDigits: 0
+        }
+    ).format(valor);
 }
 
 
 /**
- * Formatea números normales.
+ * Formatea números.
  */
-function formatearNumero(valor) {
-    return new Intl.NumberFormat("es-ES", {
-        maximumFractionDigits: 0
-    }).format(valor);
+function formatearNumero(
+    valor
+) {
+
+    return new Intl.NumberFormat(
+        "es-ES",
+        {
+            maximumFractionDigits: 0
+        }
+    ).format(valor);
 }
 
 
 /* =========================================================
-   4. CREAR UNA META
+   5. SEGURIDAD HTML
+   ========================================================= */
+
+function escapeHTML(
+    texto
+) {
+
+    return String(texto)
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+}
+
+
+/* =========================================================
+   6. CREAR NUEVA META
    ========================================================= */
 
 function crearMeta() {
 
-    const nombreInput = document.getElementById("nombreMeta");
-    const objetivoInput = document.getElementById("objetivoMeta");
-    const añoInput = document.getElementById("añoMeta");
-    const mensualInput = document.getElementById("mensualMeta");
+    const nombreInput =
+        document.getElementById(
+            "nombreMeta"
+        );
 
-    if (!nombreInput || !objetivoInput || !añoInput || !mensualInput) {
+    const objetivoInput =
+        document.getElementById(
+            "objetivoMeta"
+        );
+
+    const añoInput =
+        document.getElementById(
+            "añoMeta"
+        );
+
+    const mensualInput =
+        document.getElementById(
+            "mensualMeta"
+        );
+
+
+    if (
+        !nombreInput ||
+        !objetivoInput ||
+        !añoInput ||
+        !mensualInput
+    ) {
         return;
     }
 
-    const nombre = nombreInput.value.trim();
-    const objetivo = Number(objetivoInput.value);
-    const año = Number(añoInput.value);
-    const mensual = Number(mensualInput.value);
+
+    const nombre =
+        nombreInput.value.trim();
+
+    const objetivo =
+        Number(
+            objetivoInput.value
+        );
+
+    const año =
+        Number(
+            añoInput.value
+        );
+
+    const mensual =
+        Number(
+            mensualInput.value
+        );
+
 
     if (!nombre) {
-        alert("Ponle un nombre a tu meta.");
+
+        alert(
+            "Ponle un nombre a tu meta."
+        );
+
         return;
     }
 
-    if (!objetivo || objetivo <= 0) {
-        alert("Introduce un objetivo válido.");
+
+    if (
+        !objetivo ||
+        objetivo <= 0
+    ) {
+
+        alert(
+            "Introduce un objetivo válido."
+        );
+
         return;
     }
 
-    if (!año || año <= AÑO_ACTUAL) {
-        alert(`El año objetivo debe ser posterior a ${AÑO_ACTUAL}.`);
+
+    if (
+        !año ||
+        año <= AÑO_ACTUAL
+    ) {
+
+        alert(
+            `El año objetivo debe ser posterior a ${AÑO_ACTUAL}.`
+        );
+
         return;
     }
+
 
     if (mensual < 0) {
-        alert("La aportación mensual no puede ser negativa.");
+
+        alert(
+            "La aportación mensual no puede ser negativa."
+        );
+
         return;
     }
 
+
     const nuevaMeta = {
+
         id: Date.now(),
+
         nombre,
+
         objetivo,
+
         ahorrado: 0,
+
         año,
+
         mensual
+
     };
 
-    metas.push(nuevaMeta);
 
-    renderizarMetas();
-    actualizarResumen();
-    actualizarGraficaGeneral();
-
-    nombreInput.value = "";
-    objetivoInput.value = "";
-    añoInput.value = "";
-    mensualInput.value = "";
-
-    const formulario = document.getElementById("formularioMeta");
-
-    if (formulario) {
-        formulario.style.display = "none";
-    }
-}
-
-
-/* =========================================================
-   5. ELIMINAR META
-   ========================================================= */
-
-function eliminarMeta(id) {
-
-    const confirmar = confirm(
-        "¿Seguro que quieres eliminar esta meta?"
+    metas.push(
+        nuevaMeta
     );
 
-    if (!confirmar) return;
-
-    metas = metas.filter(meta => meta.id !== id);
 
     renderizarMetas();
+
     actualizarResumen();
+
     actualizarGraficaGeneral();
+
+    actualizarYoDelFuturo();
+
+
+    nombreInput.value = "";
+
+    objetivoInput.value = "";
+
+    añoInput.value = "";
+
+    mensualInput.value = "";
+
+
+    const formulario =
+        document.getElementById(
+            "formularioMeta"
+        );
+
+
+    if (formulario) {
+
+        formulario.style.display =
+            "none";
+    }
+
 }
 
 
 /* =========================================================
-   6. RENDERIZAR TODAS LAS METAS
+   7. ELIMINAR META
+   ========================================================= */
+
+function eliminarMeta(
+    id
+) {
+
+    const confirmar =
+        confirm(
+            "¿Seguro que quieres eliminar esta meta?"
+        );
+
+
+    if (!confirmar) {
+        return;
+    }
+
+
+    metas =
+        metas.filter(
+            meta =>
+                meta.id !== id
+        );
+
+
+    renderizarMetas();
+
+    actualizarResumen();
+
+    actualizarGraficaGeneral();
+
+    actualizarYoDelFuturo();
+
+}
+
+
+/* =========================================================
+   8. RENDERIZAR METAS
    ========================================================= */
 
 function renderizarMetas() {
 
-    const contenedor = document.getElementById("listaMetas");
+    const contenedor =
+        document.getElementById(
+            "listaMetas"
+        );
 
-    if (!contenedor) return;
+
+    if (!contenedor) {
+        return;
+    }
+
 
     contenedor.innerHTML = "";
+
 
     if (metas.length === 0) {
 
         contenedor.innerHTML = `
+
             <div class="empty-state">
-                <h3>Aún no tienes metas</h3>
-                <p>Crea tu primera meta para empezar a construir tu horizonte.</p>
+
+                <h3>
+                    Aún no tienes metas
+                </h3>
+
+                <p>
+                    Crea tu primera meta para empezar
+                    a construir tu horizonte.
+                </p>
+
             </div>
+
         `;
 
         return;
     }
 
-    metas.forEach(meta => {
 
-        const tarjeta = crearTarjetaMeta(meta);
+    metas.forEach(
+        meta => {
 
-        contenedor.appendChild(tarjeta);
+            const tarjeta =
+                crearTarjetaMeta(
+                    meta
+                );
 
-    });
+            contenedor.appendChild(
+                tarjeta
+            );
+
+        }
+    );
+
 }
 
 
 /* =========================================================
-   7. CREAR TARJETA DE META
+   9. CREAR TARJETA DE META
    ========================================================= */
 
-function crearTarjetaMeta(meta) {
+function crearTarjetaMeta(
+    meta
+) {
 
-    const tarjeta = document.createElement("article");
+    const tarjeta =
+        document.createElement(
+            "article"
+        );
 
-    tarjeta.className = "goal-card";
 
-    const progreso = calcularProgreso(
-        meta.ahorrado,
-        meta.objetivo
-    );
+    tarjeta.className =
+        "goal-card";
 
-    const añosRestantes = calcularAñosRestantes(
-        meta.año
-    );
 
-    const valorFuturo = calcularValorFuturo(
-        meta.ahorrado,
-        meta.mensual,
-        añosRestantes
-    );
+    const progreso =
+        calcularProgreso(
+            meta.ahorrado,
+            meta.objetivo
+        );
 
-    const diferencia = Math.max(
-        meta.objetivo - meta.ahorrado,
-        0
-    );
+
+    const añosRestantes =
+        calcularAñosRestantes(
+            meta.año
+        );
+
+
+    const valorFuturo =
+        calcularValorFuturo(
+            meta.ahorrado,
+            meta.mensual,
+            añosRestantes
+        );
+
+
+    const diferencia =
+        Math.max(
+            meta.objetivo -
+            meta.ahorrado,
+            0
+        );
+
 
     tarjeta.innerHTML = `
 
-        <div class="goal-top">
+        <div class="goal-icon">
+            ${obtenerIconoMeta(meta.nombre)}
+        </div>
 
-            <div>
-                <h3>${escapeHTML(meta.nombre)}</h3>
 
-                <span class="goal-year">
-                    Objetivo: ${meta.año}
+        <div class="goal-content">
+
+            <div class="goal-title">
+
+                <h3>
+                    ${escapeHTML(meta.nombre)}
+                </h3>
+
+                <span>
+                    ${meta.año}
                 </span>
+
             </div>
 
-            <div class="goal-percentage">
-                ${progreso}%
-            </div>
 
-        </div>
-
-
-        <div class="progress-bar">
-
-            <div
-                class="progress-fill"
-                style="width: ${progreso}%"
-            ></div>
-
-        </div>
+            <p>
+                ${generarDescripcionMeta(meta)}
+            </p>
 
 
-        <div class="goal-numbers">
+            <div class="progress-info">
 
-            <div class="goal-info">
-
-                <span>Ya tienes</span>
-
-                <strong>
+                <span>
                     ${formatearEuros(meta.ahorrado)}
-                </strong>
-
-            </div>
-
-
-            <div class="goal-info">
-
-                <span>Objetivo</span>
-
-                <strong>
+                    de
                     ${formatearEuros(meta.objetivo)}
-                </strong>
-
-            </div>
-
-
-            <div class="goal-info">
-
-                <span>Faltan</span>
+                </span>
 
                 <strong>
-                    ${formatearEuros(diferencia)}
+                    ${progreso}%
                 </strong>
 
             </div>
 
-        </div>
 
+            <div class="progress-bar">
 
-        <div class="goal-details">
+                <div
+                    style="width:${progreso}%"
+                ></div>
 
-            <div>
-                <span>💶 Aportación mensual</span>
-                <strong>${formatearEuros(meta.mensual)}</strong>
             </div>
 
-            <div>
-                <span>⏳ Tiempo restante</span>
-                <strong>${añosRestantes} años</strong>
+
+            <div class="goal-footer">
+
+                <span>
+                    ${formatearEuros(meta.mensual)}/mes
+                </span>
+
+                <span>
+                    ${añosRestantes}
+                    ${añosRestantes === 1 ? "año" : "años"}
+                    restantes
+                </span>
+
             </div>
 
-        </div>
 
-
-        <div class="future-value">
-
-            <div>
+            <div class="future-value">
 
                 <span>
                     Simulación orientativa
@@ -369,154 +650,340 @@ function crearTarjetaMeta(meta) {
                     ${formatearEuros(valorFuturo)}
                 </strong>
 
+                <small>
+                    Estimación con una rentabilidad
+                    hipotética del 5% anual.
+                    No garantiza rentabilidad.
+                </small>
+
             </div>
 
-            <small>
-                Si mantuvieras ${formatearEuros(meta.mensual)}/mes
-                con una rentabilidad hipotética del 5% anual.
-                No garantiza rentabilidad.
-            </small>
+
+            <div class="goal-actions">
+
+                <button
+                    class="secondary-button"
+                    type="button"
+                    onclick="verDetalleMeta(${meta.id})"
+                >
+                    Ver evolución
+                </button>
+
+
+                <button
+                    class="secondary-button"
+                    type="button"
+                    onclick="mostrarComparador(${meta.id})"
+                >
+                    Comparar
+                </button>
+
+
+                <button
+                    class="delete-button"
+                    type="button"
+                    onclick="eliminarMeta(${meta.id})"
+                >
+                    Eliminar
+                </button>
+
+            </div>
 
         </div>
 
-
-        <div class="goal-actions">
-
-            <button
-                class="secondary-button"
-                onclick="verDetalleMeta(${meta.id})"
-            >
-                Ver evolución
-            </button>
-
-            <button
-                class="delete-button"
-                onclick="eliminarMeta(${meta.id})"
-            >
-                Eliminar
-            </button>
-
-        </div>
     `;
+
 
     return tarjeta;
 }
 
 
 /* =========================================================
-   8. DETALLE DE UNA META
+   10. DESCRIPCIÓN AUTOMÁTICA
    ========================================================= */
 
-function verDetalleMeta(id) {
+function generarDescripcionMeta(
+    meta
+) {
 
-    const meta = metas.find(
-        elemento => elemento.id === id
-    );
+    const nombre =
+        meta.nombre.toLowerCase();
 
-    if (!meta) return;
 
-    const años = calcularAñosRestantes(meta.año);
+    if (
+        nombre.includes("casa") ||
+        nombre.includes("vivienda")
+    ) {
 
-    const datos = generarDatosEvolucion(meta);
+        return "Entrada para una vivienda";
+    }
 
-    mostrarModalMeta(meta, datos, años);
+
+    if (
+        nombre.includes("viaje") ||
+        nombre.includes("japón") ||
+        nombre.includes("japon")
+    ) {
+
+        return "Un proyecto para disfrutar y explorar";
+    }
+
+
+    if (
+        nombre.includes("independencia")
+    ) {
+
+        return "Construir un colchón financiero";
+    }
+
+
+    return "Un objetivo pensado para tu futuro";
 }
 
 
 /* =========================================================
-   9. GENERAR DATOS PARA LA GRÁFICA
+   11. ICONOS
    ========================================================= */
 
-function generarDatosEvolucion(meta) {
+function obtenerIconoMeta(
+    nombre
+) {
 
-    const añosRestantes = calcularAñosRestantes(meta.año);
+    const texto =
+        nombre.toLowerCase();
+
+
+    if (
+        texto.includes("casa") ||
+        texto.includes("vivienda")
+    ) {
+
+        return "⌂";
+    }
+
+
+    if (
+        texto.includes("viaje") ||
+        texto.includes("japón") ||
+        texto.includes("japon")
+    ) {
+
+        return "✈";
+    }
+
+
+    if (
+        texto.includes("independencia")
+    ) {
+
+        return "◈";
+    }
+
+
+    return "◎";
+}
+
+
+/* =========================================================
+   12. DETALLE DE META
+   ========================================================= */
+
+function verDetalleMeta(
+    id
+) {
+
+    const meta =
+        metas.find(
+            elemento =>
+                elemento.id === id
+        );
+
+
+    if (!meta) {
+        return;
+    }
+
+
+    const datos =
+        generarDatosEvolucion(
+            meta
+        );
+
+
+    mostrarModalMeta(
+        meta,
+        datos
+    );
+}
+
+
+/* =========================================================
+   13. DATOS DE EVOLUCIÓN
+   ========================================================= */
+
+function generarDatosEvolucion(
+    meta
+) {
+
+    const añosRestantes =
+        calcularAñosRestantes(
+            meta.año
+        );
+
 
     const datos = [];
 
-    let capital = meta.ahorrado;
+    let capital =
+        meta.ahorrado;
 
-    for (let i = 0; i <= añosRestantes; i++) {
 
-        const año = AÑO_ACTUAL + i;
+    for (
+        let i = 0;
+        i <= añosRestantes;
+        i++
+    ) {
+
+        const año =
+            AÑO_ACTUAL + i;
+
 
         datos.push({
+
             año,
-            valor: capital
+
+            valor:
+                capital
+
         });
 
-        capital = calcularValorFuturo(
-            capital,
-            meta.mensual,
-            1
-        );
+
+        capital =
+            calcularValorFuturo(
+                capital,
+                meta.mensual,
+                1
+            );
+
     }
+
 
     return datos;
 }
 
 
 /* =========================================================
-   10. MODAL DE DETALLE
+   14. MODAL
    ========================================================= */
 
-function mostrarModalMeta(meta, datos, años) {
+function mostrarModalMeta(
+    meta,
+    datos
+) {
 
-    let modal = document.getElementById("modalMeta");
+    let modal =
+        document.getElementById(
+            "modalMeta"
+        );
+
 
     if (!modal) {
 
-        modal = document.createElement("div");
+        modal =
+            document.createElement(
+                "div"
+            );
 
-        modal.id = "modalMeta";
+        modal.id =
+            "modalMeta";
 
-        modal.className = "modal";
+        modal.className =
+            "modal";
 
-        document.body.appendChild(modal);
+        document.body.appendChild(
+            modal
+        );
+
     }
 
+
     const valorFinal =
-        datos[datos.length - 1]?.valor || meta.ahorrado;
+        datos.length > 0
+            ? datos[datos.length - 1].valor
+            : meta.ahorrado;
+
 
     modal.innerHTML = `
 
-        <div class="modal-overlay" onclick="cerrarModalMeta()"></div>
+        <div
+            class="modal-overlay"
+            onclick="cerrarModalMeta()"
+        ></div>
+
 
         <div class="modal-content">
 
             <button
                 class="modal-close"
+                type="button"
                 onclick="cerrarModalMeta()"
             >
                 ×
             </button>
 
-            <h2>${escapeHTML(meta.nombre)}</h2>
+
+            <p class="eyebrow">
+                EVOLUCIÓN
+            </p>
+
+
+            <h2>
+                ${escapeHTML(meta.nombre)}
+            </h2>
+
 
             <p>
                 Evolución estimada hasta ${meta.año}
             </p>
 
+
             <div class="modal-stats">
 
                 <div>
-                    <span>Actualmente</span>
+
+                    <span>
+                        Actualmente
+                    </span>
+
                     <strong>
                         ${formatearEuros(meta.ahorrado)}
                     </strong>
+
                 </div>
 
+
                 <div>
-                    <span>Aportación mensual</span>
+
+                    <span>
+                        Aportación mensual
+                    </span>
+
                     <strong>
                         ${formatearEuros(meta.mensual)}
                     </strong>
+
                 </div>
 
+
                 <div>
-                    <span>Estimación final</span>
+
+                    <span>
+                        Estimación final
+                    </span>
+
                     <strong>
                         ${formatearEuros(valorFinal)}
                     </strong>
+
                 </div>
 
             </div>
@@ -536,48 +1003,82 @@ function mostrarModalMeta(meta, datos, años) {
             <p class="simulation-warning">
 
                 Simulación orientativa con una rentabilidad
-                hipotética del 5% anual. No garantiza
-                rentabilidad futura.
+                hipotética del 5% anual.
+                No garantiza rentabilidad futura.
 
             </p>
 
         </div>
+
     `;
 
-    modal.classList.add("active");
 
-    dibujarGraficaMeta(datos, meta);
+    modal.classList.add(
+        "active"
+    );
+
+
+    dibujarGraficaMeta(
+        datos,
+        meta
+    );
 }
 
 
 /* =========================================================
-   11. CERRAR MODAL
+   15. CERRAR MODAL
    ========================================================= */
 
 function cerrarModalMeta() {
 
-    const modal = document.getElementById("modalMeta");
+    const modal =
+        document.getElementById(
+            "modalMeta"
+        );
+
 
     if (modal) {
-        modal.classList.remove("active");
+
+        modal.classList.remove(
+            "active"
+        );
+
     }
 }
 
 
 /* =========================================================
-   12. GRÁFICA DE UNA META
+   16. GRÁFICA DE META
    ========================================================= */
 
-function dibujarGraficaMeta(datos, meta) {
+function dibujarGraficaMeta(
+    datos,
+    meta
+) {
 
-    const canvas = document.getElementById("graficaMeta");
+    const canvas =
+        document.getElementById(
+            "graficaMeta"
+        );
 
-    if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    if (!canvas) {
+        return;
+    }
 
-    const width = canvas.width;
-    const height = canvas.height;
+
+    const ctx =
+        canvas.getContext(
+            "2d"
+        );
+
+
+    const width =
+        canvas.width;
+
+    const height =
+        canvas.height;
+
 
     ctx.clearRect(
         0,
@@ -586,26 +1087,38 @@ function dibujarGraficaMeta(datos, meta) {
         height
     );
 
-    if (!datos.length) return;
+
+    if (!datos.length) {
+        return;
+    }
+
 
     const margen = 55;
 
+
     const anchoGrafica =
-        width - margen * 2;
+        width -
+        margen * 2;
+
 
     const altoGrafica =
-        height - margen * 2;
+        height -
+        margen * 2;
 
-    const valores = datos.map(
-        dato => dato.valor
-    );
 
-    const maxValor = Math.max(
-        meta.objetivo,
-        ...valores
-    );
+    const valores =
+        datos.map(
+            dato =>
+                dato.valor
+        );
 
-    const minValor = 0;
+
+    const maxValor =
+        Math.max(
+            meta.objetivo,
+            ...valores,
+            1
+        );
 
 
     /* Ejes */
@@ -635,11 +1148,18 @@ function dibujarGraficaMeta(datos, meta) {
     const yObjetivo =
         height -
         margen -
-        ((meta.objetivo - minValor) /
-            (maxValor - minValor)) *
-            altoGrafica;
+        (
+            meta.objetivo /
+            maxValor
+        ) *
+        altoGrafica;
 
-    ctx.setLineDash([8, 6]);
+
+    ctx.setLineDash([
+        8,
+        6
+    ]);
+
 
     ctx.beginPath();
 
@@ -655,6 +1175,7 @@ function dibujarGraficaMeta(datos, meta) {
 
     ctx.stroke();
 
+
     ctx.setLineDash([]);
 
 
@@ -662,152 +1183,295 @@ function dibujarGraficaMeta(datos, meta) {
 
     ctx.beginPath();
 
-    datos.forEach((dato, index) => {
 
-        const x =
-            margen +
-            (index / (datos.length - 1 || 1)) *
-            anchoGrafica;
+    datos.forEach(
+        (
+            dato,
+            index
+        ) => {
 
-        const y =
-            height -
-            margen -
-            ((dato.valor - minValor) /
-                (maxValor - minValor)) *
+            const x =
+                margen +
+                (
+                    index /
+                    (
+                        datos.length - 1 ||
+                        1
+                    )
+                ) *
+                anchoGrafica;
+
+
+            const y =
+                height -
+                margen -
+                (
+                    dato.valor /
+                    maxValor
+                ) *
                 altoGrafica;
 
-        if (index === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
+
+            if (index === 0) {
+
+                ctx.moveTo(
+                    x,
+                    y
+                );
+
+            } else {
+
+                ctx.lineTo(
+                    x,
+                    y
+                );
+
+            }
+
         }
-    });
+    );
+
 
     ctx.stroke();
 
 
     /* Puntos */
 
-    datos.forEach((dato, index) => {
+    datos.forEach(
+        (
+            dato,
+            index
+        ) => {
 
-        const x =
-            margen +
-            (index / (datos.length - 1 || 1)) *
-            anchoGrafica;
+            const x =
+                margen +
+                (
+                    index /
+                    (
+                        datos.length - 1 ||
+                        1
+                    )
+                ) *
+                anchoGrafica;
 
-        const y =
-            height -
-            margen -
-            ((dato.valor - minValor) /
-                (maxValor - minValor)) *
+
+            const y =
+                height -
+                margen -
+                (
+                    dato.valor /
+                    maxValor
+                ) *
                 altoGrafica;
 
-        ctx.beginPath();
 
-        ctx.arc(
-            x,
-            y,
-            4,
-            0,
-            Math.PI * 2
-        );
+            ctx.beginPath();
 
-        ctx.fill();
-    });
+            ctx.arc(
+                x,
+                y,
+                4,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+
+        }
+    );
 
 
-    /* Etiquetas */
+    /* Años */
 
-    ctx.font = "13px Arial";
+    ctx.font =
+        "13px Arial";
 
-    ctx.textAlign = "center";
 
-    datos.forEach((dato, index) => {
+    ctx.textAlign =
+        "center";
 
-        const x =
-            margen +
-            (index / (datos.length - 1 || 1)) *
-            anchoGrafica;
 
-        ctx.fillText(
-            dato.año,
-            x,
-            height - 20
-        );
-    });
+    datos.forEach(
+        (
+            dato,
+            index
+        ) => {
+
+            const x =
+                margen +
+                (
+                    index /
+                    (
+                        datos.length - 1 ||
+                        1
+                    )
+                ) *
+                anchoGrafica;
+
+
+            ctx.fillText(
+                dato.año,
+                x,
+                height - 20
+            );
+
+        }
+    );
+
 }
 
 
 /* =========================================================
-   13. RESUMEN GENERAL
+   17. RESUMEN GENERAL
    ========================================================= */
 
 function actualizarResumen() {
 
-    const patrimonio = metas.reduce(
-        (total, meta) =>
-            total + meta.ahorrado,
-        0
-    );
+    const patrimonio =
+        metas.reduce(
+            (
+                total,
+                meta
+            ) =>
+                total +
+                meta.ahorrado,
+            0
+        );
 
-    const aportacionMensual = metas.reduce(
-        (total, meta) =>
-            total + meta.mensual,
-        0
-    );
 
-    const objetivos = metas.reduce(
-        (total, meta) =>
-            total + meta.objetivo,
-        0
-    );
+    const aportacionMensual =
+        metas.reduce(
+            (
+                total,
+                meta
+            ) =>
+                total +
+                meta.mensual,
+            0
+        );
+
+
+    const objetivos =
+        metas.reduce(
+            (
+                total,
+                meta
+            ) =>
+                total +
+                meta.objetivo,
+            0
+        );
+
 
     const progresoGeneral =
         objetivos > 0
             ? Math.round(
-                (patrimonio / objetivos) * 100
+                (
+                    patrimonio /
+                    objetivos
+                ) * 100
             )
             : 0;
 
 
     actualizarElemento(
         "patrimonioTotal",
-        formatearEuros(patrimonio)
+        formatearEuros(
+            patrimonio
+        )
     );
+
 
     actualizarElemento(
         "aportacionTotal",
-        formatearEuros(aportacionMensual)
+        formatearEuros(
+            aportacionMensual
+        )
     );
+
+
+    actualizarElemento(
+        "aportacionTotalResumen",
+        formatearEuros(
+            aportacionMensual
+        )
+    );
+
 
     actualizarElemento(
         "progresoTotal",
         `${progresoGeneral}%`
     );
 
+
     actualizarElemento(
         "numeroMetas",
         metas.length
     );
+
+
+    actualizarElemento(
+        "numeroMetasResumen",
+        metas.length
+    );
+
 }
 
 
 /* =========================================================
-   14. GRÁFICA GENERAL
+   18. ACTUALIZAR ELEMENTO
+   ========================================================= */
+
+function actualizarElemento(
+    id,
+    contenido
+) {
+
+    const elemento =
+        document.getElementById(
+            id
+        );
+
+
+    if (!elemento) {
+        return;
+    }
+
+
+    elemento.textContent =
+        contenido;
+}
+
+
+/* =========================================================
+   19. GRÁFICA GENERAL
    ========================================================= */
 
 function actualizarGraficaGeneral() {
 
     const canvas =
-        document.getElementById("graficaGeneral");
+        document.getElementById(
+            "graficaGeneral"
+        );
 
-    if (!canvas) return;
+
+    if (!canvas) {
+        return;
+    }
+
 
     const ctx =
-        canvas.getContext("2d");
+        canvas.getContext(
+            "2d"
+        );
 
-    const width = canvas.width;
-    const height = canvas.height;
+
+    const width =
+        canvas.width;
+
+    const height =
+        canvas.height;
+
 
     ctx.clearRect(
         0,
@@ -816,41 +1480,68 @@ function actualizarGraficaGeneral() {
         height
     );
 
-    if (!metas.length) return;
 
-
-    const años = 10;
-
-    const datos = [];
-
-    for (let año = 0; año <= años; año++) {
-
-        let total = 0;
-
-        metas.forEach(meta => {
-
-            total += calcularValorFuturo(
-                meta.ahorrado,
-                meta.mensual,
-                año
-            );
-
-        });
-
-        datos.push(total);
+    if (!metas.length) {
+        return;
     }
 
 
-    const margen = 50;
+    const años =
+        10;
+
+
+    const datos =
+        [];
+
+
+    for (
+        let año = 0;
+        año <= años;
+        año++
+    ) {
+
+        let total = 0;
+
+
+        metas.forEach(
+            meta => {
+
+                total +=
+                    calcularValorFuturo(
+                        meta.ahorrado,
+                        meta.mensual,
+                        año
+                    );
+
+            }
+        );
+
+
+        datos.push(
+            total
+        );
+
+    }
+
+
+    const margen = 55;
+
 
     const ancho =
-        width - margen * 2;
+        width -
+        margen * 2;
+
 
     const alto =
-        height - margen * 2;
+        height -
+        margen * 2;
 
-    const max =
-        Math.max(...datos, 1);
+
+    const maxValor =
+        Math.max(
+            ...datos,
+            1
+        );
 
 
     /* Ejes */
@@ -875,228 +1566,399 @@ function actualizarGraficaGeneral() {
     ctx.stroke();
 
 
-    /* Línea */
+    /* Línea principal */
 
     ctx.beginPath();
 
-    datos.forEach((valor, index) => {
 
-        const x =
-            margen +
-            (index / años) *
-            ancho;
+    datos.forEach(
+        (
+            valor,
+            index
+        ) => {
 
-        const y =
-            height -
-            margen -
-            (valor / max) *
-            alto;
+            const x =
+                margen +
+                (
+                    index /
+                    años
+                ) *
+                ancho;
 
-        if (index === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
+
+            const y =
+                height -
+                margen -
+                (
+                    valor /
+                    maxValor
+                ) *
+                alto;
+
+
+            if (index === 0) {
+
+                ctx.moveTo(
+                    x,
+                    y
+                );
+
+            } else {
+
+                ctx.lineTo(
+                    x,
+                    y
+                );
+
+            }
+
         }
-    });
+    );
+
 
     ctx.stroke();
 
 
     /* Puntos */
 
-    datos.forEach((valor, index) => {
+    datos.forEach(
+        (
+            valor,
+            index
+        ) => {
 
-        const x =
-            margen +
-            (index / años) *
-            ancho;
+            const x =
+                margen +
+                (
+                    index /
+                    años
+                ) *
+                ancho;
 
-        const y =
-            height -
-            margen -
-            (valor / max) *
-            alto;
 
-        ctx.beginPath();
+            const y =
+                height -
+                margen -
+                (
+                    valor /
+                    maxValor
+                ) *
+                alto;
 
-        ctx.arc(
-            x,
-            y,
-            4,
-            0,
-            Math.PI * 2
-        );
 
-        ctx.fill();
-    });
+            ctx.beginPath();
+
+            ctx.arc(
+                x,
+                y,
+                4,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+
+        }
+    );
+
+
+    /* Años */
+
+    ctx.font =
+        "13px Arial";
+
+
+    ctx.textAlign =
+        "center";
+
+
+    datos.forEach(
+        (
+            valor,
+            index
+        ) => {
+
+            const x =
+                margen +
+                (
+                    index /
+                    años
+                ) *
+                ancho;
+
+
+            ctx.fillText(
+                AÑO_ACTUAL + index,
+                x,
+                height - 20
+            );
+
+        }
+    );
+
 }
 
 
 /* =========================================================
-   15. COMPARADOR DE APORTACIONES
+   20. COMPARAR APORTACIONES
    ========================================================= */
 
-function calcularEscenarios(meta) {
+function calcularEscenarios(
+    meta
+) {
 
     const años =
-        calcularAñosRestantes(meta.año);
+        calcularAñosRestantes(
+            meta.año
+        );
+
 
     const escenarios = [
+
         {
             nombre: "Actual",
             mensual: meta.mensual
         },
+
         {
             nombre: "+50 €/mes",
             mensual: meta.mensual + 50
         },
+
         {
             nombre: "+100 €/mes",
             mensual: meta.mensual + 100
         }
+
     ];
 
-    return escenarios.map(escenario => {
 
-        const valor =
-            calcularValorFuturo(
-                meta.ahorrado,
-                escenario.mensual,
-                años
-            );
+    return escenarios.map(
+        escenario => {
 
-        return {
-            ...escenario,
-            valor
-        };
-    });
+            const valor =
+                calcularValorFuturo(
+                    meta.ahorrado,
+                    escenario.mensual,
+                    años
+                );
+
+
+            return {
+
+                ...escenario,
+
+                valor
+
+            };
+
+        }
+    );
+
 }
 
 
 /* =========================================================
-   16. MOSTRAR COMPARADOR
+   21. MOSTRAR COMPARADOR
    ========================================================= */
 
-function mostrarComparador(id) {
+function mostrarComparador(
+    id
+) {
 
-    const meta = metas.find(
-        elemento => elemento.id === id
-    );
+    const meta =
+        metas.find(
+            elemento =>
+                elemento.id === id
+        );
 
-    if (!meta) return;
+
+    if (!meta) {
+        return;
+    }
+
 
     const escenarios =
-        calcularEscenarios(meta);
+        calcularEscenarios(
+            meta
+        );
+
 
     let contenedor =
-        document.getElementById("comparador");
+        document.getElementById(
+            "comparador"
+        );
+
 
     if (!contenedor) {
 
         contenedor =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
-        contenedor.id = "comparador";
+        contenedor.id =
+            "comparador";
 
         contenedor.className =
             "comparison-container";
 
+
         const metasSection =
-            document.getElementById("metas");
+            document.getElementById(
+                "metas"
+            );
+
 
         if (metasSection) {
+
             metasSection.appendChild(
                 contenedor
             );
+
         } else {
+
             document.body.appendChild(
                 contenedor
             );
+
         }
+
     }
+
 
     contenedor.innerHTML = `
 
-        <h3>
-            ¿Qué pasa si aumentas tu aportación?
-        </h3>
+        <div class="comparison-header">
 
-        <p>
-            ${escapeHTML(meta.nombre)}
-        </p>
+            <div>
 
-        <div class="comparison-grid">
+                <p class="eyebrow">
+                    COMPARADOR
+                </p>
 
-            ${escenarios.map(escenario => `
+                <h3>
+                    ¿Qué pasa si aumentas
+                    tu aportación?
+                </h3>
 
-                <div class="comparison-card">
+                <p>
+                    ${escapeHTML(meta.nombre)}
+                </p>
 
-                    <span>
-                        ${escenario.nombre}
-                    </span>
-
-                    <strong>
-                        ${formatearEuros(
-                            escenario.valor
-                        )}
-                    </strong>
-
-                    <small>
-                        ${formatearEuros(
-                            escenario.mensual
-                        )}/mes
-                    </small>
-
-                </div>
-
-            `).join("")}
+            </div>
 
         </div>
 
+
+        <div class="comparison-grid">
+
+            ${escenarios
+                .map(
+                    escenario => `
+
+                    <div class="comparison-card">
+
+                        <span>
+                            ${escenario.nombre}
+                        </span>
+
+                        <strong>
+                            ${formatearEuros(
+                                escenario.valor
+                            )}
+                        </strong>
+
+                        <small>
+                            ${formatearEuros(
+                                escenario.mensual
+                            )}/mes
+                        </small>
+
+                    </div>
+
+                `
+                )
+                .join("")}
+
+        </div>
+
+
         <small class="simulation-warning">
+
             Simulación orientativa al 5% anual.
             No garantiza rentabilidad.
+
         </small>
+
     `;
+
+
+    contenedor.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+
 }
 
 
 /* =========================================================
-   17. "TU YO DEL FUTURO"
+   22. TU YO DEL FUTURO
    ========================================================= */
 
 function actualizarYoDelFuturo() {
 
     const elemento =
-        document.getElementById("yoDelFuturo");
+        document.getElementById(
+            "yoDelFuturo"
+        );
 
-    if (!elemento) return;
+
+    if (!elemento) {
+        return;
+    }
+
 
     if (!metas.length) {
 
         elemento.innerHTML = `
-            <p>
+
+            <p class="future-message">
+
                 Crea una meta para empezar a visualizar
                 tu futuro financiero.
+
             </p>
+
         `;
 
         return;
     }
 
+
     const totalActual =
         metas.reduce(
-            (total, meta) =>
-                total + meta.ahorrado,
+            (
+                total,
+                meta
+            ) =>
+                total +
+                meta.ahorrado,
             0
         );
 
+
     const totalMensual =
         metas.reduce(
-            (total, meta) =>
-                total + meta.mensual,
+            (
+                total,
+                meta
+            ) =>
+                total +
+                meta.mensual,
             0
         );
+
 
     const valorFuturo =
         calcularValorFuturo(
@@ -1108,230 +1970,337 @@ function actualizarYoDelFuturo() {
 
     elemento.innerHTML = `
 
-        <div class="future-message">
+        <p class="future-message">
+
+            “Lo que haces hoy puede cambiar
+            la cantidad de opciones que tienes mañana.”
+
+        </p>
+
+
+        <div class="future-result">
 
             <span>
                 En 10 años
             </span>
 
             <strong>
-                ${formatearEuros(valorFuturo)}
+                ${formatearEuros(
+                    valorFuturo
+                )}
             </strong>
 
-            <p>
-                Si mantuvieras tus aportaciones actuales
-                y se produjera una rentabilidad hipotética
-                del 5% anual.
-            </p>
-
             <small>
-                Simulación orientativa · No garantiza
-                rentabilidad.
+
+                Simulación hipotética manteniendo
+                tus aportaciones actuales y una
+                rentabilidad del 5% anual.
+
             </small>
 
         </div>
+
     `;
+
 }
 
 
 /* =========================================================
-   18. CÍRCULO
-   =========================================================
-   
-   IMPORTANTE:
-   
-   Aquí NO se permite modificar la cartera de otra persona.
-   
-   Solo mostramos:
-   - nombre
-   - meta compartida
-   - progreso agregado
-   
-   Los datos individuales de inversión permanecen separados.
+   23. MI CÍRCULO
    ========================================================= */
-
-const circulo = [
-    {
-        nombre: "Paula",
-        meta: "Viaje a Japón",
-        objetivo: 18000,
-        progreso: 58
-    },
-    {
-        nombre: "Ana",
-        meta: "Viaje a Japón",
-        objetivo: 18000,
-        progreso: 42
-    },
-    {
-        nombre: "Lucía",
-        meta: "Viaje a Japón",
-        objetivo: 18000,
-        progreso: 73
-    }
-];
-
 
 function actualizarCirculo() {
 
     const contenedor =
-        document.getElementById("circulo");
+        document.getElementById(
+            "circuloContenido"
+        );
 
-    if (!contenedor) return;
+
+    if (!contenedor) {
+        return;
+    }
+
+
+    const total =
+        circulo.reduce(
+            (
+                suma,
+                persona
+            ) =>
+                suma +
+                persona.aportado,
+            0
+        );
+
+
+    const progreso =
+        Math.round(
+            (
+                total /
+                CIRCULO_OBJETIVO
+            ) * 100
+        );
+
 
     contenedor.innerHTML = `
 
         <div class="circle-header">
 
-            <h3>
-                Mi Círculo
-            </h3>
+            <div class="avatars">
 
-            <p>
-                Compartid objetivos y progreso,
-                sin modificar las carteras de los demás.
-            </p>
+                ${circulo
+                    .slice(0, 4)
+                    .map(
+                        persona => `
+                            <span>
+                                ${persona.nombre
+                                    .charAt(0)
+                                    .toUpperCase()}
+                            </span>
+                        `
+                    )
+                    .join("")}
+
+                <span>
+                    +${Math.max(
+                        circulo.length - 4,
+                        0
+                    )}
+                </span>
+
+            </div>
+
+
+            <div>
+
+                <strong>
+                    Viaje a Japón 🇯🇵
+                </strong>
+
+                <small>
+                    Meta conjunta ·
+                    ${formatearEuros(
+                        CIRCULO_OBJETIVO
+                    )}
+                </small>
+
+            </div>
 
         </div>
 
-        <div class="circle-members">
 
-            ${circulo.map(persona => `
+        <div class="circle-progress">
 
-                <div class="circle-member">
+            <div
+                style="width:${Math.min(
+                    progreso,
+                    100
+                )}%"
+            ></div>
 
-                    <div class="circle-avatar">
-                        ${persona.nombre
-                            .charAt(0)
-                            .toUpperCase()}
-                    </div>
+        </div>
 
-                    <div class="circle-info">
 
-                        <strong>
-                            ${escapeHTML(persona.nombre)}
-                        </strong>
+        <div class="circle-total">
+
+            <strong>
+                ${formatearEuros(total)}
+            </strong>
+
+            <span>
+                ${progreso}% conseguido
+            </span>
+
+        </div>
+
+
+        <div class="friends">
+
+            ${circulo
+                .map(
+                    persona => `
+
+                    <div>
 
                         <span>
-                            ${escapeHTML(persona.meta)}
+                            ${escapeHTML(
+                                persona.nombre
+                            )}
                         </span>
 
-                    </div>
-
-                    <div class="circle-progress">
-
-                        <strong>
-                            ${persona.progreso}%
-                        </strong>
-
-                        <div class="progress-bar">
-
-                            <div
-                                class="progress-fill"
-                                style="
-                                    width:
-                                    ${persona.progreso}%
-                                "
-                            ></div>
-
-                        </div>
+                        <b>
+                            ${formatearEuros(
+                                persona.aportado
+                            )}
+                        </b>
 
                     </div>
 
-                </div>
-
-            `).join("")}
+                `
+                )
+                .join("")}
 
         </div>
+
     `;
+
 }
 
 
 /* =========================================================
-   19. BOTÓN "NUEVA META"
+   24. BOTÓN NUEVA META
    ========================================================= */
 
 function configurarBotonNuevaMeta() {
 
     const boton =
-        document.getElementById("nuevaMeta");
+        document.getElementById(
+            "nuevaMeta"
+        );
+
 
     const formulario =
-        document.getElementById("formularioMeta");
+        document.getElementById(
+            "formularioMeta"
+        );
 
-    if (!boton || !formulario) return;
+
+    if (
+        !boton ||
+        !formulario
+    ) {
+        return;
+    }
+
 
     boton.addEventListener(
         "click",
         () => {
 
-            if (
-                formulario.style.display === "none" ||
-                !formulario.style.display
-            ) {
-                formulario.style.display = "block";
-            } else {
-                formulario.style.display = "none";
+            const estaOculto =
+                formulario.style.display ===
+                "none";
+
+
+            formulario.style.display =
+                estaOculto
+                    ? "block"
+                    : "none";
+
+
+            if (estaOculto) {
+
+                formulario.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
             }
 
         }
     );
+
 }
 
 
 /* =========================================================
-   20. BOTÓN "CREAR META"
+   25. FORMULARIO
    ========================================================= */
 
 function configurarFormulario() {
 
     const boton =
-        document.getElementById("crearMeta");
+        document.getElementById(
+            "crearMeta"
+        );
 
-    if (!boton) return;
+
+    if (!boton) {
+        return;
+    }
+
 
     boton.addEventListener(
         "click",
         crearMeta
     );
+
+
+    const inputs = [
+
+        document.getElementById(
+            "nombreMeta"
+        ),
+
+        document.getElementById(
+            "objetivoMeta"
+        ),
+
+        document.getElementById(
+            "añoMeta"
+        ),
+
+        document.getElementById(
+            "mensualMeta"
+        )
+
+    ];
+
+
+    inputs.forEach(
+        input => {
+
+            if (!input) {
+                return;
+            }
+
+
+            input.addEventListener(
+                "keydown",
+                event => {
+
+                    if (
+                        event.key ===
+                        "Enter"
+                    ) {
+
+                        crearMeta();
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
 }
 
 
 /* =========================================================
-   21. ACTUALIZAR ELEMENTO
+   26. CERRAR MODAL CON ESC
    ========================================================= */
 
-function actualizarElemento(
-    id,
-    contenido
-) {
+document.addEventListener(
+    "keydown",
+    event => {
 
-    const elemento =
-        document.getElementById(id);
+        if (
+            event.key ===
+            "Escape"
+        ) {
 
-    if (!elemento) return;
+            cerrarModalMeta();
 
-    elemento.textContent = contenido;
-}
+        }
 
-
-/* =========================================================
-   22. SEGURIDAD BÁSICA PARA TEXTO INTRODUCIDO
-   ========================================================= */
-
-function escapeHTML(texto) {
-
-    return String(texto)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+    }
+);
 
 
 /* =========================================================
-   23. INICIALIZACIÓN
+   27. INICIALIZACIÓN
    ========================================================= */
 
 document.addEventListener(
@@ -1357,20 +2326,24 @@ document.addEventListener(
 
 
 /* =========================================================
-   24. FUNCIONES DISPONIBLES DESDE HTML
+   28. FUNCIONES DISPONIBLES PARA HTML
    ========================================================= */
 
 window.crearMeta =
     crearMeta;
 
+
 window.eliminarMeta =
     eliminarMeta;
+
 
 window.verDetalleMeta =
     verDetalleMeta;
 
+
 window.cerrarModalMeta =
     cerrarModalMeta;
+
 
 window.mostrarComparador =
     mostrarComparador;
