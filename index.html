@@ -2,19 +2,32 @@
 <html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Horizonte | Tu futuro empieza hoy</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet" href="styles.css">
+    <title>
+        Horizonte | Tu futuro empieza hoy
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="styles.css"
+    >
+
 </head>
+
 
 <body>
 
-    <!-- =========================
-         BARRA DE NAVEGACIÓN
-    ========================== -->
+
+    <!-- =====================================================
+         NAVEGACIÓN
+    ====================================================== -->
 
     <header class="navbar">
 
@@ -22,69 +35,107 @@
             horizonte<span>.</span>
         </div>
 
+
         <nav>
-            <a href="#metas">Mis metas</a>
-            <a href="#circulo">Mi círculo</a>
-            <a href="#datos">Datos reales</a>
+
+            <a href="#metas">
+                Mis metas
+            </a>
+
+            <a href="#circulo">
+                Mi círculo
+            </a>
+
+            <a href="#datos">
+                Datos reales
+            </a>
+
         </nav>
 
-        <button class="profile-button" type="button">
+
+        <button
+            class="profile-button"
+            type="button"
+        >
             Mi perfil
         </button>
 
     </header>
 
 
-    <!-- =========================
+
+    <!-- =====================================================
          CONTENIDO PRINCIPAL
-    ========================== -->
+    ====================================================== -->
 
     <main>
 
-        <!-- =========================
+
+        <!-- =================================================
              HERO
-        ========================== -->
+        ================================================== -->
 
         <section class="hero">
 
+
             <div class="hero-text">
+
 
                 <p class="eyebrow">
                     TU YO DEL FUTURO
                 </p>
 
+
                 <h1>
+
                     ¿Qué vida estás
                     <br>
                     <em>financiando hoy?</em>
+
                 </h1>
 
+
                 <p class="hero-description">
+
                     Elige una meta, registra lo que vas aportando,
                     descubre cómo podría evolucionar tu ahorro y
                     comparte el progreso con las personas que te importan.
+
                 </p>
+
 
                 <div class="hero-buttons">
 
-                    <a href="#metas" class="primary-button">
+
+                    <a
+                        href="#metas"
+                        class="primary-button"
+                    >
                         Crear mi meta
                     </a>
 
-                    <a href="#datos" class="secondary-link">
+
+                    <a
+                        href="#datos"
+                        class="secondary-link"
+                    >
                         Ver datos reales →
                     </a>
 
+
                 </div>
+
 
             </div>
 
 
-            <!-- =========================
-                 TU YO DEL FUTURO
-            ========================== -->
+
+            <!-- =============================================
+                 TARJETA FUTURO
+            ============================================== -->
 
             <div class="future-card">
+
 
                 <div class="future-card-header">
 
@@ -100,14 +151,17 @@
                 <div id="yoDelFuturo">
 
                     <p class="future-message">
-                        Tu futuro financiero empieza con las decisiones
-                        que tomas hoy.
+
+                        Tu futuro financiero empieza con
+                        las decisiones que tomas hoy.
+
                     </p>
 
                 </div>
 
 
                 <div class="future-stats">
+
 
                     <div>
 
@@ -116,7 +170,7 @@
                         </strong>
 
                         <span>
-                            Aportación mensual
+                            Aportación mensual prevista
                         </span>
 
                     </div>
@@ -133,6 +187,7 @@
                         </span>
 
                     </div>
+
 
                 </div>
 
@@ -151,20 +206,26 @@
 
 
                 <small>
-                    Simulación ilustrativa · no constituye una previsión
-                    ni una garantía
+
+                    Simulación ilustrativa · no constituye
+                    una previsión ni una garantía.
+
                 </small>
 
+
             </div>
+
 
         </section>
 
 
-        <!-- =========================
-             RESUMEN
-        ========================== -->
+
+        <!-- =================================================
+             RESUMEN GENERAL
+        ================================================== -->
 
         <section class="section summary-section">
+
 
             <div class="section-header">
 
@@ -183,12 +244,14 @@
             </div>
 
 
+
             <div class="data-grid">
+
 
                 <div class="data-card">
 
                     <span>
-                        Patrimonio destinado a metas
+                        Dinero registrado
                     </span>
 
                     <strong id="patrimonioTotal">
@@ -196,7 +259,7 @@
                     </strong>
 
                     <small>
-                        Capital acumulado
+                        Aportaciones que has registrado
                     </small>
 
                 </div>
@@ -205,7 +268,7 @@
                 <div class="data-card">
 
                     <span>
-                        Aportación mensual
+                        Aportación mensual prevista
                     </span>
 
                     <strong id="aportacionTotalResumen">
@@ -213,7 +276,7 @@
                     </strong>
 
                     <small>
-                        Aportación planificada
+                        Entre todas tus metas
                     </small>
 
                 </div>
@@ -252,18 +315,26 @@
 
                 </div>
 
+
             </div>
+
 
         </section>
 
 
-        <!-- =========================
-             MIS METAS
-        ========================== -->
 
-        <section id="metas" class="section">
+        <!-- =================================================
+             MIS METAS
+        ================================================== -->
+
+        <section
+            id="metas"
+            class="section"
+        >
+
 
             <div class="section-header">
+
 
                 <div>
 
@@ -286,18 +357,21 @@
                     + Nueva meta
                 </button>
 
+
             </div>
 
 
-            <!-- =========================
+
+            <!-- =============================================
                  FORMULARIO NUEVA META
-            ========================== -->
+            ============================================== -->
 
             <div
                 id="formularioMeta"
                 class="goal-form"
-                style="display: none;"
+                style="display:none;"
             >
+
 
                 <div class="form-header">
 
@@ -316,7 +390,9 @@
                 </div>
 
 
+
                 <div class="form-grid">
+
 
                     <div class="form-field">
 
@@ -333,6 +409,7 @@
                     </div>
 
 
+
                     <div class="form-field">
 
                         <label for="objetivoMeta">
@@ -344,10 +421,11 @@
                             type="number"
                             min="1"
                             step="0.01"
-                            placeholder="18000"
+                            placeholder="3000"
                         >
 
                     </div>
+
 
 
                     <div class="form-field">
@@ -360,10 +438,11 @@
                             id="añoMeta"
                             type="number"
                             min="2027"
-                            placeholder="2032"
+                            placeholder="2027"
                         >
 
                     </div>
+
 
 
                     <div class="form-field">
@@ -377,12 +456,14 @@
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="150"
+                            placeholder="50"
                         >
 
                     </div>
 
+
                 </div>
+
 
 
                 <button
@@ -393,12 +474,14 @@
                     Crear meta
                 </button>
 
+
             </div>
 
 
-            <!-- =========================
+
+            <!-- =============================================
                  LISTA DE METAS
-            ========================== -->
+            ============================================== -->
 
             <div
                 id="listaMetas"
@@ -406,13 +489,16 @@
             ></div>
 
 
-            <!-- =========================
+
+            <!-- =============================================
                  GRÁFICA GENERAL
-            ========================== -->
+            ============================================== -->
 
             <div class="chart-card">
 
+
                 <div class="chart-header">
+
 
                     <div>
 
@@ -421,18 +507,23 @@
                         </h3>
 
                         <p>
-                            Evolución orientativa basada en tus aportaciones
-                            registradas y previstas, con una rentabilidad
-                            hipotética del 5% anual.
+
+                            Proyección orientativa basada en
+                            tus aportaciones previstas y una
+                            rentabilidad hipotética del 5% anual.
+
                         </p>
 
                     </div>
+
 
                     <span>
                         SIMULACIÓN
                     </span>
 
+
                 </div>
+
 
 
                 <div class="chart">
@@ -446,56 +537,76 @@
                 </div>
 
 
+
                 <div class="chart-legend">
 
                     <span>
+
                         <i class="green-dot"></i>
-                        Evolución hipotética
+
+                        Valor futuro simulado
+
                     </span>
 
+
                     <span>
+
                         <i class="grey-dot"></i>
-                        Situación actual
+
+                        Dinero registrado actualmente
+
                     </span>
 
                 </div>
 
 
+
                 <p class="source-note">
 
-                    Simulación exclusivamente ilustrativa.
-                    La rentabilidad futura puede ser diferente
-                    y no está garantizada.
+                    Esta simulación utiliza un 5% anual
+                    exclusivamente como hipótesis ilustrativa.
+                    La inflación no está incluida en este cálculo
+                    y la rentabilidad futura no está garantizada.
 
                 </p>
 
+
             </div>
+
 
         </section>
 
 
-        <!-- =========================
+
+        <!-- =================================================
              MI CÍRCULO
-        ========================== -->
+        ================================================== -->
 
         <section
             id="circulo"
             class="section dark-section"
         >
 
+
             <div class="section-header">
 
+
                 <div>
+
 
                     <p class="eyebrow">
                         02 · MI CÍRCULO
                     </p>
 
+
                     <h2>
+
                         Compartís la meta.
                         <br>
                         <em>No la cartera.</em>
+
                     </h2>
+
 
                     <p class="section-description">
 
@@ -504,6 +615,7 @@
                         que decidáis mostrar.
 
                     </p>
+
 
                 </div>
 
@@ -515,15 +627,13 @@
                     + Invitar
                 </button>
 
+
             </div>
+
 
 
             <div class="circle-layout">
 
-
-                <!-- =========================
-                     CÍRCULO
-                ========================== -->
 
                 <div
                     id="circuloContenido"
@@ -531,19 +641,18 @@
                 ></div>
 
 
-                <!-- =========================
-                     PRIVACIDAD
-                ========================== -->
-
                 <div class="privacy-card">
+
 
                     <div class="privacy-icon">
                         ✓
                     </div>
 
+
                     <h3>
                         Tu cartera sigue siendo tuya.
                     </h3>
+
 
                     <p>
 
@@ -558,35 +667,46 @@
 
                     </p>
 
+
                 </div>
 
+
             </div>
+
 
         </section>
 
 
-        <!-- =========================
-             DATOS REALES
-        ========================== -->
+
+        <!-- =================================================
+             DATOS
+        ================================================== -->
 
         <section
             id="datos"
             class="section"
         >
 
+
             <div class="section-header">
 
+
                 <div>
+
 
                     <p class="eyebrow">
                         03 · DATOS REALES
                     </p>
 
+
                     <h2>
+
                         La realidad detrás
                         <br>
                         de las simulaciones.
+
                     </h2>
+
 
                     <p class="section-description">
 
@@ -596,6 +716,7 @@
 
                     </p>
 
+
                 </div>
 
 
@@ -603,10 +724,13 @@
                     ● DATOS REALES
                 </span>
 
+
             </div>
 
 
+
             <div class="data-grid">
+
 
                 <div class="data-card">
 
@@ -623,6 +747,7 @@
                     </small>
 
                 </div>
+
 
 
                 <div class="data-card">
@@ -642,6 +767,7 @@
                 </div>
 
 
+
                 <div class="data-card">
 
                     <span>
@@ -657,6 +783,7 @@
                     </small>
 
                 </div>
+
 
 
                 <div class="data-card">
@@ -675,55 +802,71 @@
 
                 </div>
 
+
             </div>
+
 
 
             <div class="chart-card">
 
+
                 <div class="chart-header">
+
 
                     <div>
 
+
                         <h3>
-                            Ejemplo de evolución de una meta
+                            Datos y simulaciones
                         </h3>
 
+
                         <p>
-                            Las simulaciones de las metas se actualizan
-                            automáticamente al registrar nuevas aportaciones.
+
+                            Los datos observados se mantienen separados
+                            de las hipótesis utilizadas en las simulaciones.
+
                         </p>
 
+
                     </div>
+
 
                     <span>
                         ILUSTRATIVO
                     </span>
 
+
                 </div>
+
 
 
                 <p class="source-note">
 
                     Las rentabilidades pasadas no son un indicador fiable
-                    de rentabilidades futuras. Las simulaciones son
-                    exclusivamente ilustrativas.
+                    de rentabilidades futuras.
 
                 </p>
 
+
             </div>
+
 
         </section>
 
 
-        <!-- =========================
+
+        <!-- =================================================
              CTA FINAL
-        ========================== -->
+        ================================================== -->
 
         <section class="final-cta">
+
 
             <p class="eyebrow">
                 TU PRÓXIMO PASO
             </p>
+
 
             <h2>
 
@@ -741,14 +884,17 @@
                 Empezar mi horizonte
             </a>
 
+
         </section>
+
 
     </main>
 
 
-    <!-- =========================
+
+    <!-- =====================================================
          FOOTER
-    ========================== -->
+    ====================================================== -->
 
     <footer>
 
@@ -756,18 +902,25 @@
             horizonte. · Prototipo académico
         </span>
 
+
         <span>
-            Datos reales + simulaciones claramente identificadas
+
+            Datos reales + simulaciones
+            claramente identificadas
+
         </span>
 
     </footer>
 
 
-    <!-- =========================
+
+    <!-- =====================================================
          JAVASCRIPT
-    ========================== -->
+    ====================================================== -->
 
     <script src="script.js"></script>
 
+
 </body>
+
 </html>
