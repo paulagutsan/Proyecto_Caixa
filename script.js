@@ -1,135 +1,119 @@
-/* =========================================================
-   HORIZONTE · script.js
-   =========================================================
-
-   Esta versión diferencia claramente:
-
-   1. DINERO REAL REGISTRADO
-      -> Lo que el usuario ha introducido.
-
-   2. APORTACIÓN PREVISTA
-      -> Lo que el usuario planea aportar cada mes.
-
-   3. SIMULACIÓN
-      -> Una hipótesis de crecimiento futuro utilizando
-         un 5% anual.
-
-   La inflación NO forma parte de esta simulación.
-
-   ========================================================= */
-
-
-/* =========================================================
-   1. CONFIGURACIÓN
-   ========================================================= */
-
 const RENTABILIDAD_SIMULADA = 0.05;
+const AÑO_ACTUAL = new Date().getFullYear();
+const STORAGE_KEY = "horizonte_metas_v5";
 
-const AÑO_ACTUAL =
-    new Date().getFullYear();
-
-const STORAGE_KEY =
-    "horizonte_metas_v3";
-
-
-/* =========================================================
-   2. METAS INICIALES
-   ========================================================= */
-
-const metasIniciales = [
+const METAS_INICIALES = [
 
     {
         id: 1,
-
         nombre: "Mi primera casa",
-
         objetivo: 25000,
-
         ahorrado: 8450,
-
         año: 2032,
-
         mensual: 170,
 
         aportaciones: [
-
             {
                 id: 101,
-
                 cantidad: 8450,
-
                 fecha: "2026-09-01"
-
             }
-
         ]
-
     },
-
 
     {
         id: 2,
-
         nombre: "Año sabático",
-
         objetivo: 12000,
-
         ahorrado: 3920,
-
         año: 2030,
-
         mensual: 120,
 
         aportaciones: [
-
             {
                 id: 201,
-
                 cantidad: 3920,
-
                 fecha: "2026-09-01"
-
             }
-
         ]
-
     },
-
 
     {
         id: 3,
-
         nombre: "Independencia",
-
         objetivo: 30000,
-
         ahorrado: 6280,
-
         año: 2040,
-
         mensual: 100,
 
         aportaciones: [
-
             {
                 id: 301,
-
                 cantidad: 6280,
-
                 fecha: "2026-09-01"
-
             }
-
         ]
-
     }
 
 ];
 
 
+let metas = cargarMetas();
+
+
 /* =========================================================
-   3. CARGAR METAS
-   ========================================================= */
+   CÍRCULO
+========================================================= */
+
+const circulo = [
+
+    {
+        nombre: "Andrea",
+        aportado: 3240
+    },
+
+    {
+        nombre: "Lucía",
+        aportado: 2800
+    },
+
+    {
+        nombre: "Carlos",
+        aportado: 2100
+    },
+
+    {
+        nombre: "Tú",
+        aportado: 1650
+    },
+
+    {
+        nombre: "María",
+        aportado: 650
+    }
+
+];
+
+
+const CIRCULO_OBJETIVO = 18000;
+
+
+/* =========================================================
+   CARGAR Y GUARDAR
+========================================================= */
+
+function copiar(
+    objeto
+) {
+
+    return JSON.parse(
+        JSON.stringify(
+            objeto
+        )
+    );
+
+}
+
 
 function cargarMetas() {
 
@@ -143,7 +127,9 @@ function cargarMetas() {
 
         if (!guardadas) {
 
-            return copiarMetasIniciales();
+            return copiar(
+                METAS_INICIALES
+            );
 
         }
 
@@ -155,56 +141,99 @@ function cargarMetas() {
 
 
         if (
-            !Array.isArray(datos)
+            !Array.isArray(
+                datos
+            )
         ) {
 
-            return copiarMetasIniciales();
+            return copiar(
+                METAS_INICIALES
+            );
 
         }
 
 
-        return datos;
+        return datos.map(
+            normalizarMeta
+        );
 
     } catch (error) {
 
         console.error(
-            "Error cargando las metas:",
+            "No se pudieron cargar las metas:",
             error
         );
 
-        return copiarMetasIniciales();
+        return copiar(
+            METAS_INICIALES
+        );
 
     }
 
 }
 
 
-/* =========================================================
-   4. COPIAR DATOS INICIALES
-   ========================================================= */
+function normalizarMeta(
+    meta
+) {
 
-function copiarMetasIniciales() {
-
-    return JSON.parse(
-        JSON.stringify(
-            metasIniciales
+    const aportaciones =
+        Array.isArray(
+            meta.aportaciones
         )
-    );
+            ? meta.aportaciones
+            : [];
+
+
+    const ahorrado =
+        aportaciones.length
+            ? aportaciones.reduce(
+                (
+                    total,
+                    aportacion
+                ) =>
+                    total +
+                    Number(
+                        aportacion.cantidad || 0
+                    ),
+                0
+            )
+            : Number(
+                meta.ahorrado || 0
+            );
+
+
+    return {
+
+        ...meta,
+
+        objetivo:
+            Number(
+                meta.objetivo || 0
+            ),
+
+        año:
+            Number(
+                meta.año ||
+                AÑO_ACTUAL + 1
+            ),
+
+        mensual:
+            Number(
+                meta.mensual || 0
+            ),
+
+        ahorrado:
+            redondear(
+                ahorrado
+            ),
+
+        aportaciones
+
+    };
 
 }
 
-
-/* =========================================================
-   5. VARIABLE PRINCIPAL
-   ========================================================= */
-
-let metas =
-    cargarMetas();
-
-
-/* =========================================================
-   6. GUARDAR DATOS
-   ========================================================= */
 
 function guardarMetas() {
 
@@ -220,7 +249,7 @@ function guardarMetas() {
     } catch (error) {
 
         console.error(
-            "Error guardando las metas:",
+            "No se pudieron guardar las metas:",
             error
         );
 
@@ -230,239 +259,23 @@ function guardarMetas() {
 
 
 /* =========================================================
-   7. CÍRCULO
-   ========================================================= */
+   UTILIDADES
+========================================================= */
 
-const circulo = [
-
-    {
-        nombre: "Andrea",
-        meta: "Viaje a Japón 🇯🇵",
-        aportado: 3240
-    },
-
-    {
-        nombre: "Lucía",
-        meta: "Viaje a Japón 🇯🇵",
-        aportado: 2800
-    },
-
-    {
-        nombre: "Carlos",
-        meta: "Viaje a Japón 🇯🇵",
-        aportado: 2100
-    },
-
-    {
-        nombre: "Tú",
-        meta: "Viaje a Japón 🇯🇵",
-        aportado: 1650
-    },
-
-    {
-        nombre: "María",
-        meta: "Viaje a Japón 🇯🇵",
-        aportado: 650
-    }
-
-];
-
-
-const CIRCULO_OBJETIVO =
-    18000;
-
-
-/* =========================================================
-   8. PROGRESO
-   ========================================================= */
-
-function calcularProgreso(
-    ahorrado,
-    objetivo
+function redondear(
+    numero
 ) {
 
-    if (
-        !objetivo ||
-        objetivo <= 0
-    ) {
-
-        return 0;
-
-    }
-
-
-    return Math.min(
-        Math.round(
-            (
-                ahorrado /
-                objetivo
-            ) * 100
-        ),
-        100
-    );
+    return Math.round(
+        (
+            Number(numero) || 0
+        ) * 100
+    ) / 100;
 
 }
 
 
-/* =========================================================
-   9. AÑOS RESTANTES
-   ========================================================= */
-
-function calcularAñosRestantes(
-    añoObjetivo
-) {
-
-    return Math.max(
-        añoObjetivo -
-        AÑO_ACTUAL,
-        0
-    );
-
-}
-
-
-/* =========================================================
-   10. VALOR FUTURO
-   ========================================================= */
-
-function calcularValorFuturo(
-    capitalInicial,
-    aportacionMensual,
-    años,
-    rentabilidadAnual =
-        RENTABILIDAD_SIMULADA
-) {
-
-    if (
-        años <= 0
-    ) {
-
-        return capitalInicial;
-
-    }
-
-
-    const meses =
-        Math.round(
-            años * 12
-        );
-
-
-    const interesMensual =
-        rentabilidadAnual /
-        12;
-
-
-    let valor =
-        Number(
-            capitalInicial
-        ) || 0;
-
-
-    for (
-        let i = 0;
-        i < meses;
-        i++
-    ) {
-
-        valor =
-            valor *
-            (
-                1 +
-                interesMensual
-            );
-
-
-        valor +=
-            Number(
-                aportacionMensual
-            ) || 0;
-
-    }
-
-
-    return valor;
-
-}
-
-
-/* =========================================================
-   11. APORTACIONES FUTURAS
-   ========================================================= */
-
-function calcularAportacionesFuturas(
-    mensual,
-    años
-) {
-
-    return (
-        Number(mensual) *
-        Math.round(
-            años * 12
-        )
-    );
-
-}
-
-
-/* =========================================================
-   12. CRECIMIENTO SIMULADO
-   ========================================================= */
-
-function calcularCrecimientoSimulado(
-    meta
-) {
-
-    const años =
-        calcularAñosRestantes(
-            meta.año
-        );
-
-
-    const aportacionesFuturas =
-        calcularAportacionesFuturas(
-            meta.mensual,
-            años
-        );
-
-
-    const valorFuturo =
-        calcularValorFuturo(
-            meta.ahorrado,
-            meta.mensual,
-            años
-        );
-
-
-    const crecimiento =
-        Math.max(
-            valorFuturo -
-            meta.ahorrado -
-            aportacionesFuturas,
-            0
-        );
-
-
-    return {
-
-        años,
-
-        aportacionesFuturas,
-
-        crecimiento,
-
-        valorFuturo
-
-    };
-
-}
-
-
-/* =========================================================
-   13. EUROS
-   ========================================================= */
-
-function formatearEuros(
+function euros(
     valor
 ) {
 
@@ -480,22 +293,30 @@ function formatearEuros(
 }
 
 
-/* =========================================================
-   14. FECHA
-   ========================================================= */
+function eurosExactos(
+    valor
+) {
 
-function formatearFecha(
+    return new Intl.NumberFormat(
+        "es-ES",
+        {
+            style: "currency",
+            currency: "EUR",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }
+    ).format(
+        Number(valor) || 0
+    );
+
+}
+
+
+function fechaBonita(
     fecha
 ) {
 
-    if (!fecha) {
-
-        return "";
-
-    }
-
-
-    const fechaObj =
+    const date =
         new Date(
             `${fecha}T12:00:00`
         );
@@ -503,7 +324,7 @@ function formatearFecha(
 
     if (
         Number.isNaN(
-            fechaObj.getTime()
+            date.getTime()
         )
     ) {
 
@@ -513,19 +334,20 @@ function formatearFecha(
 
 
     return new Intl.DateTimeFormat(
-        "es-ES"
+        "es-ES",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        }
     ).format(
-        fechaObj
+        date
     );
 
 }
 
 
-/* =========================================================
-   15. FECHA ACTUAL
-   ========================================================= */
-
-function obtenerFechaHoy() {
+function fechaHoy() {
 
     const hoy =
         new Date();
@@ -559,10 +381,6 @@ function obtenerFechaHoy() {
 
 }
 
-
-/* =========================================================
-   16. ESCAPAR HTML
-   ========================================================= */
 
 function escapeHTML(
     texto
@@ -599,10 +417,170 @@ function escapeHTML(
 
 
 /* =========================================================
-   17. ICONO
-   ========================================================= */
+   CÁLCULOS
+========================================================= */
 
-function obtenerIconoMeta(
+function progresoMeta(
+    meta
+) {
+
+    if (
+        !meta.objetivo
+    ) {
+
+        return 0;
+
+    }
+
+
+    return Math.min(
+        100,
+        Math.round(
+            (
+                meta.ahorrado /
+                meta.objetivo
+            ) * 100
+        )
+    );
+
+}
+
+
+function añosRestantes(
+    meta
+) {
+
+    return Math.max(
+        meta.año -
+        AÑO_ACTUAL,
+        0
+    );
+
+}
+
+
+function valorFuturo(
+    capitalInicial,
+    mensual,
+    años,
+    tasa =
+        RENTABILIDAD_SIMULADA
+) {
+
+    const meses =
+        Math.max(
+            0,
+            Math.round(
+                años * 12
+            )
+        );
+
+
+    let valor =
+        Number(
+            capitalInicial
+        ) || 0;
+
+
+    if (
+        meses === 0
+    ) {
+
+        return valor;
+
+    }
+
+
+    const tasaMensual =
+        tasa / 12;
+
+
+    for (
+        let i = 0;
+        i < meses;
+        i++
+    ) {
+
+        valor *=
+            (
+                1 +
+                tasaMensual
+            );
+
+
+        valor +=
+            Number(
+                mensual
+            ) || 0;
+
+    }
+
+
+    return valor;
+
+}
+
+
+function simulacion(
+    meta,
+    mensual =
+        meta.mensual
+) {
+
+    const años =
+        añosRestantes(
+            meta
+        );
+
+
+    const meses =
+        años * 12;
+
+
+    const futuras =
+        (
+            Number(
+                mensual
+            ) || 0
+        ) *
+        meses;
+
+
+    const total =
+        valorFuturo(
+            meta.ahorrado,
+            mensual,
+            años
+        );
+
+
+    const crecimiento =
+        Math.max(
+            total -
+            meta.ahorrado -
+            futuras,
+            0
+        );
+
+
+    return {
+
+        años,
+        meses,
+        futuras,
+        crecimiento,
+        total
+
+    };
+
+}
+
+
+/* =========================================================
+   ICONOS
+========================================================= */
+
+function iconoMeta(
     nombre
 ) {
 
@@ -645,21 +623,17 @@ function obtenerIconoMeta(
 }
 
 
-/* =========================================================
-   18. DESCRIPCIÓN
-   ========================================================= */
-
-function generarDescripcionMeta(
-    meta
+function descripcionMeta(
+    nombre
 ) {
 
-    const nombre =
-        meta.nombre.toLowerCase();
+    const texto =
+        nombre.toLowerCase();
 
 
     if (
-        nombre.includes("casa") ||
-        nombre.includes("vivienda")
+        texto.includes("casa") ||
+        texto.includes("vivienda")
     ) {
 
         return "Entrada para una vivienda";
@@ -668,9 +642,9 @@ function generarDescripcionMeta(
 
 
     if (
-        nombre.includes("viaje") ||
-        nombre.includes("japón") ||
-        nombre.includes("japon")
+        texto.includes("viaje") ||
+        texto.includes("japón") ||
+        texto.includes("japon")
     ) {
 
         return "Un proyecto para disfrutar y explorar";
@@ -679,7 +653,7 @@ function generarDescripcionMeta(
 
 
     if (
-        nombre.includes("independencia")
+        texto.includes("independencia")
     ) {
 
         return "Construir un colchón financiero";
@@ -693,70 +667,44 @@ function generarDescripcionMeta(
 
 
 /* =========================================================
-   19. CREAR META
-   ========================================================= */
+   CREAR META
+========================================================= */
 
 function crearMeta() {
 
-    const nombreInput =
+    const nombre =
         document.getElementById(
             "nombreMeta"
-        );
-
-
-    const objetivoInput =
-        document.getElementById(
-            "objetivoMeta"
-        );
-
-
-    const añoInput =
-        document.getElementById(
-            "añoMeta"
-        );
-
-
-    const mensualInput =
-        document.getElementById(
-            "mensualMeta"
-        );
-
-
-    if (
-        !nombreInput ||
-        !objetivoInput ||
-        !añoInput ||
-        !mensualInput
-    ) {
-
-        return;
-
-    }
-
-
-    const nombre =
-        nombreInput.value.trim();
+        )?.value.trim();
 
 
     const objetivo =
         Number(
-            objetivoInput.value
+            document.getElementById(
+                "objetivoMeta"
+            )?.value
         );
 
 
     const año =
         Number(
-            añoInput.value
+            document.getElementById(
+                "añoMeta"
+            )?.value
         );
 
 
     const mensual =
         Number(
-            mensualInput.value
+            document.getElementById(
+                "mensualMeta"
+            )?.value
         );
 
 
-    if (!nombre) {
+    if (
+        !nombre
+    ) {
 
         alert(
             "Ponle un nombre a tu meta."
@@ -768,10 +716,10 @@ function crearMeta() {
 
 
     if (
-        objetivo <= 0 ||
         !Number.isFinite(
             objetivo
-        )
+        ) ||
+        objetivo <= 0
     ) {
 
         alert(
@@ -784,10 +732,10 @@ function crearMeta() {
 
 
     if (
-        año <= AÑO_ACTUAL ||
         !Number.isFinite(
             año
-        )
+        ) ||
+        año <= AÑO_ACTUAL
     ) {
 
         alert(
@@ -800,10 +748,10 @@ function crearMeta() {
 
 
     if (
-        mensual < 0 ||
         !Number.isFinite(
             mensual
-        )
+        ) ||
+        mensual < 0
     ) {
 
         alert(
@@ -815,7 +763,7 @@ function crearMeta() {
     }
 
 
-    const nuevaMeta = {
+    metas.push({
 
         id:
             Date.now(),
@@ -834,38 +782,93 @@ function crearMeta() {
         aportaciones:
             []
 
-    };
-
-
-    metas.push(
-        nuevaMeta
-    );
+    });
 
 
     guardarMetas();
 
 
-    renderizarMetas();
+    [
+        "nombreMeta",
+        "objetivoMeta",
+        "añoMeta",
+        "mensualMeta"
+    ]
+        .forEach(
+            id => {
 
-    actualizarResumen();
+                const input =
+                    document.getElementById(
+                        id
+                    );
 
-    actualizarGraficaGeneral();
 
-    actualizarYoDelFuturo();
+                if (input) {
+
+                    input.value =
+                        "";
+
+                }
+
+            }
+        );
 
 
-    nombreInput.value =
-        "";
+    cerrarFormularioNuevaMeta();
 
-    objetivoInput.value =
-        "";
+    actualizarTodo();
 
-    añoInput.value =
-        "";
+    mostrarToast(
+        "Meta creada correctamente"
+    );
 
-    mensualInput.value =
-        "";
+}
 
+
+/* =========================================================
+   FORMULARIO NUEVA META
+========================================================= */
+
+function abrirFormularioNuevaMeta() {
+
+    const formulario =
+        document.getElementById(
+            "formularioMeta"
+        );
+
+
+    if (!formulario) {
+        return;
+    }
+
+
+    formulario.hidden =
+        false;
+
+
+    formulario.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+
+
+    setTimeout(
+        () => {
+
+            document
+                .getElementById(
+                    "nombreMeta"
+                )
+                ?.focus();
+
+        },
+        250
+    );
+
+}
+
+
+function cerrarFormularioNuevaMeta() {
 
     const formulario =
         document.getElementById(
@@ -875,8 +878,8 @@ function crearMeta() {
 
     if (formulario) {
 
-        formulario.style.display =
-            "none";
+        formulario.hidden =
+            true;
 
     }
 
@@ -884,8 +887,8 @@ function crearMeta() {
 
 
 /* =========================================================
-   20. RENDERIZAR METAS
-   ========================================================= */
+   RENDERIZADO DE METAS
+========================================================= */
 
 function renderizarMetas() {
 
@@ -911,6 +914,10 @@ function renderizarMetas() {
         contenedor.innerHTML = `
 
             <div class="empty-state">
+
+                <div class="empty-icon">
+                    ◎
+                </div>
 
                 <h3>
                     Aún no tienes metas
@@ -945,10 +952,6 @@ function renderizarMetas() {
 }
 
 
-/* =========================================================
-   21. CREAR TARJETA
-   ========================================================= */
-
 function crearTarjetaMeta(
     meta
 ) {
@@ -964,40 +967,34 @@ function crearTarjetaMeta(
 
 
     const progreso =
-        calcularProgreso(
-            meta.ahorrado,
-            meta.objetivo
-        );
-
-
-    const añosRestantes =
-        calcularAñosRestantes(
-            meta.año
-        );
-
-
-    const simulacion =
-        calcularCrecimientoSimulado(
+        progresoMeta(
             meta
         );
 
 
-    const aportaciones =
-        Array.isArray(
-            meta.aportaciones
-        )
-            ? meta.aportaciones
-            : [];
+    const años =
+        añosRestantes(
+            meta
+        );
+
+
+    const sim =
+        simulacion(
+            meta
+        );
+
+
+    const registros =
+        meta.aportaciones?.length ||
+        0;
 
 
     tarjeta.innerHTML = `
 
         <div class="goal-icon">
-
-            ${obtenerIconoMeta(
+            ${iconoMeta(
                 meta.nombre
             )}
-
         </div>
 
 
@@ -1006,58 +1003,73 @@ function crearTarjetaMeta(
 
             <div class="goal-title">
 
-                <h3>
-                    ${escapeHTML(
-                        meta.nombre
-                    )}
-                </h3>
+                <div>
 
-                <span>
+                    <h3>
+                        ${escapeHTML(
+                            meta.nombre
+                        )}
+                    </h3>
+
+                    <p>
+                        ${escapeHTML(
+                            descripcionMeta(
+                                meta.nombre
+                            )
+                        )}
+                    </p>
+
+                </div>
+
+
+                <span class="goal-year">
                     ${meta.año}
                 </span>
 
             </div>
 
 
-            <p>
+            <div class="real-progress-block">
 
-                ${generarDescripcionMeta(
-                    meta
-                )}
+                <div class="progress-info">
 
-            </p>
+                    <span>
 
+                        Has conseguido
 
-            <!-- =========================================
-                 DINERO REAL
-            ========================================== -->
+                        <strong>
+                            ${euros(
+                                meta.ahorrado
+                            )}
+                        </strong>
 
-            <div class="progress-info">
+                        de
 
-                <span>
-                    Has conseguido
-                    ${formatearEuros(
-                        meta.ahorrado
-                    )}
-                    de
-                    ${formatearEuros(
-                        meta.objetivo
-                    )}
-                </span>
+                        ${euros(
+                            meta.objetivo
+                        )}
+
+                    </span>
 
 
-                <strong>
-                    ${progreso}%
-                </strong>
+                    <strong class="progress-percentage">
 
-            </div>
+                        ${progreso}%
+
+                    </strong>
+
+                </div>
 
 
-            <div class="progress-bar">
+                <div class="progress-bar">
 
-                <div
-                    style="width:${progreso}%"
-                ></div>
+                    <div
+                        style="
+                            width:${progreso}%
+                        "
+                    ></div>
+
+                </div>
 
             </div>
 
@@ -1066,20 +1078,25 @@ function crearTarjetaMeta(
 
                 <span>
 
-                    Aportación prevista ·
-                    ${formatearEuros(
-                        meta.mensual
-                    )}/mes
+                    Aportación prevista
+
+                    <strong>
+                        ${euros(
+                            meta.mensual
+                        )}/mes
+                    </strong>
 
                 </span>
 
 
                 <span>
 
-                    ${añosRestantes}
+                    <strong>
+                        ${años}
+                    </strong>
 
                     ${
-                        añosRestantes === 1
+                        años === 1
                             ? "año"
                             : "años"
                     }
@@ -1091,46 +1108,152 @@ function crearTarjetaMeta(
             </div>
 
 
-            <!-- =========================================
-                 BOTÓN APORTACIÓN
-            ========================================== -->
-
             <button
-                class="primary-button contribution-button"
+                class="contribution-button"
                 type="button"
-                onclick="abrirFormularioAportacion(${meta.id})"
+                onclick="
+                    abrirFormularioAportacion(
+                        ${meta.id}
+                    )
+                "
             >
 
-                + Registrar aportación
+                <span class="button-plus">
+                    +
+                </span>
+
+                Registrar aportación
 
             </button>
 
 
-            <!-- =========================================
-                 HISTORIAL
-            ========================================== -->
+            <div
+                id="aportacion-form-${meta.id}"
+                class="contribution-form"
+                hidden
+            >
 
-            <div class="contribution-summary">
+                <div class="contribution-form-title">
 
-                <span>
+                    <span>
+                        NUEVA APORTACIÓN
+                    </span>
 
-                    ${
-                        aportaciones.length
-                    }
+                    <small>
+                        Se añadirá a tu dinero real registrado.
+                    </small>
 
-                    ${
-                        aportaciones.length === 1
-                            ? "aportación registrada"
-                            : "aportaciones registradas"
-                    }
+                </div>
 
-                </span>
+
+                <div class="contribution-fields">
+
+
+                    <div class="form-field">
+
+                        <label
+                            for="cantidad-${meta.id}"
+                        >
+                            Cantidad (€)
+                        </label>
+
+
+                        <input
+                            id="cantidad-${meta.id}"
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="250"
+                        >
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label
+                            for="fecha-${meta.id}"
+                        >
+                            Fecha
+                        </label>
+
+
+                        <input
+                            id="fecha-${meta.id}"
+                            type="date"
+                            value="${fechaHoy()}"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="contribution-actions">
+
+
+                    <button
+                        class="primary-button"
+                        type="button"
+                        onclick="
+                            registrarAportacion(
+                                ${meta.id}
+                            )
+                        "
+                    >
+                        Registrar
+                    </button>
+
+
+                    <button
+                        class="text-button"
+                        type="button"
+                        onclick="
+                            cerrarFormularioAportacion(
+                                ${meta.id}
+                            )
+                        "
+                    >
+                        Cancelar
+                    </button>
+
+
+                </div>
+
+            </div>
+
+
+            <div class="goal-tools">
+
+                <div class="goal-tool-info">
+
+                    <span class="tool-label">
+                        APORTACIONES
+                    </span>
+
+                    <strong>
+
+                        ${registros}
+
+                        ${
+                            registros === 1
+                                ? "registro"
+                                : "registros"
+                        }
+
+                    </strong>
+
+                </div>
 
 
                 <button
-                    class="history-button"
+                    class="link-action"
                     type="button"
-                    onclick="mostrarHistorial(${meta.id})"
+                    onclick="
+                        mostrarHistorial(
+                            ${meta.id}
+                        )
+                    "
                 >
 
                     Ver historial →
@@ -1140,96 +1263,26 @@ function crearTarjetaMeta(
             </div>
 
 
-            <!-- =========================================
-                 FORMULARIO APORTACIÓN
-            ========================================== -->
-
-            <div
-                id="aportacion-form-${meta.id}"
-                class="contribution-form"
-                style="display:none;"
-            >
+            <div class="simulation-box">
 
 
-                <div class="form-field">
+                <div class="simulation-box-header">
 
-                    <label
-                        for="cantidad-${meta.id}"
-                    >
-                        ¿Cuánto has aportado?
-                    </label>
+                    <div>
 
+                        <span class="simulation-label">
+                            SIMULACIÓN
+                        </span>
 
-                    <input
-                        id="cantidad-${meta.id}"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="250"
-                    >
+                        <h4>
+                            ¿Qué podría pasar?
+                        </h4>
 
-                </div>
+                    </div>
 
 
-
-                <div class="form-field">
-
-                    <label
-                        for="fecha-${meta.id}"
-                    >
-                        Fecha
-                    </label>
-
-
-                    <input
-                        id="fecha-${meta.id}"
-                        type="date"
-                        value="${obtenerFechaHoy()}"
-                    >
-
-                </div>
-
-
-
-                <div class="contribution-actions">
-
-
-                    <button
-                        class="primary-button"
-                        type="button"
-                        onclick="registrarAportacion(${meta.id})"
-                    >
-                        Registrar
-                    </button>
-
-
-                    <button
-                        class="secondary-button"
-                        type="button"
-                        onclick="cerrarFormularioAportacion(${meta.id})"
-                    >
-                        Cancelar
-                    </button>
-
-
-                </div>
-
-
-            </div>
-
-
-
-            <!-- =========================================
-                 SIMULACIÓN
-            ========================================== -->
-
-            <div class="future-value">
-
-
-                <div class="simulation-title">
-
-                    <span>
-                        ¿Qué podría pasar?
+                    <span class="info-badge">
+                        i
                     </span>
 
                 </div>
@@ -1237,10 +1290,10 @@ function crearTarjetaMeta(
 
                 <p>
 
-                    Si mantienes una aportación de
+                    Si mantienes
 
                     <strong>
-                        ${formatearEuros(
+                        ${euros(
                             meta.mensual
                         )}/mes
                     </strong>
@@ -1248,18 +1301,34 @@ function crearTarjetaMeta(
                     durante
 
                     <strong>
-                        ${simulacion.años}
-                        ${
-                            simulacion.años === 1
-                                ? "año"
-                                : "años"
-                        }
-                    </strong>:
+                        ${años}
+                    </strong>
+
+                    ${
+                        años === 1
+                            ? "año"
+                            : "años"
+                    }:
 
                 </p>
 
 
-                <div class="simulation-breakdown">
+                <div class="simulation-main">
+
+                    <span>
+                        Valor estimado
+                    </span>
+
+                    <strong>
+                        ${euros(
+                            sim.total
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div class="simulation-mini-grid">
 
 
                     <div>
@@ -1269,7 +1338,7 @@ function crearTarjetaMeta(
                         </span>
 
                         <strong>
-                            ${formatearEuros(
+                            ${euros(
                                 meta.ahorrado
                             )}
                         </strong>
@@ -1284,8 +1353,8 @@ function crearTarjetaMeta(
                         </span>
 
                         <strong>
-                            ${formatearEuros(
-                                simulacion.aportacionesFuturas
+                            ${euros(
+                                sim.futuras
                             )}
                         </strong>
 
@@ -1295,12 +1364,12 @@ function crearTarjetaMeta(
                     <div>
 
                         <span>
-                            Crecimiento simulado
+                            Crecimiento hipotético
                         </span>
 
                         <strong>
-                            +${formatearEuros(
-                                simulacion.crecimiento
+                            +${euros(
+                                sim.crecimiento
                             )}
                         </strong>
 
@@ -1310,31 +1379,10 @@ function crearTarjetaMeta(
                 </div>
 
 
-                <div class="simulation-result">
-
-
-                    <span>
-                        Valor estimado
-                    </span>
-
-
-                    <strong>
-                        ${formatearEuros(
-                            simulacion.valorFuturo
-                        )}
-                    </strong>
-
-
-                </div>
-
-
                 <small>
 
-                    Hipótesis utilizada:
-                    5% de rentabilidad anual.
-
+                    Hipótesis: 5% anual.
                     La inflación no está incluida.
-
                     No es una previsión ni una garantía.
 
                 </small>
@@ -1343,19 +1391,22 @@ function crearTarjetaMeta(
             </div>
 
 
-
-            <!-- =========================================
-                 ACCIONES
-            ========================================== -->
-
             <div class="goal-actions">
 
 
                 <button
-                    class="secondary-button"
+                    class="action-button"
                     type="button"
-                    onclick="verDetalleMeta(${meta.id})"
+                    onclick="
+                        verDetalleMeta(
+                            ${meta.id}
+                        )
+                    "
                 >
+
+                    <span>
+                        ↗
+                    </span>
 
                     Ver evolución
 
@@ -1363,26 +1414,44 @@ function crearTarjetaMeta(
 
 
                 <button
-                    class="secondary-button"
+                    class="action-button"
                     type="button"
-                    onclick="mostrarComparador(${meta.id})"
+                    onclick="
+                        mostrarComparador(
+                            ${meta.id}
+                        )
+                    "
                 >
 
-                    Comparar aportaciones
+                    <span>
+                        ⇄
+                    </span>
+
+                    Comparar
 
                 </button>
 
+
+            </div>
+
+
+            <div class="goal-danger-zone">
 
                 <button
-                    class="delete-button"
+                    class="delete-meta-button"
                     type="button"
-                    onclick="eliminarMeta(${meta.id})"
+                    onclick="
+                        eliminarMeta(
+                            ${meta.id}
+                        )
+                    "
                 >
 
-                    Eliminar
+                    🗑
+
+                    Eliminar meta
 
                 </button>
-
 
             </div>
 
@@ -1398,8 +1467,8 @@ function crearTarjetaMeta(
 
 
 /* =========================================================
-   22. ABRIR FORMULARIO DE APORTACIÓN
-   ========================================================= */
+   APORTACIONES
+========================================================= */
 
 function abrirFormularioAportacion(
     id
@@ -1416,39 +1485,24 @@ function abrirFormularioAportacion(
     }
 
 
-    const estaOculto =
-        formulario.style.display ===
-        "none";
+    formulario.hidden =
+        !formulario.hidden;
 
 
-    formulario.style.display =
-        estaOculto
-            ? "block"
-            : "none";
+    if (
+        !formulario.hidden
+    ) {
 
-
-    if (estaOculto) {
-
-        const input =
-            document.getElementById(
+        document
+            .getElementById(
                 `cantidad-${id}`
-            );
-
-
-        if (input) {
-
-            input.focus();
-
-        }
+            )
+            ?.focus();
 
     }
 
 }
 
-
-/* =========================================================
-   23. CERRAR FORMULARIO
-   ========================================================= */
 
 function cerrarFormularioAportacion(
     id
@@ -1462,17 +1516,13 @@ function cerrarFormularioAportacion(
 
     if (formulario) {
 
-        formulario.style.display =
-            "none";
+        formulario.hidden =
+            true;
 
     }
 
 }
 
-
-/* =========================================================
-   24. REGISTRAR APORTACIÓN
-   ========================================================= */
 
 function registrarAportacion(
     id
@@ -1490,38 +1540,24 @@ function registrarAportacion(
     }
 
 
-    const cantidadInput =
-        document.getElementById(
-            `cantidad-${id}`
-        );
-
-
-    const fechaInput =
-        document.getElementById(
-            `fecha-${id}`
-        );
-
-
-    if (
-        !cantidadInput ||
-        !fechaInput
-    ) {
-        return;
-    }
-
-
     const cantidad =
         Number(
-            cantidadInput.value
+            document.getElementById(
+                `cantidad-${id}`
+            )?.value
         );
 
 
     const fecha =
-        fechaInput.value;
+        document.getElementById(
+            `fecha-${id}`
+        )?.value;
 
 
     if (
-        !cantidad ||
+        !Number.isFinite(
+            cantidad
+        ) ||
         cantidad <= 0
     ) {
 
@@ -1562,7 +1598,10 @@ function registrarAportacion(
         id:
             Date.now(),
 
-        cantidad,
+        cantidad:
+            redondear(
+                cantidad
+            ),
 
         fecha
 
@@ -1570,110 +1609,35 @@ function registrarAportacion(
 
 
     meta.ahorrado =
-        meta.aportaciones.reduce(
-            (
-                total,
-                aportacion
-            ) =>
-                total +
-                Number(
-                    aportacion.cantidad
-                ),
-            0
+        redondear(
+            meta.aportaciones.reduce(
+                (
+                    total,
+                    aportacion
+                ) =>
+                    total +
+                    Number(
+                        aportacion.cantidad || 0
+                    ),
+                0
+            )
         );
-
-
-    meta.ahorrado =
-        Math.round(
-            meta.ahorrado *
-            100
-        ) / 100;
 
 
     guardarMetas();
 
+    actualizarTodo();
 
-    renderizarMetas();
-
-    actualizarResumen();
-
-    actualizarGraficaGeneral();
-
-    actualizarYoDelFuturo();
-
-
-    mostrarMensajeAportacion(
-        cantidad
+    mostrarToast(
+        `Has registrado ${eurosExactos(cantidad)}`
     );
 
 }
 
 
 /* =========================================================
-   25. MENSAJE DE ÉXITO
-   ========================================================= */
-
-function mostrarMensajeAportacion(
-    cantidad
-) {
-
-    const mensaje =
-        document.createElement(
-            "div"
-        );
-
-
-    mensaje.className =
-        "success-message";
-
-
-    mensaje.textContent =
-        `Has registrado ${formatearEuros(cantidad)} correctamente.`;
-
-
-    document.body.appendChild(
-        mensaje
-    );
-
-
-    requestAnimationFrame(
-        () => {
-
-            mensaje.classList.add(
-                "show"
-            );
-
-        }
-    );
-
-
-    setTimeout(
-        () => {
-
-            mensaje.classList.remove(
-                "show"
-            );
-
-
-            setTimeout(
-                () => {
-
-                    mensaje.remove();
-
-                },
-                300
-            );
-
-        },
-        3000
-    );
-
-}
-
-
-/* =========================================================
-   26. HISTORIAL
-   ========================================================= */
+   HISTORIAL
+========================================================= */
 
 function mostrarHistorial(
     id
@@ -1692,74 +1656,41 @@ function mostrarHistorial(
 
 
     const aportaciones =
-        Array.isArray(
-            meta.aportaciones
-        )
-            ? [
-                ...meta.aportaciones
-            ]
-            : [];
-
-
-    aportaciones.sort(
-        (
-            a,
-            b
-        ) =>
-            new Date(
-                b.fecha
-            ) -
-            new Date(
-                a.fecha
-            )
-    );
-
-
-    let modal =
-        document.getElementById(
-            "modalHistorial"
-        );
-
-
-    if (!modal) {
-
-        modal =
-            document.createElement(
-                "div"
+        [
+            ...(meta.aportaciones || [])
+        ]
+            .sort(
+                (
+                    a,
+                    b
+                ) =>
+                    new Date(
+                        b.fecha
+                    ) -
+                    new Date(
+                        a.fecha
+                    )
             );
 
 
-        modal.id =
-            "modalHistorial";
-
-
-        modal.className =
-            "modal";
-
-
-        document.body.appendChild(
-            modal
-        );
-
-    }
-
-
-    modal.innerHTML = `
-
+    abrirModal(
+        "modalHistorial",
+        `
 
         <div
             class="modal-overlay"
-            onclick="cerrarHistorial()"
+            data-close-modal
         ></div>
 
 
-        <div class="modal-content">
+        <div class="modal-content modal-small">
 
 
             <button
                 class="modal-close"
                 type="button"
-                onclick="cerrarHistorial()"
+                data-close-modal
+                aria-label="Cerrar"
             >
                 ×
             </button>
@@ -1777,9 +1708,11 @@ function mostrarHistorial(
             </h2>
 
 
-            <p>
-                Estas son las aportaciones
+            <p class="modal-intro">
+
+                Aquí ves únicamente el dinero
                 que has registrado.
+
             </p>
 
 
@@ -1790,7 +1723,7 @@ function mostrarHistorial(
                 </span>
 
                 <strong>
-                    ${formatearEuros(
+                    ${eurosExactos(
                         meta.ahorrado
                     )}
                 </strong>
@@ -1802,26 +1735,9 @@ function mostrarHistorial(
 
 
                 ${
-                    aportaciones.length === 0
+                    aportaciones.length
 
                     ?
-
-                    `
-
-                        <div class="empty-history">
-
-                            <p>
-
-                                Todavía no has registrado
-                                ninguna aportación.
-
-                            </p>
-
-                        </div>
-
-                    `
-
-                    :
 
                     aportaciones
                         .map(
@@ -1830,11 +1746,11 @@ function mostrarHistorial(
                                 <div class="history-row">
 
 
-                                    <div>
+                                    <div class="history-main">
 
                                         <strong>
 
-                                            +${formatearEuros(
+                                            +${eurosExactos(
                                                 aportacion.cantidad
                                             )}
 
@@ -1843,12 +1759,11 @@ function mostrarHistorial(
 
                                         <span>
 
-                                            ${formatearFecha(
+                                            ${fechaBonita(
                                                 aportacion.fecha
                                             )}
 
                                         </span>
-
 
                                     </div>
 
@@ -1856,10 +1771,12 @@ function mostrarHistorial(
                                     <button
                                         class="history-delete"
                                         type="button"
-                                        onclick="eliminarAportacion(
-                                            ${meta.id},
-                                            ${aportacion.id}
-                                        )"
+                                        onclick="
+                                            eliminarAportacion(
+                                                ${meta.id},
+                                                ${aportacion.id}
+                                            )
+                                        "
                                     >
 
                                         Eliminar
@@ -1872,6 +1789,22 @@ function mostrarHistorial(
                             `
                         )
                         .join("")
+
+                    :
+
+                    `
+
+                        <div class="empty-history">
+
+                            <p>
+                                Todavía no has registrado
+                                ninguna aportación.
+                            </p>
+
+                        </div>
+
+                    `
+
                 }
 
 
@@ -1880,42 +1813,11 @@ function mostrarHistorial(
 
         </div>
 
-    `;
-
-
-    modal.classList.add(
-        "active"
+        `
     );
 
 }
 
-
-/* =========================================================
-   27. CERRAR HISTORIAL
-   ========================================================= */
-
-function cerrarHistorial() {
-
-    const modal =
-        document.getElementById(
-            "modalHistorial"
-        );
-
-
-    if (modal) {
-
-        modal.classList.remove(
-            "active"
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   28. ELIMINAR APORTACIÓN
-   ========================================================= */
 
 function eliminarAportacion(
     metaId,
@@ -1946,7 +1848,10 @@ function eliminarAportacion(
 
 
     meta.aportaciones =
-        meta.aportaciones.filter(
+        (
+            meta.aportaciones ||
+            []
+        ).filter(
             aportacion =>
                 aportacion.id !==
                 aportacionId
@@ -1954,33 +1859,26 @@ function eliminarAportacion(
 
 
     meta.ahorrado =
-        meta.aportaciones.reduce(
-            (
-                total,
-                aportacion
-            ) =>
-                total +
-                Number(
-                    aportacion.cantidad
-                ),
-            0
+        redondear(
+            meta.aportaciones.reduce(
+                (
+                    total,
+                    aportacion
+                ) =>
+                    total +
+                    Number(
+                        aportacion.cantidad || 0
+                    ),
+                0
+            )
         );
 
 
     guardarMetas();
 
+    cerrarTodosLosModales();
 
-    cerrarHistorial();
-
-
-    renderizarMetas();
-
-    actualizarResumen();
-
-    actualizarGraficaGeneral();
-
-    actualizarYoDelFuturo();
-
+    actualizarTodo();
 
     mostrarHistorial(
         metaId
@@ -1990,48 +1888,8 @@ function eliminarAportacion(
 
 
 /* =========================================================
-   29. ELIMINAR META
-   ========================================================= */
-
-function eliminarMeta(
-    id
-) {
-
-    const confirmar =
-        confirm(
-            "¿Seguro que quieres eliminar esta meta y todas sus aportaciones?"
-        );
-
-
-    if (!confirmar) {
-        return;
-    }
-
-
-    metas =
-        metas.filter(
-            meta =>
-                meta.id !== id
-        );
-
-
-    guardarMetas();
-
-
-    renderizarMetas();
-
-    actualizarResumen();
-
-    actualizarGraficaGeneral();
-
-    actualizarYoDelFuturo();
-
-}
-
-
-/* =========================================================
-   30. DETALLE DE META
-   ========================================================= */
+   EVOLUCIÓN
+========================================================= */
 
 function verDetalleMeta(
     id
@@ -2049,131 +1907,50 @@ function verDetalleMeta(
     }
 
 
-    const datos =
-        generarDatosEvolucion(
+    const simulacionMeta =
+        simulacion(
             meta
         );
 
 
-    mostrarModalMeta(
-        meta,
-        datos
-    );
-
-}
-
-
-/* =========================================================
-   31. DATOS GRÁFICA META
-   ========================================================= */
-
-function generarDatosEvolucion(
-    meta
-) {
-
-    const años =
-        calcularAñosRestantes(
-            meta.año
-        );
-
-
-    const datos = [];
-
-
-    for (
-        let i = 0;
-        i <= años;
-        i++
-    ) {
-
-        datos.push({
-
-            año:
-                AÑO_ACTUAL + i,
-
-            valor:
-                calcularValorFuturo(
-                    meta.ahorrado,
-                    meta.mensual,
-                    i
-                )
-
-        });
-
-    }
-
-
-    return datos;
-
-}
-
-
-/* =========================================================
-   32. MODAL EVOLUCIÓN
-   ========================================================= */
-
-function mostrarModalMeta(
-    meta,
-    datos
-) {
-
-    let modal =
-        document.getElementById(
-            "modalMeta"
-        );
-
-
-    if (!modal) {
-
-        modal =
-            document.createElement(
-                "div"
+    const datosReales =
+        [
+            ...(meta.aportaciones || [])
+        ]
+            .sort(
+                (
+                    a,
+                    b
+                ) =>
+                    new Date(
+                        a.fecha
+                    ) -
+                    new Date(
+                        b.fecha
+                    )
             );
 
 
-        modal.id =
-            "modalMeta";
-
-
-        modal.className =
-            "modal";
-
-
-        document.body.appendChild(
-            modal
-        );
-
-    }
-
-
-    const simulacion =
-        calcularCrecimientoSimulado(
-            meta
-        );
-
-
-    const progreso =
-        calcularProgreso(
-            meta.ahorrado,
-            meta.objetivo
-        );
-
-
-    modal.innerHTML = `
+    abrirModal(
+        "modalMeta",
+        `
 
         <div
             class="modal-overlay"
-            onclick="cerrarModalMeta()"
+            data-close-modal
         ></div>
 
 
-        <div class="modal-content">
+        <div
+            class="modal-content modal-large"
+        >
 
 
             <button
                 class="modal-close"
                 type="button"
-                onclick="cerrarModalMeta()"
+                data-close-modal
+                aria-label="Cerrar"
             >
                 ×
             </button>
@@ -2191,10 +1968,14 @@ function mostrarModalMeta(
             </h2>
 
 
-            <p>
+            <p class="modal-intro">
 
-                Aquí puedes ver cómo podría evolucionar
-                manteniendo tu aportación prevista.
+                La línea continua representa tus
+                aportaciones registradas.
+
+                La línea discontinua muestra una
+                proyección hipotética si mantienes
+                tu aportación prevista.
 
             </p>
 
@@ -2209,7 +1990,7 @@ function mostrarModalMeta(
                     </span>
 
                     <strong>
-                        ${formatearEuros(
+                        ${euros(
                             meta.ahorrado
                         )}
                     </strong>
@@ -2224,7 +2005,9 @@ function mostrarModalMeta(
                     </span>
 
                     <strong>
-                        ${progreso}%
+                        ${progresoMeta(
+                            meta
+                        )}%
                     </strong>
 
                 </div>
@@ -2233,12 +2016,12 @@ function mostrarModalMeta(
                 <div>
 
                     <span>
-                        Valor simulado
+                        Objetivo
                     </span>
 
                     <strong>
-                        ${formatearEuros(
-                            simulacion.valorFuturo
+                        ${euros(
+                            meta.objetivo
                         )}
                     </strong>
 
@@ -2248,13 +2031,46 @@ function mostrarModalMeta(
             </div>
 
 
-            <div class="chart-container">
+            <div class="evolution-chart-wrap">
 
                 <canvas
                     id="graficaMeta"
-                    width="800"
-                    height="400"
+                    width="900"
+                    height="430"
                 ></canvas>
+
+            </div>
+
+
+            <div class="chart-key">
+
+
+                <span>
+
+                    <i class="key-dot actual"></i>
+
+                    Dinero registrado
+
+                </span>
+
+
+                <span>
+
+                    <i class="key-dot projected"></i>
+
+                    Proyección hipotética
+
+                </span>
+
+
+                <span>
+
+                    <i class="key-line"></i>
+
+                    Objetivo
+
+                </span>
+
 
             </div>
 
@@ -2265,27 +2081,12 @@ function mostrarModalMeta(
                 <div>
 
                     <span>
-                        Capital actual
-                    </span>
-
-                    <strong>
-                        ${formatearEuros(
-                            meta.ahorrado
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div>
-
-                    <span>
                         Aportaciones futuras
                     </span>
 
                     <strong>
-                        ${formatearEuros(
-                            simulacion.aportacionesFuturas
+                        ${euros(
+                            simulacionMeta.futuras
                         )}
                     </strong>
 
@@ -2295,12 +2096,27 @@ function mostrarModalMeta(
                 <div>
 
                     <span>
-                        Crecimiento simulado
+                        Crecimiento hipotético
                     </span>
 
                     <strong>
-                        +${formatearEuros(
-                            simulacion.crecimiento
+                        +${euros(
+                            simulacionMeta.crecimiento
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Valor estimado final
+                    </span>
+
+                    <strong>
+                        ${euros(
+                            simulacionMeta.total
                         )}
                     </strong>
 
@@ -2312,61 +2128,35 @@ function mostrarModalMeta(
 
             <p class="simulation-warning">
 
-                Hipótesis: 5% de rentabilidad anual.
+                Hipótesis utilizada: 5% de rentabilidad anual.
                 La inflación no está incluida.
-                Esta cifra no es una previsión ni una garantía.
+                El resultado es ilustrativo y no garantiza
+                rentabilidades futuras.
 
             </p>
 
 
         </div>
 
-    `;
-
-
-    modal.classList.add(
-        "active"
+        `
     );
 
 
-    dibujarGraficaMeta(
-        datos,
-        meta
+    dibujarGraficaEvolucion(
+        meta,
+        datosReales
     );
 
 }
 
 
 /* =========================================================
-   33. CERRAR MODAL META
-   ========================================================= */
+   GRÁFICA EVOLUCIÓN
+========================================================= */
 
-function cerrarModalMeta() {
-
-    const modal =
-        document.getElementById(
-            "modalMeta"
-        );
-
-
-    if (modal) {
-
-        modal.classList.remove(
-            "active"
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   34. DIBUJAR GRÁFICA DE META
-   ========================================================= */
-
-function dibujarGraficaMeta(
-    datos,
-    meta
+function dibujarGraficaEvolucion(
+    meta,
+    reales
 ) {
 
     const canvas =
@@ -2394,6 +2184,81 @@ function dibujarGraficaMeta(
         canvas.height;
 
 
+    const left =
+        65;
+
+
+    const right =
+        25;
+
+
+    const top =
+        30;
+
+
+    const bottom =
+        55;
+
+
+    const plotWidth =
+        width -
+        left -
+        right;
+
+
+    const plotHeight =
+        height -
+        top -
+        bottom;
+
+
+    const years =
+        Math.max(
+            añosRestantes(
+                meta
+            ),
+            1
+        );
+
+
+    const projection =
+        Array.from(
+            {
+                length:
+                    years + 1
+            },
+            (
+                _,
+                index
+            ) => ({
+
+                year:
+                    AÑO_ACTUAL +
+                    index,
+
+                value:
+                    valorFuturo(
+                        meta.ahorrado,
+                        meta.mensual,
+                        index
+                    )
+
+            })
+        );
+
+
+    const maxValue =
+        Math.max(
+            meta.objetivo,
+            meta.ahorrado,
+            ...projection.map(
+                punto =>
+                    punto.value
+            ),
+            1
+        );
+
+
     ctx.clearRect(
         0,
         0,
@@ -2402,89 +2267,105 @@ function dibujarGraficaMeta(
     );
 
 
-    if (!datos.length) {
-        return;
-    }
+    /* cuadrícula */
+
+    ctx.globalAlpha =
+        0.1;
 
 
-    const margen =
-        55;
+    for (
+        let i = 0;
+        i <= 4;
+        i++
+    ) {
+
+        const y =
+            top +
+            (
+                plotHeight *
+                i /
+                4
+            );
 
 
-    const ancho =
-        width -
-        margen * 2;
+        ctx.beginPath();
 
 
-    const alto =
-        height -
-        margen * 2;
-
-
-    const maxValor =
-        Math.max(
-            meta.objetivo,
-            ...datos.map(
-                dato =>
-                    dato.valor
-            ),
-            1
+        ctx.moveTo(
+            left,
+            y
         );
 
 
-    /* Ejes */
+        ctx.lineTo(
+            width -
+            right,
+            y
+        );
+
+
+        ctx.stroke();
+
+    }
+
+
+    ctx.globalAlpha =
+        1;
+
+
+    /* ejes */
 
     ctx.beginPath();
 
     ctx.moveTo(
-        margen,
-        margen
+        left,
+        top
     );
 
     ctx.lineTo(
-        margen,
+        left,
         height -
-        margen
+        bottom
     );
 
     ctx.lineTo(
         width -
-        margen,
+        right,
         height -
-        margen
+        bottom
     );
 
     ctx.stroke();
 
 
-    /* Objetivo */
+    /* objetivo */
 
     const yObjetivo =
-        height -
-        margen -
+        top +
+        plotHeight -
         (
             meta.objetivo /
-            maxValor
+            maxValue
         ) *
-        alto;
+        plotHeight;
 
 
     ctx.setLineDash([
         8,
-        6
+        7
     ]);
 
 
     ctx.beginPath();
 
     ctx.moveTo(
-        margen,
+        left,
         yObjetivo
     );
 
     ctx.lineTo(
         width -
-        margen,
+        right,
         yObjetivo
     );
 
@@ -2494,38 +2375,40 @@ function dibujarGraficaMeta(
     ctx.setLineDash([]);
 
 
-    /* Evolución */
+    /* proyección */
+
+    ctx.setLineDash([
+        5,
+        5
+    ]);
+
 
     ctx.beginPath();
 
 
-    datos.forEach(
+    projection.forEach(
         (
-            dato,
+            punto,
             index
         ) => {
 
             const x =
-                margen +
+                left +
                 (
                     index /
-                    (
-                        datos.length -
-                        1 ||
-                        1
-                    )
+                    years
                 ) *
-                ancho;
+                plotWidth;
 
 
             const y =
-                height -
-                margen -
+                top +
+                plotHeight -
                 (
-                    dato.valor /
-                    maxValor
+                    punto.value /
+                    maxValue
                 ) *
-                alto;
+                plotHeight;
 
 
             if (
@@ -2553,447 +2436,167 @@ function dibujarGraficaMeta(
     ctx.stroke();
 
 
-    /* Puntos */
+    ctx.setLineDash([]);
 
-    datos.forEach(
-        (
-            dato,
-            index
-        ) => {
 
-            const x =
-                margen +
-                (
-                    index /
-                    (
-                        datos.length -
-                        1 ||
-                        1
-                    )
-                ) *
-                ancho;
+    /* reales */
 
-
-            const y =
-                height -
-                margen -
-                (
-                    dato.valor /
-                    maxValor
-                ) *
-                alto;
-
-
-            ctx.beginPath();
-
-
-            ctx.arc(
-                x,
-                y,
-                4,
-                0,
-                Math.PI * 2
-            );
-
-
-            ctx.fill();
-
-        }
-    );
-
-
-    /* Años */
-
-    ctx.font =
-        "13px Arial";
-
-
-    ctx.textAlign =
-        "center";
-
-
-    datos.forEach(
-        (
-            dato,
-            index
-        ) => {
-
-            const x =
-                margen +
-                (
-                    index /
-                    (
-                        datos.length -
-                        1 ||
-                        1
-                    )
-                ) *
-                ancho;
-
-
-            ctx.fillText(
-                dato.año,
-                x,
-                height -
-                20
-            );
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   35. RESUMEN GENERAL
-   ========================================================= */
-
-function actualizarResumen() {
-
-    const patrimonio =
-        metas.reduce(
-            (
-                total,
-                meta
-            ) =>
-                total +
-                Number(
-                    meta.ahorrado
-                ),
-            0
-        );
-
-
-    const aportacionMensual =
-        metas.reduce(
-            (
-                total,
-                meta
-            ) =>
-                total +
-                Number(
-                    meta.mensual
-                ),
-            0
-        );
-
-
-    const objetivos =
-        metas.reduce(
-            (
-                total,
-                meta
-            ) =>
-                total +
-                Number(
-                    meta.objetivo
-                ),
-            0
-        );
-
-
-    const progreso =
-        objetivos > 0
-            ? Math.round(
-                (
-                    patrimonio /
-                    objetivos
-                ) *
-                100
-            )
-            : 0;
-
-
-    actualizarElemento(
-        "patrimonioTotal",
-        formatearEuros(
-            patrimonio
-        )
-    );
-
-
-    actualizarElemento(
-        "aportacionTotal",
-        formatearEuros(
-            aportacionMensual
-        )
-    );
-
-
-    actualizarElemento(
-        "aportacionTotalResumen",
-        formatearEuros(
-            aportacionMensual
-        )
-    );
-
-
-    actualizarElemento(
-        "progresoTotal",
-        `${progreso}%`
-    );
-
-
-    actualizarElemento(
-        "numeroMetas",
-        metas.length
-    );
-
-
-    actualizarElemento(
-        "numeroMetasResumen",
-        metas.length
-    );
-
-}
-
-
-/* =========================================================
-   36. ACTUALIZAR ELEMENTO
-   ========================================================= */
-
-function actualizarElemento(
-    id,
-    contenido
-) {
-
-    const elemento =
-        document.getElementById(
-            id
-        );
-
-
-    if (!elemento) {
-        return;
-    }
-
-
-    elemento.textContent =
-        contenido;
-
-}
-
-
-/* =========================================================
-   37. GRÁFICA GENERAL
-   ========================================================= */
-
-function actualizarGraficaGeneral() {
-
-    const canvas =
-        document.getElementById(
-            "graficaGeneral"
-        );
-
-
-    if (!canvas) {
-        return;
-    }
-
-
-    const ctx =
-        canvas.getContext(
-            "2d"
-        );
-
-
-    const width =
-        canvas.width;
-
-
-    const height =
-        canvas.height;
-
-
-    ctx.clearRect(
-        0,
-        0,
-        width,
-        height
-    );
-
-
-    if (!metas.length) {
-        return;
-    }
-
-
-    const años =
-        10;
-
-
-    const datos = [];
-
-
-    for (
-        let i = 0;
-        i <= años;
-        i++
+    if (
+        reales.length
     ) {
 
-        let total = 0;
+        let acumulado =
+            0;
 
 
-        metas.forEach(
-            meta => {
+        ctx.beginPath();
 
-                total +=
-                    calcularValorFuturo(
-                        meta.ahorrado,
-                        meta.mensual,
-                        i
+
+        reales.forEach(
+            (
+                aportacion,
+                index
+            ) => {
+
+                acumulado +=
+                    Number(
+                        aportacion.cantidad
+                    ) ||
+                    0;
+
+
+                const fecha =
+                    new Date(
+                        `${aportacion.fecha}T12:00:00`
                     );
+
+
+                const año =
+                    fecha.getFullYear();
+
+
+                const distancia =
+                    Math.min(
+                        Math.max(
+                            año -
+                            AÑO_ACTUAL,
+                            0
+                        ),
+                        years
+                    );
+
+
+                const x =
+                    left +
+                    (
+                        distancia /
+                        years
+                    ) *
+                    plotWidth;
+
+
+                const y =
+                    top +
+                    plotHeight -
+                    (
+                        acumulado /
+                        maxValue
+                    ) *
+                    plotHeight;
+
+
+                if (
+                    index === 0
+                ) {
+
+                    ctx.moveTo(
+                        x,
+                        y
+                    );
+
+                } else {
+
+                    ctx.lineTo(
+                        x,
+                        y
+                    );
+
+                }
 
             }
         );
 
 
-        datos.push(
-            total
-        );
+        ctx.stroke();
 
     }
 
 
-    const margen =
-        55;
+    /* puntos reales */
+
+    let acumulado =
+        0;
 
 
-    const ancho =
-        width -
-        margen * 2;
+    reales.forEach(
+        aportacion => {
+
+            acumulado +=
+                Number(
+                    aportacion.cantidad
+                ) ||
+                0;
 
 
-    const alto =
-        height -
-        margen * 2;
+            const fecha =
+                new Date(
+                    `${aportacion.fecha}T12:00:00`
+                );
 
 
-    const maxValor =
-        Math.max(
-            ...datos,
-            1
-        );
+            const año =
+                fecha.getFullYear();
 
 
-    /* Ejes */
+            const distancia =
+                Math.min(
+                    Math.max(
+                        año -
+                        AÑO_ACTUAL,
+                        0
+                    ),
+                    years
+                );
 
-    ctx.beginPath();
-
-    ctx.moveTo(
-        margen,
-        margen
-    );
-
-    ctx.lineTo(
-        margen,
-        height -
-        margen
-    );
-
-    ctx.lineTo(
-        width -
-        margen,
-        height -
-        margen
-    );
-
-    ctx.stroke();
-
-
-    /* Línea */
-
-    ctx.beginPath();
-
-
-    datos.forEach(
-        (
-            valor,
-            index
-        ) => {
 
             const x =
-                margen +
+                left +
                 (
-                    index /
-                    años
+                    distancia /
+                    years
                 ) *
-                ancho;
+                plotWidth;
 
 
             const y =
-                height -
-                margen -
+                top +
+                plotHeight -
                 (
-                    valor /
-                    maxValor
+                    acumulado /
+                    maxValue
                 ) *
-                alto;
-
-
-            if (
-                index === 0
-            ) {
-
-                ctx.moveTo(
-                    x,
-                    y
-                );
-
-            } else {
-
-                ctx.lineTo(
-                    x,
-                    y
-                );
-
-            }
-
-        }
-    );
-
-
-    ctx.stroke();
-
-
-    /* Puntos */
-
-    datos.forEach(
-        (
-            valor,
-            index
-        ) => {
-
-            const x =
-                margen +
-                (
-                    index /
-                    años
-                ) *
-                ancho;
-
-
-            const y =
-                height -
-                margen -
-                (
-                    valor /
-                    maxValor
-                ) *
-                alto;
+                plotHeight;
 
 
             ctx.beginPath();
 
-
             ctx.arc(
                 x,
                 y,
-                4,
+                5,
                 0,
                 Math.PI * 2
             );
-
 
             ctx.fill();
 
@@ -3001,7 +2604,7 @@ function actualizarGraficaGeneral() {
     );
 
 
-    /* Años */
+    /* años */
 
     ctx.font =
         "13px Arial";
@@ -3011,26 +2614,26 @@ function actualizarGraficaGeneral() {
         "center";
 
 
-    datos.forEach(
+    projection.forEach(
         (
-            valor,
+            punto,
             index
         ) => {
 
             const x =
-                margen +
+                left +
                 (
                     index /
-                    años
+                    years
                 ) *
-                ancho;
+                plotWidth;
 
 
             ctx.fillText(
-                AÑO_ACTUAL + index,
+                punto.year,
                 x,
                 height -
-                20
+                18
             );
 
         }
@@ -3040,68 +2643,8 @@ function actualizarGraficaGeneral() {
 
 
 /* =========================================================
-   38. COMPARADOR
-   ========================================================= */
-
-function calcularEscenarios(
-    meta
-) {
-
-    const años =
-        calcularAñosRestantes(
-            meta.año
-        );
-
-
-    const escenarios = [
-
-        {
-            nombre: "Aportación actual",
-            mensual: meta.mensual
-        },
-
-        {
-            nombre: "+50 €/mes",
-            mensual:
-                meta.mensual +
-                50
-        },
-
-        {
-            nombre: "+100 €/mes",
-            mensual:
-                meta.mensual +
-                100
-        }
-
-    ];
-
-
-    return escenarios.map(
-        escenario => {
-
-            return {
-
-                ...escenario,
-
-                valor:
-                    calcularValorFuturo(
-                        meta.ahorrado,
-                        escenario.mensual,
-                        años
-                    )
-
-            };
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   39. MOSTRAR COMPARADOR
-   ========================================================= */
+   COMPARADOR
+========================================================= */
 
 function mostrarComparador(
     id
@@ -3119,126 +2662,442 @@ function mostrarComparador(
     }
 
 
-    const escenarios =
-        calcularEscenarios(
+    const años =
+        añosRestantes(
             meta
         );
 
 
-    let contenedor =
-        document.getElementById(
-            "comparador"
-        );
+    const escenarios = [
 
+        {
+            titulo:
+                "Aportación prevista",
 
-    if (!contenedor) {
+            mensual:
+                Number(
+                    meta.mensual
+                ) || 0
+        },
 
-        contenedor =
-            document.createElement(
-                "div"
-            );
+        {
+            titulo:
+                "Aportar 50 € más",
 
+            mensual:
+                (
+                    Number(
+                        meta.mensual
+                    ) || 0
+                ) +
+                50
+        },
 
-        contenedor.id =
-            "comparador";
+        {
+            titulo:
+                "Aportar 100 € más",
 
-
-        contenedor.className =
-            "comparison-container";
-
-
-        const section =
-            document.getElementById(
-                "metas"
-            );
-
-
-        if (section) {
-
-            section.appendChild(
-                contenedor
-            );
-
+            mensual:
+                (
+                    Number(
+                        meta.mensual
+                    ) || 0
+                ) +
+                100
         }
 
-    }
+    ];
 
 
-    contenedor.innerHTML = `
+    const tarjetas =
+        escenarios
+            .map(
+                escenario => {
 
-        <div class="comparison-header">
-
-            <p class="eyebrow">
-                COMPARADOR
-            </p>
-
-            <h3>
-                ¿Qué cambia si aportas más?
-            </h3>
-
-            <p>
-                ${escapeHTML(
-                    meta.nombre
-                )}
-            </p>
-
-        </div>
+                    const resultado =
+                        simulacion(
+                            meta,
+                            escenario.mensual
+                        );
 
 
-        <div class="comparison-grid">
-
-            ${escenarios
-                .map(
-                    escenario => `
+                    return `
 
                         <div class="comparison-card">
 
-                            <span>
-                                ${escenario.nombre}
+                            <span class="comparison-card-title">
+
+                                ${escapeHTML(
+                                    escenario.titulo
+                                )}
+
                             </span>
 
-                            <strong>
-                                ${formatearEuros(
-                                    escenario.valor
-                                )}
-                            </strong>
 
                             <small>
-                                ${formatearEuros(
+
+                                ${euros(
                                     escenario.mensual
                                 )}/mes
+
                             </small>
+
+
+                            <strong>
+
+                                ${euros(
+                                    resultado.total
+                                )}
+
+                            </strong>
+
+
+                            <p>
+
+                                Valor simulado
+                                al final del periodo.
+
+                            </p>
+
+
+                            <div class="comparison-detail">
+
+                                <span>
+                                    Aportaciones futuras
+                                </span>
+
+                                <b>
+                                    ${euros(
+                                        resultado.futuras
+                                    )}
+                                </b>
+
+                            </div>
+
+
+                            <div class="comparison-detail">
+
+                                <span>
+                                    Crecimiento hipotético
+                                </span>
+
+                                <b>
+                                    +${euros(
+                                        resultado.crecimiento
+                                    )}
+                                </b>
+
+                            </div>
+
 
                         </div>
 
-                    `
-                )
-                .join("")}
+                    `;
+
+                }
+            )
+            .join("");
+
+
+    abrirModal(
+        "modalComparador",
+        `
+
+        <div
+            class="modal-overlay"
+            data-close-modal
+        ></div>
+
+
+        <div
+            class="modal-content modal-large"
+        >
+
+
+            <button
+                class="modal-close"
+                type="button"
+                data-close-modal
+                aria-label="Cerrar"
+            >
+                ×
+            </button>
+
+
+            <p class="eyebrow">
+                COMPARAR
+            </p>
+
+
+            <h2>
+                ¿Qué cambia si aportas más?
+            </h2>
+
+
+            <p class="modal-intro">
+
+                ${escapeHTML(
+                    meta.nombre
+                )}
+
+                ·
+
+                ${años}
+
+                ${
+                    años === 1
+                        ? "año"
+                        : "años"
+                }
+
+                hasta el objetivo.
+
+            </p>
+
+
+            <div class="comparison-grid">
+
+                ${tarjetas}
+
+            </div>
+
+
+            <div class="comparison-note">
+
+                <strong>
+                    ¿Qué estás comparando?
+                </strong>
+
+
+                <p>
+
+                    El dinero que ya has registrado
+                    se mantiene igual.
+
+                    Solo cambia la aportación mensual
+                    futura utilizada en cada simulación.
+
+                </p>
+
+            </div>
+
+
+            <p class="simulation-warning">
+
+                Hipótesis: 5% de rentabilidad anual.
+                La inflación no está incluida.
+                Los resultados son ilustrativos y no garantizan
+                rentabilidades futuras.
+
+            </p>
+
 
         </div>
 
-
-        <small class="simulation-warning">
-
-            Simulación orientativa al 5% anual.
-            No representa una previsión ni una garantía.
-
-        </small>
-
-    `;
-
-
-    contenedor.scrollIntoView({
-        behavior: "smooth",
-        block: "center"
-    });
+        `
+    );
 
 }
 
 
 /* =========================================================
-   40. TU YO DEL FUTURO
-   ========================================================= */
+   MODALES
+========================================================= */
+
+function abrirModal(
+    id,
+    html
+) {
+
+    cerrarModalPorId(
+        id
+    );
+
+
+    const modal =
+        document.createElement(
+            "div"
+        );
+
+
+    modal.id =
+        id;
+
+
+    modal.className =
+        "modal";
+
+
+    modal.innerHTML =
+        html;
+
+
+    document.body.appendChild(
+        modal
+    );
+
+
+    requestAnimationFrame(
+        () => {
+
+            modal.classList.add(
+                "active"
+            );
+
+        }
+    );
+
+
+    modal
+        .querySelectorAll(
+            "[data-close-modal]"
+        )
+        .forEach(
+            elemento => {
+
+                elemento.addEventListener(
+                    "click",
+                    () => {
+
+                        cerrarModalPorId(
+                            id
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+
+function cerrarModalPorId(
+    id
+) {
+
+    const modal =
+        document.getElementById(
+            id
+        );
+
+
+    if (!modal) {
+        return;
+    }
+
+
+    modal.classList.remove(
+        "active"
+    );
+
+
+    setTimeout(
+        () => {
+
+            modal.remove();
+
+        },
+        250
+    );
+
+}
+
+
+function cerrarTodosLosModales() {
+
+    document
+        .querySelectorAll(
+            ".modal"
+        )
+        .forEach(
+            modal => {
+
+                modal.classList.remove(
+                    "active"
+                );
+
+
+                setTimeout(
+                    () => {
+
+                        modal.remove();
+
+                    },
+                    250
+                );
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+function mostrarToast(
+    mensaje
+) {
+
+    const toast =
+        document.createElement(
+            "div"
+        );
+
+
+    toast.className =
+        "toast-message";
+
+
+    toast.textContent =
+        mensaje;
+
+
+    document.body.appendChild(
+        toast
+    );
+
+
+    requestAnimationFrame(
+        () => {
+
+            toast.classList.add(
+                "show"
+            );
+
+        }
+    );
+
+
+    setTimeout(
+        () => {
+
+            toast.classList.remove(
+                "show"
+            );
+
+
+            setTimeout(
+                () => {
+
+                    toast.remove();
+
+                },
+                250
+            );
+
+        },
+        2600
+    );
+
+}
+
+
+/* =========================================================
+   TU YO DEL FUTURO
+========================================================= */
 
 function actualizarYoDelFuturo() {
 
@@ -3279,7 +3138,8 @@ function actualizarYoDelFuturo() {
             ) =>
                 total +
                 Number(
-                    meta.ahorrado
+                    meta.ahorrado ||
+                    0
                 ),
             0
         );
@@ -3293,28 +3153,31 @@ function actualizarYoDelFuturo() {
             ) =>
                 total +
                 Number(
-                    meta.mensual
+                    meta.mensual ||
+                    0
                 ),
             0
         );
 
 
     const futuro =
-        calcularValorFuturo(
+        valorFuturo(
             actual,
             mensual,
             10
         );
 
 
+    const aportacionesFuturas =
+        mensual *
+        120;
+
+
     const crecimiento =
         Math.max(
             futuro -
             actual -
-            (
-                mensual *
-                120
-            ),
+            aportacionesFuturas,
             0
         );
 
@@ -3323,7 +3186,7 @@ function actualizarYoDelFuturo() {
 
         <p class="future-message">
 
-            “Lo que haces hoy puede cambiar
+            “Lo que haces hoy puede ampliar
             las opciones que tienes mañana.”
 
         </p>
@@ -3332,12 +3195,12 @@ function actualizarYoDelFuturo() {
         <div class="future-result">
 
             <span>
-                En 10 años
+                Simulación a 10 años
             </span>
 
 
             <strong>
-                ${formatearEuros(
+                ${euros(
                     futuro
                 )}
             </strong>
@@ -3346,20 +3209,11 @@ function actualizarYoDelFuturo() {
             <small>
 
                 Con tus aportaciones previstas,
-                el resultado simulado sería de
+                el crecimiento hipotético sería aproximadamente
 
-                ${formatearEuros(
-                    futuro
-                )}
-
-                , de los cuales el crecimiento
-                hipotético sería aproximadamente
-
-                ${formatearEuros(
+                ${euros(
                     crecimiento
-                )}
-
-                .
+                )}.
 
             </small>
 
@@ -3371,8 +3225,8 @@ function actualizarYoDelFuturo() {
 
 
 /* =========================================================
-   41. MI CÍRCULO
-   ========================================================= */
+   CÍRCULO
+========================================================= */
 
 function actualizarCirculo() {
 
@@ -3395,7 +3249,8 @@ function actualizarCirculo() {
             ) =>
                 suma +
                 Number(
-                    persona.aportado
+                    persona.aportado ||
+                    0
                 ),
             0
         );
@@ -3456,9 +3311,7 @@ function actualizarCirculo() {
             </div>
 
 
-
             <div>
-
 
                 <strong>
                     Viaje a Japón 🇯🇵
@@ -3468,12 +3321,11 @@ function actualizarCirculo() {
                 <small>
 
                     Meta conjunta ·
-                    ${formatearEuros(
+                    ${euros(
                         CIRCULO_OBJETIVO
                     )}
 
                 </small>
-
 
             </div>
 
@@ -3485,10 +3337,12 @@ function actualizarCirculo() {
         <div class="circle-progress">
 
             <div
-                style="width:${Math.min(
-                    progreso,
-                    100
-                )}%"
+                style="
+                    width:${Math.min(
+                        progreso,
+                        100
+                    )}%
+                "
             ></div>
 
         </div>
@@ -3497,17 +3351,22 @@ function actualizarCirculo() {
 
         <div class="circle-total">
 
-            <strong>
-                ${formatearEuros(
-                    total
-                )}
-            </strong>
+            <div>
+
+                <strong>
+                    ${euros(total)}
+                </strong>
+
+                <span>
+                    reunidos por el grupo
+                </span>
+
+            </div>
 
 
-            <span>
-                ${progreso}% conseguido
-            </span>
-
+            <b>
+                ${progreso}%
+            </b>
 
         </div>
 
@@ -3522,16 +3381,35 @@ function actualizarCirculo() {
 
                         <div>
 
-                            <span>
-                                ${escapeHTML(
-                                    persona.nombre
-                                )}
-                            </span>
+                            <div class="friend-name">
+
+                                <span class="friend-avatar">
+
+                                    ${persona.nombre
+                                        .charAt(
+                                            0
+                                        )
+                                        .toUpperCase()}
+
+                                </span>
+
+                                <span>
+
+                                    ${escapeHTML(
+                                        persona.nombre
+                                    )}
+
+                                </span>
+
+                            </div>
+
 
                             <b>
-                                ${formatearEuros(
+
+                                ${euros(
                                     persona.aportado
                                 )}
+
                             </b>
 
                         </div>
@@ -3549,138 +3427,535 @@ function actualizarCirculo() {
 
 
 /* =========================================================
-   42. BOTÓN NUEVA META
-   ========================================================= */
+   RESUMEN
+========================================================= */
 
-function configurarBotonNuevaMeta() {
+function actualizarResumen() {
 
-    const boton =
-        document.getElementById(
-            "nuevaMeta"
+    const dinero =
+        metas.reduce(
+            (
+                total,
+                meta
+            ) =>
+                total +
+                Number(
+                    meta.ahorrado ||
+                    0
+                ),
+            0
         );
 
 
-    const formulario =
-        document.getElementById(
-            "formularioMeta"
+    const mensual =
+        metas.reduce(
+            (
+                total,
+                meta
+            ) =>
+                total +
+                Number(
+                    meta.mensual ||
+                    0
+                ),
+            0
         );
 
 
-    if (
-        !boton ||
-        !formulario
-    ) {
+    const objetivos =
+        metas.reduce(
+            (
+                total,
+                meta
+            ) =>
+                total +
+                Number(
+                    meta.objetivo ||
+                    0
+                ),
+            0
+        );
+
+
+    const progreso =
+        objetivos > 0
+            ? Math.round(
+                (
+                    dinero /
+                    objetivos
+                ) *
+                100
+            )
+            : 0;
+
+
+    actualizarElemento(
+        "patrimonioTotal",
+        euros(
+            dinero
+        )
+    );
+
+
+    actualizarElemento(
+        "aportacionTotal",
+        euros(
+            mensual
+        )
+    );
+
+
+    actualizarElemento(
+        "aportacionTotalResumen",
+        euros(
+            mensual
+        )
+    );
+
+
+    actualizarElemento(
+        "progresoTotal",
+        `${progreso}%`
+    );
+
+
+    actualizarElemento(
+        "numeroMetas",
+        metas.length
+    );
+
+
+    actualizarElemento(
+        "numeroMetasResumen",
+        metas.length
+    );
+
+}
+
+
+function actualizarElemento(
+    id,
+    valor
+) {
+
+    const elemento =
+        document.getElementById(
+            id
+        );
+
+
+    if (elemento) {
+
+        elemento.textContent =
+            valor;
+
+    }
+
+}
+
+
+/* =========================================================
+   GRÁFICA GENERAL
+========================================================= */
+
+function actualizarGraficaGeneral() {
+
+    const canvas =
+        document.getElementById(
+            "graficaGeneral"
+        );
+
+
+    if (!canvas) {
         return;
     }
 
 
-    boton.addEventListener(
-        "click",
-        () => {
-
-            const oculto =
-                formulario.style.display ===
-                "none";
+    const ctx =
+        canvas.getContext(
+            "2d"
+        );
 
 
-            formulario.style.display =
-                oculto
-                    ? "block"
-                    : "none";
+    const width =
+        canvas.width;
 
 
-            if (oculto) {
+    const height =
+        canvas.height;
 
-                formulario.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
+
+    const left =
+        65;
+
+
+    const right =
+        30;
+
+
+    const top =
+        30;
+
+
+    const bottom =
+        50;
+
+
+    const plotWidth =
+        width -
+        left -
+        right;
+
+
+    const plotHeight =
+        height -
+        top -
+        bottom;
+
+
+    const years =
+        10;
+
+
+    const datos =
+        Array.from(
+            {
+                length:
+                    years + 1
+            },
+            (
+                _,
+                index
+            ) =>
+                metas.reduce(
+                    (
+                        total,
+                        meta
+                    ) =>
+                        total +
+                        valorFuturo(
+                            meta.ahorrado,
+                            meta.mensual,
+                            index
+                        ),
+                    0
+                )
+        );
+
+
+    const max =
+        Math.max(
+            ...datos,
+            1
+        );
+
+
+    ctx.clearRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    ctx.globalAlpha =
+        0.1;
+
+
+    for (
+        let i = 0;
+        i <= 4;
+        i++
+    ) {
+
+        const y =
+            top +
+            (
+                plotHeight *
+                i /
+                4
+            );
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            left,
+            y
+        );
+
+
+        ctx.lineTo(
+            width -
+            right,
+            y
+        );
+
+
+        ctx.stroke();
+
+    }
+
+
+    ctx.globalAlpha =
+        1;
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        left,
+        top
+    );
+
+    ctx.lineTo(
+        left,
+        height -
+        bottom
+    );
+
+    ctx.lineTo(
+        width -
+        right,
+        height -
+        bottom
+    );
+
+    ctx.stroke();
+
+
+    ctx.beginPath();
+
+
+    datos.forEach(
+        (
+            valor,
+            index
+        ) => {
+
+            const x =
+                left +
+                (
+                    index /
+                    years
+                ) *
+                plotWidth;
+
+
+            const y =
+                top +
+                plotHeight -
+                (
+                    valor /
+                    max
+                ) *
+                plotHeight;
+
+
+            if (
+                index === 0
+            ) {
+
+                ctx.moveTo(
+                    x,
+                    y
+                );
+
+            } else {
+
+                ctx.lineTo(
+                    x,
+                    y
+                );
 
             }
 
         }
     );
 
+
+    ctx.stroke();
+
+
+    datos.forEach(
+        (
+            valor,
+            index
+        ) => {
+
+            const x =
+                left +
+                (
+                    index /
+                    years
+                ) *
+                plotWidth;
+
+
+            const y =
+                top +
+                plotHeight -
+                (
+                    valor /
+                    max
+                ) *
+                plotHeight;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+                x,
+                y,
+                4,
+                0,
+                Math.PI * 2
+            );
+
+
+            ctx.fill();
+
+        }
+    );
+
+
+    ctx.font =
+        "13px Arial";
+
+
+    ctx.textAlign =
+        "center";
+
+
+    for (
+        let i = 0;
+        i <= years;
+        i++
+    ) {
+
+        const x =
+            left +
+            (
+                i /
+                years
+            ) *
+            plotWidth;
+
+
+        ctx.fillText(
+            AÑO_ACTUAL +
+            i,
+            x,
+            height -
+            18
+        );
+
+    }
+
 }
 
 
 /* =========================================================
-   43. FORMULARIO NUEVA META
-   ========================================================= */
+   ACTUALIZAR TODO
+========================================================= */
 
-function configurarFormulario() {
+function actualizarTodo() {
 
-    const boton =
-        document.getElementById(
-            "crearMeta"
-        );
+    renderizarMetas();
 
+    actualizarResumen();
 
-    if (!boton) {
-        return;
-    }
+    actualizarGraficaGeneral();
 
+    actualizarYoDelFuturo();
 
-    boton.addEventListener(
-        "click",
-        crearMeta
-    );
+    actualizarCirculo();
+
+}
 
 
-    const inputs = [
+/* =========================================================
+   INICIO
+========================================================= */
 
-        document.getElementById(
-            "nombreMeta"
-        ),
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-        document.getElementById(
-            "objetivoMeta"
-        ),
+        actualizarTodo();
 
-        document.getElementById(
-            "añoMeta"
-        ),
 
-        document.getElementById(
+        document
+            .getElementById(
+                "nuevaMeta"
+            )
+            ?.addEventListener(
+                "click",
+                abrirFormularioNuevaMeta
+            );
+
+
+        document
+            .getElementById(
+                "crearMeta"
+            )
+            ?.addEventListener(
+                "click",
+                crearMeta
+            );
+
+
+        document
+            .getElementById(
+                "cancelarNuevaMeta"
+            )
+            ?.addEventListener(
+                "click",
+                cerrarFormularioNuevaMeta
+            );
+
+
+        [
+            "nombreMeta",
+            "objetivoMeta",
+            "añoMeta",
             "mensualMeta"
-        )
+        ]
+            .forEach(
+                id => {
 
-    ];
+                    document
+                        .getElementById(
+                            id
+                        )
+                        ?.addEventListener(
+                            "keydown",
+                            event => {
 
+                                if (
+                                    event.key ===
+                                    "Enter"
+                                ) {
 
-    inputs.forEach(
-        input => {
+                                    crearMeta();
 
-            if (!input) {
-                return;
-            }
+                                }
 
-
-            input.addEventListener(
-                "keydown",
-                event => {
-
-                    if (
-                        event.key ===
-                        "Enter"
-                    ) {
-
-                        crearMeta();
-
-                    }
+                            }
+                        );
 
                 }
             );
 
-        }
-    );
-
-}
+    }
+);
 
 
 /* =========================================================
-   44. ESC
-   ========================================================= */
+   ESC
+========================================================= */
 
 document.addEventListener(
     "keydown",
@@ -3691,9 +3966,7 @@ document.addEventListener(
             "Escape"
         ) {
 
-            cerrarModalMeta();
-
-            cerrarHistorial();
+            cerrarTodosLosModales();
 
         }
 
@@ -3702,74 +3975,36 @@ document.addEventListener(
 
 
 /* =========================================================
-   45. INICIALIZACIÓN
-   ========================================================= */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        renderizarMetas();
-
-        actualizarResumen();
-
-        actualizarGraficaGeneral();
-
-        actualizarYoDelFuturo();
-
-        actualizarCirculo();
-
-        configurarBotonNuevaMeta();
-
-        configurarFormulario();
-
-    }
-);
-
-
-/* =========================================================
-   46. FUNCIONES GLOBALES
-   ========================================================= */
+   FUNCIONES GLOBALES
+========================================================= */
 
 window.crearMeta =
     crearMeta;
 
-
 window.eliminarMeta =
     eliminarMeta;
-
-
-window.verDetalleMeta =
-    verDetalleMeta;
-
-
-window.cerrarModalMeta =
-    cerrarModalMeta;
-
-
-window.mostrarComparador =
-    mostrarComparador;
-
-
-window.abrirFormularioAportacion =
-    abrirFormularioAportacion;
-
-
-window.cerrarFormularioAportacion =
-    cerrarFormularioAportacion;
-
 
 window.registrarAportacion =
     registrarAportacion;
 
+window.abrirFormularioAportacion =
+    abrirFormularioAportacion;
+
+window.cerrarFormularioAportacion =
+    cerrarFormularioAportacion;
 
 window.mostrarHistorial =
     mostrarHistorial;
 
-
-window.cerrarHistorial =
-    cerrarHistorial;
-
-
 window.eliminarAportacion =
     eliminarAportacion;
+
+window.verDetalleMeta =
+    verDetalleMeta;
+
+window.mostrarComparador =
+    mostrarComparador;
+
+window.cerrarTodosLosModales =
+    cerrarTodosLosModales;
+
