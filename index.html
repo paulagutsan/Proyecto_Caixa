@@ -60,9 +60,9 @@
                 </h1>
 
                 <p class="hero-description">
-                    Elige una meta, descubre cómo podría evolucionar
-                    tu ahorro y comparte el progreso con las personas
-                    que te importan.
+                    Elige una meta, registra lo que vas aportando,
+                    descubre cómo podría evolucionar tu ahorro y
+                    comparte el progreso con las personas que te importan.
                 </p>
 
                 <div class="hero-buttons">
@@ -213,7 +213,7 @@
                     </strong>
 
                     <small>
-                        Entre todas tus metas
+                        Aportación planificada
                     </small>
 
                 </div>
@@ -290,7 +290,7 @@
 
 
             <!-- =========================
-                 FORMULARIO
+                 FORMULARIO NUEVA META
             ========================== -->
 
             <div
@@ -343,6 +343,7 @@
                             id="objetivoMeta"
                             type="number"
                             min="1"
+                            step="0.01"
                             placeholder="18000"
                         >
 
@@ -368,13 +369,14 @@
                     <div class="form-field">
 
                         <label for="mensualMeta">
-                            Aportación mensual (€)
+                            Aportación mensual prevista (€)
                         </label>
 
                         <input
                             id="mensualMeta"
                             type="number"
                             min="0"
+                            step="0.01"
                             placeholder="150"
                         >
 
@@ -420,7 +422,8 @@
 
                         <p>
                             Evolución orientativa basada en tus aportaciones
-                            actuales y una rentabilidad hipotética del 5% anual.
+                            registradas y previstas, con una rentabilidad
+                            hipotética del 5% anual.
                         </p>
 
                     </div>
@@ -452,7 +455,7 @@
 
                     <span>
                         <i class="grey-dot"></i>
-                        Capital actual
+                        Situación actual
                     </span>
 
                 </div>
@@ -519,7 +522,7 @@
 
 
                 <!-- =========================
-                     CÍRCULO DINÁMICO
+                     CÍRCULO
                 ========================== -->
 
                 <div
@@ -603,10 +606,6 @@
             </div>
 
 
-            <!-- =========================
-                 NÚMEROS
-            ========================== -->
-
             <div class="data-grid">
 
                 <div class="data-card">
@@ -679,10 +678,6 @@
             </div>
 
 
-            <!-- =========================
-                 EXPLICACIÓN
-            ========================== -->
-
             <div class="chart-card">
 
                 <div class="chart-header">
@@ -694,8 +689,8 @@
                         </h3>
 
                         <p>
-                            Los valores de tus metas se calculan
-                            dinámicamente en la sección anterior.
+                            Las simulaciones de las metas se actualizan
+                            automáticamente al registrar nuevas aportaciones.
                         </p>
 
                     </div>
@@ -769,7 +764,7 @@
 
 
     <!-- =========================
-         SCRIPT
+         JAVASCRIPT
     ========================== -->
 
     <script src="script.js"></script>
