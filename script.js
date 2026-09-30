@@ -98,6 +98,518 @@ const circulo = [
 const CIRCULO_OBJETIVO = 18000;
 
 
+
+/* =========================================================
+   AUTENTICACIÓN
+   Las contraseñas NO se guardan en localStorage.
+   El servidor las almacena con hash seguro.
+========================================================= */
+
+let usuarioActual = null;
+
+const API_AUTH = "/api/auth";
+
+async function apiAuth(endpoint, options = {}) {
+
+    const respuesta =
+        await fetch(
+            `${API_AUTH}${endpoint}`,
+            {
+                credentials: "include",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(options.headers || {})
+                },
+
+                ...options
+            }
+        );
+
+
+    let datos = {};
+
+    try {
+
+        datos =
+            await respuesta.json();
+
+    } catch (_) {
+
+        datos = {};
+
+    }
+
+
+    if (!respuesta.ok) {
+
+        throw new Error(
+            datos.error ||
+            "No se ha podido completar la operación."
+        );
+
+    }
+
+
+    return datos;
+
+}
+
+
+function mostrarAuthModal(
+    vista = "login"
+) {
+
+    const modal =
+        document.getElementById(
+            "authModal"
+        );
+
+
+    if (!modal) return;
+
+
+    modal.hidden =
+        false;
+
+
+    cambiarVistaAuth(
+        vista
+    );
+
+
+    setTimeout(
+        () => {
+
+            const selector =
+                vista === "register"
+                    ? "#registerUsername"
+                    : "#loginUsername";
+
+
+            document
+                .querySelector(
+                    selector
+                )
+                ?.focus();
+
+        },
+        50
+    );
+
+}
+
+
+function cerrarAuthModal() {
+
+    const modal =
+        document.getElementById(
+            "authModal"
+        );
+
+
+    if (modal) {
+
+        modal.hidden =
+            true;
+
+    }
+
+}
+
+
+function cambiarVistaAuth(
+    vista
+) {
+
+    const login =
+        document.getElementById(
+            "authLoginView"
+        );
+
+
+    const register =
+        document.getElementById(
+            "authRegisterView"
+        );
+
+
+    const profile =
+        document.getElementById(
+            "authProfileView"
+        );
+
+
+    if (login) {
+
+        login.hidden =
+            vista !== "login";
+
+    }
+
+
+    if (register) {
+
+        register.hidden =
+            vista !== "register";
+
+    }
+
+
+    if (profile) {
+
+        profile.hidden =
+            vista !== "profile";
+
+    }
+
+
+    document
+        .getElementById(
+            "loginError"
+        )
+        ?.setAttribute(
+            "hidden",
+            ""
+        );
+
+
+    document
+        .getElementById(
+            "registerError"
+        )
+        ?.setAttribute(
+            "hidden",
+            ""
+        );
+
+}
+
+
+function mostrarAuthError(
+    id,
+    mensaje
+) {
+
+    const elemento =
+        document.getElementById(
+            id
+        );
+
+
+    if (!elemento) return;
+
+
+    elemento.textContent =
+        mensaje;
+
+
+    elemento.hidden =
+        false;
+
+}
+
+
+function actualizarBotonPerfil() {
+
+    const boton =
+        document.getElementById(
+            "profileButton"
+        );
+
+
+    if (!boton) return;
+
+
+    boton.textContent =
+        usuarioActual
+            ? usuarioActual.username
+            : "Iniciar sesión";
+
+}
+
+
+function actualizarVistaPerfil() {
+
+    const nombre =
+        document.getElementById(
+            "profileUsername"
+        );
+
+
+    if (nombre) {
+
+        nombre.textContent =
+            usuarioActual
+                ? `Hola, ${usuarioActual.username}`
+                : "";
+
+    }
+
+}
+
+
+async function comprobarSesion() {
+
+    try {
+
+        const datos =
+            await apiAuth(
+                "/me"
+            );
+
+
+        usuarioActual =
+            datos.user ||
+            null;
+
+    } catch (error) {
+
+        usuarioActual =
+            null;
+
+    }
+
+
+    actualizarBotonPerfil();
+
+}
+
+
+async function registrarUsuario(
+    event
+) {
+
+    event.preventDefault();
+
+
+    const username =
+        document
+            .getElementById(
+                "registerUsername"
+            )
+            ?.value
+            .trim();
+
+
+    const password =
+        document
+            .getElementById(
+                "registerPassword"
+            )
+            ?.value ||
+        "";
+
+
+    const password2 =
+        document
+            .getElementById(
+                "registerPassword2"
+            )
+            ?.value ||
+        "";
+
+
+    if (
+        password !==
+        password2
+    ) {
+
+        mostrarAuthError(
+            "registerError",
+            "Las contraseñas no coinciden."
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        const datos =
+            await apiAuth(
+                "/register",
+                {
+                    method: "POST",
+
+                    body:
+                        JSON.stringify({
+                            username,
+                            password
+                        })
+                }
+            );
+
+
+        usuarioActual =
+            datos.user;
+
+
+        actualizarBotonPerfil();
+
+
+        cerrarAuthModal();
+
+
+        document
+            .getElementById(
+                "registerForm"
+            )
+            ?.reset();
+
+
+        mostrarToast(
+            `Cuenta creada. Bienvenida, ${usuarioActual.username}`
+        );
+
+    } catch (error) {
+
+        mostrarAuthError(
+            "registerError",
+            error.message
+        );
+
+    }
+
+}
+
+
+async function iniciarSesion(
+    event
+) {
+
+    event.preventDefault();
+
+
+    const username =
+        document
+            .getElementById(
+                "loginUsername"
+            )
+            ?.value
+            .trim();
+
+
+    const password =
+        document
+            .getElementById(
+                "loginPassword"
+            )
+            ?.value ||
+        "";
+
+
+    try {
+
+        const datos =
+            await apiAuth(
+                "/login",
+                {
+                    method: "POST",
+
+                    body:
+                        JSON.stringify({
+                            username,
+                            password
+                        })
+                }
+            );
+
+
+        usuarioActual =
+            datos.user;
+
+
+        actualizarBotonPerfil();
+
+
+        document
+            .getElementById(
+                "loginForm"
+            )
+            ?.reset();
+
+
+        cerrarAuthModal();
+
+
+        mostrarToast(
+            `Bienvenida, ${usuarioActual.username}`
+        );
+
+    } catch (error) {
+
+        mostrarAuthError(
+            "loginError",
+            error.message
+        );
+
+    }
+
+}
+
+
+async function cerrarSesion() {
+
+    try {
+
+        await apiAuth(
+            "/logout",
+            {
+                method: "POST"
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+    }
+
+
+    usuarioActual =
+        null;
+
+
+    actualizarBotonPerfil();
+
+
+    cerrarAuthModal();
+
+
+    mostrarToast(
+        "Sesión cerrada"
+    );
+
+}
+
+
+function abrirPerfil() {
+
+    if (!usuarioActual) {
+
+        mostrarAuthModal(
+            "login"
+        );
+
+        return;
+
+    }
+
+
+    actualizarVistaPerfil();
+
+
+    mostrarAuthModal(
+        "profile"
+    );
+
+}
+
+
 /* =========================================================
    CARGAR Y GUARDAR
 ========================================================= */
@@ -163,6 +675,7 @@ function cargarMetas() {
             "No se pudieron cargar las metas:",
             error
         );
+
 
         return copiar(
             METAS_INICIALES
@@ -386,7 +899,9 @@ function escapeHTML(
     texto
 ) {
 
-    return String(texto)
+    return String(
+        texto
+    )
 
         .replace(
             /&/g,
@@ -2267,8 +2782,6 @@ function dibujarGraficaEvolucion(
     );
 
 
-    /* cuadrícula */
-
     ctx.globalAlpha =
         0.1;
 
@@ -2313,8 +2826,6 @@ function dibujarGraficaEvolucion(
         1;
 
 
-    /* ejes */
-
     ctx.beginPath();
 
     ctx.moveTo(
@@ -2337,8 +2848,6 @@ function dibujarGraficaEvolucion(
 
     ctx.stroke();
 
-
-    /* objetivo */
 
     const yObjetivo =
         top +
@@ -2374,8 +2883,6 @@ function dibujarGraficaEvolucion(
 
     ctx.setLineDash([]);
 
-
-    /* proyección */
 
     ctx.setLineDash([
         5,
@@ -2438,8 +2945,6 @@ function dibujarGraficaEvolucion(
 
     ctx.setLineDash([]);
 
-
-    /* reales */
 
     if (
         reales.length
@@ -2532,8 +3037,6 @@ function dibujarGraficaEvolucion(
     }
 
 
-    /* puntos reales */
-
     let acumulado =
         0;
 
@@ -2603,8 +3106,6 @@ function dibujarGraficaEvolucion(
         }
     );
 
-
-    /* años */
 
     ctx.font =
         "13px Arial";
@@ -3882,9 +4383,96 @@ function actualizarTodo() {
 
 document.addEventListener(
     "DOMContentLoaded",
-    () => {
+    async () => {
+
+        await comprobarSesion();
 
         actualizarTodo();
+
+        document
+            .getElementById(
+                "profileButton"
+            )
+            ?.addEventListener(
+                "click",
+                abrirPerfil
+            );
+
+
+        document
+            .getElementById(
+                "authClose"
+            )
+            ?.addEventListener(
+                "click",
+                cerrarAuthModal
+            );
+
+
+        document
+            .querySelector(
+                "[data-auth-close]"
+            )
+            ?.addEventListener(
+                "click",
+                cerrarAuthModal
+            );
+
+
+        document
+            .getElementById(
+                "showRegister"
+            )
+            ?.addEventListener(
+                "click",
+                () =>
+                    cambiarVistaAuth(
+                        "register"
+                    )
+            );
+
+
+        document
+            .getElementById(
+                "showLogin"
+            )
+            ?.addEventListener(
+                "click",
+                () =>
+                    cambiarVistaAuth(
+                        "login"
+                    )
+            );
+
+
+        document
+            .getElementById(
+                "loginForm"
+            )
+            ?.addEventListener(
+                "submit",
+                iniciarSesion
+            );
+
+
+        document
+            .getElementById(
+                "registerForm"
+            )
+            ?.addEventListener(
+                "submit",
+                registrarUsuario
+            );
+
+
+        document
+            .getElementById(
+                "logoutButton"
+            )
+            ?.addEventListener(
+                "click",
+                cerrarSesion
+            );
 
 
         document
@@ -4007,4 +4595,3 @@ window.mostrarComparador =
 
 window.cerrarTodosLosModales =
     cerrarTodosLosModales;
-
