@@ -28,14 +28,557 @@
             <a href="#datos">Datos reales</a>
         </nav>
 
-        <button class="profile-button" type="button">
-            Mi perfil
+        <button
+            id="profileButton"
+            class="profile-button"
+            type="button"
+        >
+            Iniciar sesión
         </button>
 
     </header>
 
 
+    <!-- =====================================================
+         AUTENTICACIÓN
+    ====================================================== -->
+
+    <div
+        id="authModal"
+        class="auth-modal"
+        hidden
+    >
+
+        <div
+            class="auth-overlay"
+            data-auth-close
+        ></div>
+
+
+        <div
+            class="auth-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="authTitle"
+        >
+
+            <button
+                id="authClose"
+                class="auth-close"
+                type="button"
+                aria-label="Cerrar"
+            >
+                ×
+            </button>
+
+
+            <!-- LOGIN -->
+
+            <div id="authLoginView">
+
+                <p class="eyebrow">
+                    BIENVENIDA A HORIZONTE
+                </p>
+
+                <h2 id="authTitle">
+                    Inicia sesión
+                </h2>
+
+                <p class="auth-description">
+                    Accede a tus datos desde cualquier dispositivo.
+                </p>
+
+
+                <form
+                    id="loginForm"
+                    class="auth-form"
+                >
+
+                    <div class="form-field">
+
+                        <label for="loginUsername">
+                            Nombre de usuario
+                        </label>
+
+                        <input
+                            id="loginUsername"
+                            name="username"
+                            type="text"
+                            autocomplete="username"
+                            maxlength="40"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label for="loginPassword">
+                            Contraseña
+                        </label>
+
+                        <input
+                            id="loginPassword"
+                            name="password"
+                            type="password"
+                            autocomplete="current-password"
+                            minlength="8"
+                            required
+                        >
+
+                    </div>
+
+
+                    <p
+                        id="loginError"
+                        class="auth-error"
+                        hidden
+                    ></p>
+
+
+                    <button
+                        class="primary-button auth-submit"
+                        type="submit"
+                    >
+                        Iniciar sesión
+                    </button>
+
+                </form>
+
+
+                <p class="auth-switch">
+
+                    ¿No tienes cuenta?
+
+                    <button
+                        id="showRegister"
+                        type="button"
+                    >
+                        Crear cuenta
+                    </button>
+
+                </p>
+
+            </div>
+
+
+            <!-- REGISTRO -->
+
+            <div
+                id="authRegisterView"
+                hidden
+            >
+
+                <p class="eyebrow">
+                    NUEVA CUENTA
+                </p>
+
+                <h2>
+                    Crear tu cuenta
+                </h2>
+
+                <p class="auth-description">
+                    Tus datos de acceso se guardan de forma segura en el servidor.
+                </p>
+
+
+                <form
+                    id="registerForm"
+                    class="auth-form"
+                >
+
+                    <div class="form-field">
+
+                        <label for="registerUsername">
+                            Nombre de usuario
+                        </label>
+
+                        <input
+                            id="registerUsername"
+                            name="username"
+                            type="text"
+                            autocomplete="username"
+                            maxlength="40"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label for="registerPassword">
+                            Contraseña
+                        </label>
+
+                        <input
+                            id="registerPassword"
+                            name="password"
+                            type="password"
+                            autocomplete="new-password"
+                            minlength="8"
+                            required
+                        >
+
+                        <small>
+                            Mínimo 8 caracteres.
+                        </small>
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label for="registerPassword2">
+                            Repite la contraseña
+                        </label>
+
+                        <input
+                            id="registerPassword2"
+                            name="password2"
+                            type="password"
+                            autocomplete="new-password"
+                            minlength="8"
+                            required
+                        >
+
+                    </div>
+
+
+                    <p
+                        id="registerError"
+                        class="auth-error"
+                        hidden
+                    ></p>
+
+
+                    <button
+                        class="primary-button auth-submit"
+                        type="submit"
+                    >
+                        Crear cuenta
+                    </button>
+
+                </form>
+
+
+                <p class="auth-switch">
+
+                    ¿Ya tienes cuenta?
+
+                    <button
+                        id="showLogin"
+                        type="button"
+                    >
+                        Iniciar sesión
+                    </button>
+
+                </p>
+
+            </div>
+
+
+            <!-- PERFIL -->
+
+            <div
+                id="authProfileView"
+                hidden
+            >
+
+                <p class="eyebrow">
+                    MI PERFIL
+                </p>
+
+                <h2 id="profileUsername"></h2>
+
+                <p class="auth-description">
+                    Tu cuenta está activa en este dispositivo.
+                </p>
+
+
+                <button
+                    id="logoutButton"
+                    class="secondary-auth-button"
+                    type="button"
+                >
+                    Cerrar sesión
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         ESTILOS AUTENTICACIÓN
+    ====================================================== -->
+
+    <style>
+
+        .auth-modal {
+
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 9999;
+
+            display: grid;
+
+            place-items: center;
+
+            padding: 24px;
+
+        }
+
+
+        .auth-modal[hidden] {
+
+            display: none;
+
+        }
+
+
+        .auth-overlay {
+
+            position: absolute;
+
+            inset: 0;
+
+            background:
+                rgba(
+                    10,
+                    15,
+                    25,
+                    .62
+                );
+
+            backdrop-filter:
+                blur(6px);
+
+        }
+
+
+        .auth-card {
+
+            position: relative;
+
+            z-index: 1;
+
+            width:
+                min(
+                    460px,
+                    100%
+                );
+
+            padding: 34px;
+
+            border-radius: 24px;
+
+            background: #fff;
+
+            box-shadow:
+                0 25px 80px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    .22
+                );
+
+        }
+
+
+        .auth-card h2 {
+
+            margin:
+                6px 0 8px;
+
+        }
+
+
+        .auth-description {
+
+            margin:
+                0 0 24px;
+
+            color:
+                #6b7280;
+
+            line-height:
+                1.55;
+
+        }
+
+
+        .auth-close {
+
+            position: absolute;
+
+            top: 14px;
+
+            right: 16px;
+
+            border: 0;
+
+            background:
+                transparent;
+
+            font-size:
+                30px;
+
+            cursor:
+                pointer;
+
+            color:
+                #6b7280;
+
+        }
+
+
+        .auth-form {
+
+            display:
+                grid;
+
+            gap:
+                16px;
+
+        }
+
+
+        .auth-form input {
+
+            width:
+                100%;
+
+            box-sizing:
+                border-box;
+
+        }
+
+
+        .auth-submit {
+
+            width:
+                100%;
+
+            justify-content:
+                center;
+
+        }
+
+
+        .auth-switch {
+
+            margin:
+                20px 0 0;
+
+            text-align:
+                center;
+
+            color:
+                #6b7280;
+
+        }
+
+
+        .auth-switch button {
+
+            border:
+                0;
+
+            background:
+                transparent;
+
+            cursor:
+                pointer;
+
+            font:
+                inherit;
+
+            font-weight:
+                700;
+
+            text-decoration:
+                underline;
+
+        }
+
+
+        .auth-error {
+
+            margin:
+                0;
+
+            padding:
+                10px 12px;
+
+            border-radius:
+                10px;
+
+            background:
+                #fff1f2;
+
+            color:
+                #be123c;
+
+            font-size:
+                .92rem;
+
+        }
+
+
+        .secondary-auth-button {
+
+            width:
+                100%;
+
+            padding:
+                13px 18px;
+
+            border:
+                1px solid #d1d5db;
+
+            border-radius:
+                12px;
+
+            background:
+                #fff;
+
+            cursor:
+                pointer;
+
+            font:
+                inherit;
+
+            font-weight:
+                700;
+
+        }
+
+
+        @media (
+            max-width: 560px
+        ) {
+
+            .auth-card {
+
+                padding:
+                    28px 22px;
+
+            }
+
+        }
+
+    </style>
+
+
     <main>
+
 
         <!-- =================================================
              HERO
@@ -50,24 +593,40 @@
                 </p>
 
                 <h1>
+
                     ¿Qué vida estás
+
                     <br>
-                    <em>financiando hoy?</em>
+
+                    <em>
+                        financiando hoy?
+                    </em>
+
                 </h1>
 
                 <p class="hero-description">
+
                     Define una meta, registra tus aportaciones y
                     entiende cómo puede evolucionar tu camino
                     hacia aquello que quieres conseguir.
+
                 </p>
+
 
                 <div class="hero-buttons">
 
-                    <a href="#metas" class="primary-button">
+                    <a
+                        href="#metas"
+                        class="primary-button"
+                    >
                         Crear mi meta
                     </a>
 
-                    <a href="#datos" class="secondary-link">
+
+                    <a
+                        href="#datos"
+                        class="secondary-link"
+                    >
                         Ver datos reales →
                     </a>
 
@@ -90,18 +649,23 @@
 
                 </div>
 
+
                 <div id="yoDelFuturo">
 
                     <p class="future-message">
+
                         Tu futuro financiero empieza con las
                         decisiones que tomas hoy.
+
                     </p>
 
                 </div>
 
+
                 <div class="future-stats">
 
                     <div>
+
                         <strong id="aportacionTotal">
                             0 €
                         </strong>
@@ -109,9 +673,12 @@
                         <span>
                             Aportación mensual prevista
                         </span>
+
                     </div>
 
+
                     <div>
+
                         <strong id="numeroMetas">
                             0
                         </strong>
@@ -119,11 +686,17 @@
                         <span>
                             Metas activas
                         </span>
+
                     </div>
 
                 </div>
 
-                <div class="mini-chart" aria-hidden="true">
+
+                <div
+                    class="mini-chart"
+                    aria-hidden="true"
+                >
+
                     <span></span>
                     <span></span>
                     <span></span>
@@ -131,11 +704,15 @@
                     <span></span>
                     <span></span>
                     <span></span>
+
                 </div>
 
+
                 <small>
+
                     Simulación ilustrativa · no constituye una previsión
                     ni una garantía.
+
                 </small>
 
             </div>
@@ -147,11 +724,16 @@
              RESUMEN
         ================================================== -->
 
-        <section class="section summary-section">
+        <section
+            class="section summary-section"
+        >
 
-            <div class="section-header section-header-tight">
+            <div
+                class="section-header section-header-tight"
+            >
 
                 <div>
+
                     <p class="eyebrow">
                         TU HORIZONTE
                     </p>
@@ -159,34 +741,81 @@
                     <h2>
                         Una visión de tu progreso.
                     </h2>
+
                 </div>
 
             </div>
 
-            <div class="data-grid summary-grid">
+
+            <div
+                class="data-grid summary-grid"
+            >
 
                 <div class="data-card">
-                    <span>Dinero registrado</span>
-                    <strong id="patrimonioTotal">0 €</strong>
-                    <small>Aportaciones que has registrado</small>
+
+                    <span>
+                        Dinero registrado
+                    </span>
+
+                    <strong id="patrimonioTotal">
+                        0 €
+                    </strong>
+
+                    <small>
+                        Aportaciones que has registrado
+                    </small>
+
                 </div>
 
-                <div class="data-card">
-                    <span>Aportación mensual prevista</span>
-                    <strong id="aportacionTotalResumen">0 €</strong>
-                    <small>Entre todas tus metas</small>
-                </div>
 
                 <div class="data-card">
-                    <span>Progreso global</span>
-                    <strong id="progresoTotal">0%</strong>
-                    <small>Sobre el conjunto de tus objetivos</small>
+
+                    <span>
+                        Aportación mensual prevista
+                    </span>
+
+                    <strong id="aportacionTotalResumen">
+                        0 €
+                    </strong>
+
+                    <small>
+                        Entre todas tus metas
+                    </small>
+
                 </div>
 
+
                 <div class="data-card">
-                    <span>Metas activas</span>
-                    <strong id="numeroMetasResumen">0</strong>
-                    <small>Objetivos personales</small>
+
+                    <span>
+                        Progreso global
+                    </span>
+
+                    <strong id="progresoTotal">
+                        0%
+                    </strong>
+
+                    <small>
+                        Sobre el conjunto de tus objetivos
+                    </small>
+
+                </div>
+
+
+                <div class="data-card">
+
+                    <span>
+                        Metas activas
+                    </span>
+
+                    <strong id="numeroMetasResumen">
+                        0
+                    </strong>
+
+                    <small>
+                        Objetivos personales
+                    </small>
+
                 </div>
 
             </div>
@@ -198,7 +827,10 @@
              MIS METAS
         ================================================== -->
 
-        <section id="metas" class="section">
+        <section
+            id="metas"
+            class="section"
+        >
 
             <div class="section-header">
 
@@ -213,8 +845,10 @@
                     </h2>
 
                     <p class="section-description">
+
                         Registra lo que realmente vas aportando y
                         separa ese progreso de cualquier simulación futura.
+
                     </p>
 
                 </div>
@@ -335,6 +969,7 @@
                         Crear meta
                     </button>
 
+
                     <button
                         id="cancelarNuevaMeta"
                         class="text-button"
@@ -373,12 +1008,15 @@
                         </h3>
 
                         <p>
+
                             Proyección orientativa basada en las
                             aportaciones previstas y una hipótesis
                             del 5% anual.
+
                         </p>
 
                     </div>
+
 
                     <span class="chart-tag">
                         SIMULACIÓN
@@ -429,18 +1067,27 @@
                     </p>
 
                     <h2>
+
                         Compartís la meta.
+
                         <br>
-                        <em>No la cartera.</em>
+
+                        <em>
+                            No la cartera.
+                        </em>
+
                     </h2>
 
                     <p class="section-description">
+
                         Cada persona invierte individualmente.
                         Solo compartís el objetivo y el progreso
                         que decidáis mostrar.
+
                     </p>
 
                 </div>
+
 
                 <button
                     class="outline-button light"
@@ -494,7 +1141,10 @@
              DATOS
         ================================================== -->
 
-        <section id="datos" class="section">
+        <section
+            id="datos"
+            class="section"
+        >
 
             <div class="section-header">
 
@@ -505,18 +1155,25 @@
                     </p>
 
                     <h2>
+
                         La realidad detrás
+
                         <br>
+
                         de las simulaciones.
+
                     </h2>
 
                     <p class="section-description">
+
                         Diferenciamos los datos observados de las
                         hipótesis que usamos para explicar posibles
                         escenarios.
+
                     </p>
 
                 </div>
+
 
                 <span class="live-pill">
                     ● DATOS REALES
@@ -612,11 +1269,14 @@
                         </h3>
 
                         <p>
+
                             Los datos observados no se utilizan como
                             una promesa sobre el futuro de una meta.
+
                         </p>
 
                     </div>
+
 
                     <span class="chart-tag">
                         INFORMACIÓN
@@ -624,9 +1284,12 @@
 
                 </div>
 
+
                 <p class="source-note">
+
                     Las rentabilidades pasadas no son un indicador fiable
                     de rentabilidades futuras.
+
                 </p>
 
             </div>
@@ -645,10 +1308,15 @@
             </p>
 
             <h2>
+
                 No necesitas saber de fondos.
+
                 <br>
+
                 Necesitas saber para qué ahorras.
+
             </h2>
+
 
             <a
                 href="#metas"
@@ -682,4 +1350,5 @@
     <script src="script.js"></script>
 
 </body>
+
 </html>
