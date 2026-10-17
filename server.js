@@ -114,7 +114,7 @@ function newCode() {
 function circleView(c, me) {
     const total = c.members.reduce((s, m) => s + m.contributed, 0);
     return {
-        code: c.code, name: c.name, emoji: c.emoji, target: c.target, total, createdAt: c.createdAt,
+        code: c.code, name: c.name, category: c.category, target: c.target, total, createdAt: c.createdAt,
         members: c.members
             .map(m => ({ username: m.username, contributed: m.contributed, isMe: m.userId === me.id, isOwner: m.userId === c.ownerId }))
             .sort((a, b) => b.contributed - a.contributed),
@@ -126,27 +126,25 @@ const clampNum = (v, min, max) => { const n = Number(v); if (!Number.isFinite(n)
 const cleanText = (v, max) => String(v ?? "").replace(/[<>]/g, "").trim().slice(0, max);
 
 /* ---------- coach ---------- */
-const COACH_SYSTEM = `Eres "Hori", el coach financiero de Horizonte, una app de ahorro e inversión para la Generación Z creada para el reto CaixaBank Asset Management x Google.
-Tono: cercano, claro, español de España, frases cortas, algún emoji, cero jerga sin explicar. Máximo 120 palabras.
+const COACH_SYSTEM = `Eres el asistente de Horizonte, una app de ahorro e inversión para la Generación Z creada para el reto CaixaBank Asset Management x Google.
+Tono: profesional y cercano, propio de una gestora de activos; español de España; claro y preciso, sin emojis ni exclamaciones; explica cualquier término técnico. Máximo 120 palabras.
 Reglas: eres EDUCATIVO. No des asesoramiento de inversión personalizado, no recomiendes productos concretos ni prometas rentabilidades. Recuerda que la rentabilidad pasada no garantiza la futura y que invertir implica riesgo de pérdida. Si preguntan qué comprar, explica criterios (horizonte, riesgo, diversificación, costes) y sugiere hablar con un asesor. Usa los datos del usuario (metas, ahorro) para personalizar.`;
 
 function localCoach(msg, ctx) {
     const m = msg.toLowerCase();
-    const goals = ctx?.goals || [];
-    const left = goals.filter(g => g.saved < g.target);
-    if (/hola|buenas|hey/.test(m)) return "¡Ey! 👋 Soy Hori. Pregúntame por tus metas, el interés compuesto, la inflación o cómo empezar a invertir sin liarte.";
-    if (/inter[eé]s compuesto|compuesto/.test(m)) return "El interés compuesto es cobrar intereses… sobre tus intereses 🌱. Con 100 €/mes al 5% hipotético, en 10 años aportas 12.000 € y podrías tener ~15.500 €. El tiempo pesa más que la cantidad: empezar pronto es tu superpoder. (Es una simulación, no una promesa).";
-    if (/inflaci/.test(m)) return "La inflación hace que tus euros compren menos cada año 📉. Si dejas dinero parado con una inflación del 3%, en 10 años pierde ~26% de poder de compra. Por eso en el simulador puedes ver el valor «real» además del nominal.";
-    if (/diversific/.test(m)) return "Diversificar = no poner todos los huevos en la misma cesta 🥚. Repartir entre distintos activos, sectores y países reduce el impacto de que una sola inversión vaya mal. No elimina el riesgo, pero lo suaviza.";
-    if (/riesgo|perder/.test(m)) return "Más rentabilidad potencial = más riesgo de pérdida, siempre. Pregúntate: ¿cuándo necesito este dinero? Para <3 años, suele pesar más la estabilidad; para 10+ años, puedes tolerar más vaivenes. Haz el test de perfil en Aprende ✨";
-    if (/emergencia|colch[oó]n/.test(m)) return "Antes de invertir, monta un colchón de 3-6 meses de gastos básicos en algo líquido y seguro 🛟. Es lo que evita que tengas que vender en mal momento si surge un imprevisto.";
-    if (/empez|invertir|invertir/.test(m)) return "Para empezar: 1️⃣ colchón de emergencia, 2️⃣ define para qué ahorras (¡tus metas!), 3️⃣ aporta una cantidad pequeña y automática cada mes, 4️⃣ aprende costes y riesgos. No necesitas mucho dinero, necesitas constancia. Esto es educativo; para decisiones concretas habla con un asesor.";
-    if (/meta|objetivo|cu[aá]nto|llego|ahorr/.test(m) && left.length) {
+    const left = (ctx?.goals || []).filter(g => g.saved < g.target);
+    if (/^(hola|buenas|hey)/.test(m)) return "Hola. Puedo ayudarte con conceptos como el interés compuesto, la inflación, el riesgo o la diversificación, y comentar la evolución de tus objetivos.";
+    if (/compuesto/.test(m)) return "El interés compuesto consiste en obtener rendimientos sobre rendimientos ya generados. Con 100 € al mes durante 10 años y un 5 % anual hipotético, se aportan 12.000 € y el capital podría rondar los 15.500 €. El plazo pesa más que el importe: empezar pronto es la principal ventaja. Se trata de una simulación, no de una previsión.";
+    if (/inflaci/.test(m)) return "La inflación reduce el poder adquisitivo del dinero. Con una inflación del 3 % anual, un importe sin remunerar pierde en torno a un 26 % de capacidad de compra en diez años. En el simulador puedes ver los importes en términos reales para tenerlo en cuenta.";
+    if (/diversific/.test(m)) return "Diversificar es repartir la inversión entre distintos activos, sectores y regiones. Reduce la dependencia de que un único activo evolucione bien; no elimina el riesgo, pero lo modera.";
+    if (/riesgo|perder|p[eé]rdida/.test(m)) return "A mayor rentabilidad potencial, mayor riesgo de pérdida. La referencia principal es el plazo: si necesitarás el dinero en menos de tres años, suele primar la estabilidad; con horizontes de diez años o más es posible asumir más volatilidad. El cuestionario de perfil, en Formación, te ayudará a situarte.";
+    if (/emergencia|colch[oó]n/.test(m)) return "Antes de invertir conviene disponer de un colchón de entre tres y seis meses de gastos básicos en un instrumento líquido y de bajo riesgo. Así evitas deshacer inversiones en un mal momento ante un imprevisto.";
+    if (/empez|invertir|invierto/.test(m)) return "Un orden razonable es: primero, un colchón de emergencia; segundo, definir objetivos con importe y plazo; tercero, aportar de forma periódica y automática; y cuarto, conocer los costes y riesgos de cada producto. No hace falta mucho capital, sino constancia. Para decisiones concretas, consulta con un asesor profesional.";
+    if (/meta|objetivo|c[oó]mo (voy|van)|ahorr/.test(m) && left.length) {
         const g = left[0];
-        const need = Math.max(0, g.target - g.saved);
-        return `Tu meta «${g.name}» va al ${Math.round((g.saved / g.target) * 100)}% 🎯. Te faltan ${Math.round(need).toLocaleString("es-ES")} € y aportas ${g.monthly} €/mes. Mira el simulador para ver qué pasa si subes 20 € al mes: a veces el cambio es mayor de lo que parece.`;
+        return `Tu objetivo «${g.name}» presenta un avance del ${Math.round((g.saved / g.target) * 100)} %. Restan ${Math.round(g.target - g.saved).toLocaleString("es-ES")} € y la aportación prevista es de ${g.monthly} € al mes. En el simulador puedes comprobar el efecto de incrementar ligeramente esa aportación.`;
     }
-    return "Buena pregunta 🤔. Te puedo ayudar con: interés compuesto, inflación, riesgo, diversificación, fondo de emergencia o con tus metas. ¿Por cuál empezamos?";
+    return "Puedo ayudarte con el interés compuesto, la inflación, el riesgo, la diversificación, el colchón de emergencia o el seguimiento de tus objetivos. ¿Sobre cuál quieres profundizar?";
 }
 
 async function coach(message, context) {
@@ -235,9 +233,9 @@ async function api(req, res, url) {
         if (!name || target === null) throw HttpError(400, "Pon un nombre y un objetivo válido.");
         if (myCircles(u).length >= 10) throw HttpError(400, "Máximo 10 círculos.");
         const c = {
-            code: newCode(), name, emoji: cleanText(b.emoji, 4) || "🎯", target, ownerId: u.id, createdAt: new Date().toISOString(),
+            code: newCode(), name, category: cleanText(b.category, 20) || "otro", target, ownerId: u.id, createdAt: new Date().toISOString(),
             members: [{ userId: u.id, username: u.username, contributed: 0 }],
-            feed: [{ t: Date.now(), text: `${u.username} creó el círculo` }]
+            feed: [{ t: Date.now(), text: `${u.username} ha creado el círculo` }]
         };
         circles.push(c);
         saveCircles();
@@ -251,7 +249,7 @@ async function api(req, res, url) {
         if (c.members.length >= 30) throw HttpError(400, "El círculo está completo.");
         if (!c.members.some(m => m.userId === u.id)) {
             c.members.push({ userId: u.id, username: u.username, contributed: 0 });
-            c.feed.push({ t: Date.now(), text: `${u.username} se unió 🎉` });
+            c.feed.push({ t: Date.now(), text: `${u.username} se ha unido` });
             saveCircles();
         }
         return send(res, 200, { circle: circleView(c, u) });
@@ -267,7 +265,7 @@ async function api(req, res, url) {
             if (!c.members.length) circles = circles.filter(x => x !== c);
             else {
                 if (c.ownerId === u.id) c.ownerId = c.members[0].userId;
-                c.feed.push({ t: Date.now(), text: `${u.username} salió del círculo` });
+                c.feed.push({ t: Date.now(), text: `${u.username} ha abandonado el círculo` });
             }
             saveCircles();
             return send(res, 200, { ok: true });
@@ -277,8 +275,8 @@ async function api(req, res, url) {
         if (amount === null) throw HttpError(400, "Cantidad no válida.");
         me.contributed = Math.round((me.contributed + amount) * 100) / 100;
         const total = c.members.reduce((s, x) => s + x.contributed, 0);
-        c.feed.push({ t: Date.now(), text: `${u.username} aportó ${amount.toLocaleString("es-ES")} € 💪` });
-        if (total >= c.target && !c.done) { c.done = true; c.feed.push({ t: Date.now(), text: "¡Objetivo del círculo conseguido! 🏆" }); }
+        c.feed.push({ t: Date.now(), text: `${u.username} ha aportado ${amount.toLocaleString("es-ES")} €` });
+        if (total >= c.target && !c.done) { c.done = true; c.feed.push({ t: Date.now(), text: "Objetivo del círculo alcanzado" }); }
         c.feed = c.feed.slice(-100);
         saveCircles();
         return send(res, 200, { circle: circleView(c, u) });

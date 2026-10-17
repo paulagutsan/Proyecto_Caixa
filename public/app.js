@@ -7,12 +7,14 @@
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const eur0 = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
-const eur2 = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
+const eur0 = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0, useGrouping: "always" });
+const eur2 = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: "always" });
 const fmt = n => (Number.isInteger(n) || Math.abs(n) >= 1000 ? eur0 : eur2).format(n);
-const pct = n => `${Math.round(n)}%`;
+const fmtR = n => eur0.format(Math.round(n));
+const pct = n => `${n.toLocaleString("es-ES", { maximumFractionDigits: 1, useGrouping: "always" })} %`;
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const isoDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const longDate = s => new Date(s + "T12:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
 const NOW = new Date();
 const YEAR = NOW.getFullYear();
 const lsGet = (k, d = null) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
@@ -27,20 +29,24 @@ async function api(path, opts = {}) {
         credentials: "same-origin"
     });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw Object.assign(new Error(data.error || "Algo ha fallado."), { status: r.status });
+    if (!r.ok) throw Object.assign(new Error(data.error || "No se ha podido completar la operación."), { status: r.status });
     return data;
 }
 
 /* =========================================================
    Estado + persistencia (invitado: localStorage · cuenta: servidor)
 ========================================================= */
-const blank = () => ({ v: 2, goals: [], xp: 0, lessons: [], quiz: null, flags: {} });
+const CATS = {
+    vivienda: "Vivienda", viaje: "Viajes", formacion: "Formación", emergencia: "Colchón de emergencia",
+    vehiculo: "Vehículo", tecnologia: "Tecnología", independencia: "Independencia financiera", otro: "Otro objetivo"
+};
+const blank = () => ({ v: 3, goals: [], lessons: [], quiz: null, flags: {} });
 function normalize(s) {
     const b = blank();
     if (!s || typeof s !== "object") return b;
     return {
         ...b, ...s,
-        goals: Array.isArray(s.goals) ? s.goals.map(g => ({ emoji: "🎯", monthly: 0, contribs: [], ...g, contribs: Array.isArray(g.contribs) ? g.contribs : [] })) : [],
+        goals: Array.isArray(s.goals) ? s.goals.map(g => ({ monthly: 0, ...g, category: CATS[g.category] ? g.category : "otro", contribs: Array.isArray(g.contribs) ? g.contribs : [] })) : [],
         lessons: Array.isArray(s.lessons) ? s.lessons : [],
         flags: s.flags && typeof s.flags === "object" ? s.flags : {}
     };
@@ -55,10 +61,10 @@ function save() {
     clearTimeout(syncTimer);
     syncTimer = setTimeout(async () => {
         try { await api("/state", { method: "PUT", body: { state: S } }); }
-        catch (e) { if (e.status === 401) { user = null; paintChrome(); toast("Tu sesión caducó. Vuelve a entrar para sincronizar."); } }
+        catch (e) { if (e.status === 401) { user = null; paintChrome(); toast("Tu sesión ha caducado. Accede de nuevo para sincronizar."); } }
     }, 600);
 }
-const hasData = s => s && (s.goals?.length || s.xp);
+const hasData = s => s && s.goals?.length;
 
 /* =========================================================
    Cálculos
@@ -96,20 +102,16 @@ function requiredMonthly(target, initial, months, annualPct) {
 }
 const roundUp5 = n => Math.ceil(n / 5) * 5;
 function etaLabel(months) {
-    if (!isFinite(months)) return "sin fecha (aporta algo cada mes)";
+    if (!isFinite(months)) return "Sin fecha estimada";
     const d = new Date(YEAR, NOW.getMonth() + months, 1);
     return d.toLocaleDateString("es-ES", { month: "short", year: "numeric" });
 }
 function goalStatus(g) {
-    if (isDone(g)) return { cls: "done", txt: "¡Conseguida! 🏆" };
-    const ok = monthsToReach(g, 5) <= monthsLeft(g);
-    return ok ? { cls: "ok", txt: "Vas en plazo ✅" } : { cls: "late", txt: "Hay que acelerar ⚡" };
+    if (isDone(g)) return { cls: "done", txt: "Alcanzado" };
+    return monthsToReach(g, 5) <= monthsLeft(g) ? { cls: "ok", txt: "En plazo" } : { cls: "late", txt: "Requiere ajuste" };
 }
 
-/* ---- gamificación ---- */
-const LEVELS = ["Novato", "Aprendiz", "En racha", "Constante", "Pro", "Crack", "Leyenda"];
-const level = () => Math.floor(S.xp / 100) + 1;
-const levelName = () => LEVELS[Math.min(level() - 1, LEVELS.length - 1)];
+/* ---- constancia e hitos ---- */
 function mondayKey(d) {
     const x = new Date(d + "T12:00:00");
     x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
@@ -117,248 +119,198 @@ function mondayKey(d) {
 }
 function weekStreak() {
     const weeks = new Set(S.goals.flatMap(g => g.contribs.map(c => mondayKey(c.date))));
-    let cursor = new Date(mondayKey(isoDate()) + "T12:00:00");
-    if (!weeks.has(isoDate(cursor))) cursor.setDate(cursor.getDate() - 7); // aún puedes aportar esta semana
+    const cursor = new Date(mondayKey(isoDate()) + "T12:00:00");
+    if (!weeks.has(isoDate(cursor))) cursor.setDate(cursor.getDate() - 7); // la semana en curso aún está abierta
     let n = 0;
     while (weeks.has(isoDate(cursor))) { n++; cursor.setDate(cursor.getDate() - 7); }
     return n;
 }
 const contributedThisWeek = () => S.goals.some(g => g.contribs.some(c => mondayKey(c.date) === mondayKey(isoDate())));
-const BADGES = [
-    { id: "meta", ico: "🎯", name: "Primera meta", on: () => S.goals.length > 0 },
-    { id: "ahorro", ico: "💸", name: "Primer ahorro", on: () => totalSaved() > 0 },
-    { id: "racha", ico: "🔥", name: "Racha de 3", on: () => weekStreak() >= 3 },
-    { id: "mil", ico: "💎", name: "1.000 € ahorrados", on: () => totalSaved() >= 1000 },
-    { id: "done", ico: "🏆", name: "Meta cumplida", on: () => S.goals.some(isDone) },
-    { id: "saber", ico: "🧠", name: "3 lecciones", on: () => S.lessons.length >= 3 },
-    { id: "perfil", ico: "🪪", name: "Perfil inversor", on: () => !!S.quiz },
-    { id: "circulo", ico: "👯", name: "Círculo", on: () => !!S.flags.circle }
+const MILESTONES = [
+    { name: "Primer objetivo definido", on: () => S.goals.length > 0 },
+    { name: "Primera aportación registrada", on: () => totalSaved() > 0 },
+    { name: "Tres semanas consecutivas aportando", on: () => weekStreak() >= 3 },
+    { name: "1.000 € destinados a objetivos", on: () => totalSaved() >= 1000 },
+    { name: "Un objetivo alcanzado", on: () => S.goals.some(isDone) },
+    { name: "Perfil de inversor completado", on: () => !!S.quiz },
+    { name: "Tres módulos de formación", on: () => S.lessons.length >= 3 },
+    { name: "Miembro de un círculo", on: () => !!S.flags.circle }
 ];
-function addXp(n) {
-    const before = level();
-    S.xp += n;
-    if (level() > before) { toast(`🚀 ¡Nivel ${level()}: ${levelName()}!`); confetti(); }
-}
 
 /* =========================================================
-   UI: toast, sheet, confeti, tema
+   UI: avisos y paneles
 ========================================================= */
-function toast(msg, ms = 3200) {
+function toast(msg, ms = 3600) {
     const el = document.createElement("div");
     el.className = "toast";
     el.textContent = msg;
     $("#toasts").append(el);
     setTimeout(() => el.remove(), ms);
 }
-
-let sheetCleanup = null;
-function openSheet(html, { wide = false, onMount } = {}) {
-    closeSheet();
+function openSheet(html, { side = false } = {}) {
     const root = $("#sheetRoot");
-    root.innerHTML = `<div class="overlay" data-act="closeSheetBg"><div class="sheet ${wide ? "wide" : ""}" role="dialog" aria-modal="true">
+    root.innerHTML = `<div class="overlay ${side ? "side" : ""}" data-act="closeSheetBg"><div class="sheet" role="dialog" aria-modal="true">
         <button class="close" data-act="closeSheet" aria-label="Cerrar">×</button>${html}</div></div>`;
     document.body.style.overflow = "hidden";
     const first = $("input:not([type=hidden]), select", root);
     if (first) setTimeout(() => first.focus(), 60);
-    onMount?.(root);
 }
 function closeSheet() {
     $("#sheetRoot").innerHTML = "";
     document.body.style.overflow = "";
-    sheetCleanup?.(); sheetCleanup = null;
 }
-
-function confetti() {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const cv = $("#confetti"), ctx = cv.getContext("2d");
-    cv.width = innerWidth; cv.height = innerHeight;
-    const colors = ["#22c1ff", "#8b73ff", "#ffb703", "#2dd4a0", "#ff6b70"];
-    const ps = Array.from({ length: 150 }, () => ({
-        x: innerWidth / 2, y: innerHeight * .4, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4,
-        s: Math.random() * 8 + 4, c: colors[(Math.random() * colors.length) | 0], r: Math.random() * 6, vr: (Math.random() - .5) * .4
-    }));
-    let f = 0;
-    (function tick() {
-        ctx.clearRect(0, 0, cv.width, cv.height);
-        ps.forEach(p => {
-            p.vy += .35; p.x += p.vx; p.y += p.vy; p.r += p.vr;
-            ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * .6); ctx.restore();
-        });
-        if (++f < 160) requestAnimationFrame(tick); else ctx.clearRect(0, 0, cv.width, cv.height);
-    })();
-}
-
-function setTheme(t) {
-    document.documentElement.dataset.theme = t;
-    lsSet("hz_theme", t);
-    $("#themeBtn").textContent = t === "dark" ? "☀️" : "🌙";
-    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b1020" : "#f3f5fb";
-    if (route() === "simulador") drawSim();
-}
-
 function paintChrome() {
-    $("#levelPill").textContent = `⚡ Nv ${level()} · ${S.xp} XP`;
-    $("#authBtn").textContent = user ? user.username : "Entrar";
-    $("#authBtn").dataset.act = user ? "profile" : "auth";
+    const b = $("#authBtn");
+    b.textContent = user ? user.username : "Acceder";
+    b.dataset.act = user ? "profile" : "auth";
+    b.className = user ? "btn sm quiet" : "btn sm";
 }
 
 /* =========================================================
    Vistas
 ========================================================= */
-const route = () => (location.hash.replace(/^#\//, "") || "inicio").split("?")[0];
+const route = () => (location.hash.replace(/^#\//, "") || "resumen").split("?")[0];
+const ARROW = `<span class="arr" aria-hidden="true">→</span>`;
 
 const TEMPLATES = [
-    { emoji: "✈️", name: "Viaje con amigos", target: 1200, years: 1, monthly: 100 },
-    { emoji: "🏠", name: "Entrada de mi casa", target: 25000, years: 6, monthly: 300 },
-    { emoji: "🛟", name: "Fondo de emergencia", target: 3000, years: 2, monthly: 125 },
-    { emoji: "🎮", name: "Setup de mis sueños", target: 1500, years: 1, monthly: 125 },
-    { emoji: "🎓", name: "Máster / formación", target: 8000, years: 3, monthly: 220 },
-    { emoji: "🚗", name: "Mi primer coche", target: 9000, years: 3, monthly: 250 }
+    { category: "emergencia", name: "Colchón de emergencia", target: 3000, years: 2, monthly: 125 },
+    { category: "viaje", name: "Viaje de fin de carrera", target: 1800, years: 1, monthly: 150 },
+    { category: "vivienda", name: "Entrada de vivienda", target: 25000, years: 6, monthly: 300 },
+    { category: "formacion", name: "Máster", target: 8000, years: 3, monthly: 220 },
+    { category: "vehiculo", name: "Primer coche", target: 9000, years: 3, monthly: 250 },
+    { category: "independencia", name: "Independencia financiera", target: 50000, years: 15, monthly: 150 }
 ];
 
-function futureMessage() {
+function futureLetter() {
     const g = S.goals.filter(x => !isDone(x)).sort((a, b) => a.year - b.year)[0];
     if (!g) {
         return S.goals.length
-            ? { q: "¡Has cumplido todas tus metas! 🏆 Hora de soñar más grande: crea la siguiente.", note: "Mensaje de tu yo del futuro" }
-            : { q: "Hola, soy tú dentro de unos años. Todo lo bueno que me pasa empezó el día que decidiste para qué ahorrar. Empieza hoy, aunque sea con poco.", note: "Crea tu primera meta para recibir mensajes personalizados" };
+            ? { q: "Todos tus objetivos están cumplidos. Es buen momento para fijar el siguiente horizonte.", note: "Carta de tu yo futuro" }
+            : { q: "Lo que hoy decidas sobre tu dinero será lo que yo pueda disfrutar mañana. Empieza por darle un propósito.", note: "Define un objetivo para recibir una proyección personalizada" };
     }
-    const years = Math.max(0, monthsLeft(g) / 12);
-    const proj = fv(saved(g), g.monthly, years, 5);
+    const proj = fv(saved(g), g.monthly, Math.max(0, monthsLeft(g) / 12), 5);
     const need = requiredMonthly(g.target, saved(g), monthsLeft(g), 5);
     const q = proj >= g.target
-        ? `Soy tú en ${g.year}. Gracias por aportar ${fmt(g.monthly)} al mes: «${g.name}» está cumplida y todo salió bien. 🎉`
-        : `Soy tú en ${g.year}. Con tus ${fmt(g.monthly)}/mes voy por ${fmt(proj)} para «${g.name}». Si subes a ${fmt(roundUp5(need))}/mes, llegamos justas. 💪`;
-    return { q, note: "Simulación con 5% anual hipotético · no es una previsión ni una garantía" };
+        ? `Te escribo desde ${g.year}. Mantener ${fmt(g.monthly)} al mes fue suficiente: «${g.name}» es hoy una realidad.`
+        : `Te escribo desde ${g.year}. Con ${fmt(g.monthly)} al mes llegamos a unos ${fmtR(proj)} para «${g.name}». Con ${fmt(roundUp5(need))} al mes, lo habríamos conseguido.`;
+    return { q, note: "Proyección con una rentabilidad hipotética del 5 % anual. No constituye previsión ni garantía." };
 }
 
-function nextAction() {
+function nextStep() {
     const g = S.goals.filter(x => !isDone(x)).sort((a, b) => a.year - b.year)[0];
-    if (!g) return S.goals.length
-        ? `<p><b>Todo cumplido 🎉</b><br><span class="muted">Crea una nueva meta para seguir creciendo.</span></p><button class="btn small" data-act="newGoal">Nueva meta</button>`
-        : `<p><b>Paso 1: ponle nombre a tu dinero</b><br><span class="muted">Elige una meta y tarda menos de 30 segundos.</span></p><button class="btn small" data-act="newGoal">Crear mi meta</button>`;
+    if (!g) return `<h3>${S.goals.length ? "Define tu siguiente objetivo" : "Define tu primer objetivo"}</h3>
+        <p class="muted" style="margin-bottom:20px">Ponerle nombre, importe y fecha al ahorro es la decisión que más influye en mantenerlo.</p>
+        <button class="btn" data-act="newGoal">Nuevo objetivo ${ARROW}</button>`;
     const streak = weekStreak();
     const msg = contributedThisWeek()
-        ? `Ya aportaste esta semana. ¡Racha de ${streak} 🔥! Puedes adelantar aportaciones si quieres.`
-        : streak ? `Aporta esta semana y tu racha llegará a ${streak + 1} 🔥` : `Aporta algo esta semana y empieza tu racha 🔥`;
-    return `<p><b>Siguiente paso: «${esc(g.name)}»</b><br><span class="muted">${msg}</span></p>
-        <button class="btn small" data-act="contribute" data-id="${g.id}">Aportar ahora</button>`;
+        ? `Ya has aportado esta semana. Llevas ${streak} semana${streak === 1 ? "" : "s"} consecutiva${streak === 1 ? "" : "s"}.`
+        : streak ? `Una aportación esta semana extendería tu constancia a ${streak + 1} semanas consecutivas.` : "Registra una aportación esta semana para iniciar tu serie de constancia.";
+    return `<h3>${esc(g.name)}</h3><p class="muted" style="margin-bottom:20px">${msg}</p>
+        <button class="btn" data-act="contribute" data-id="${g.id}">Registrar aportación ${ARROW}</button>`;
 }
 
-function viewInicio() {
-    const fm = futureMessage();
-    const done = BADGES.filter(b => b.on()).length;
-    const lvlPct = S.xp % 100;
+function viewResumen() {
+    const fl = futureLetter();
     const prog = totalTarget() ? (totalSaved() / totalTarget()) * 100 : 0;
+    const done = MILESTONES.filter(m => m.on()).length;
     return `
     <section class="hero">
-        <div>
-            <p class="eyebrow">Tu yo del futuro te está esperando</p>
-            <h1>¿Qué vida estás <span class="grad-text">financiando hoy?</span></h1>
-            <p class="lead">Ponle nombre a tu dinero, simula tu camino y llega a tus metas con tu gente. Sin letra pequeña ni jerga rara.</p>
-            <div class="row"><button class="btn" data-act="newGoal">+ Crear una meta</button><a class="btn ghost" href="#/simulador">Probar el simulador</a></div>
+        <div class="hero-l">
+            <p class="kicker">Planificación de objetivos</p>
+            <h1>Invierte en la vida que <em>quieres tener.</em></h1>
+            <p class="lead">Define para qué ahorras, proyecta distintos escenarios y avanza con constancia, solo o con tu círculo. Información clara, sin tecnicismos.</p>
+            <div class="row"><button class="btn" data-act="newGoal">Definir un objetivo ${ARROW}</button><a class="btn line" href="#/simulador">Abrir el simulador</a></div>
         </div>
-        <div class="card future">
-            <div class="tag">MENSAJE DEL FUTURO</div>
-            <q>${esc(fm.q)}</q>
-            <small>${esc(fm.note)}</small>
-        </div>
+        <aside class="letter">
+            <p class="kicker">Carta de tu yo futuro</p>
+            <blockquote>${esc(fl.q)}</blockquote>
+            <small>${esc(fl.note)}</small>
+        </aside>
     </section>
 
-    <div class="grid g4" style="margin-top:22px">
-        <div class="card stat"><span>Ahorrado en tus metas</span><strong>${fmt(totalSaved())}</strong><small>${S.goals.length} meta${S.goals.length === 1 ? "" : "s"}</small></div>
-        <div class="card stat"><span>Aportación mensual</span><strong>${fmt(totalMonthly())}</strong><small>Prevista entre todas</small></div>
-        <div class="card stat"><span>Progreso global</span><strong>${pct(prog)}</strong><div class="bar" style="margin-top:6px"><i style="width:${prog}%"></i></div></div>
-        <div class="card stat"><span>Racha semanal</span><strong>${weekStreak()} 🔥</strong><small>Semanas seguidas aportando</small></div>
-    </div>
+    <section class="facts" aria-label="Indicadores">
+        <div class="fact"><span>Capital en objetivos</span><strong>${fmtR(totalSaved())}</strong><small>${S.goals.length} objetivo${S.goals.length === 1 ? "" : "s"} activo${S.goals.length === 1 ? "" : "s"}</small></div>
+        <div class="fact"><span>Aportación mensual</span><strong>${fmtR(totalMonthly())}</strong><small>Planificada</small></div>
+        <div class="fact"><span>Grado de avance</span><strong>${pct(Math.round(prog * 10) / 10)}</strong><small>Sobre ${fmtR(totalTarget())}</small></div>
+        <div class="fact"><span>Constancia</span><strong>${weekStreak()}</strong><small>Semanas consecutivas</small></div>
+    </section>
 
-    <div class="grid g2" style="margin-top:16px">
-        <div class="card"><p class="eyebrow">Tu siguiente paso</p><div class="row spread" style="align-items:center;gap:16px">${nextAction()}</div></div>
-        <div class="card">
-            <p class="eyebrow">Nivel ${level()} · ${levelName()}</p>
-            <div class="bar warm"><i style="width:${lvlPct}%"></i></div>
-            <p class="muted small-t" style="margin-top:8px">${100 - lvlPct} XP para el nivel ${level() + 1}. Gana XP aportando (+10), aprendiendo (+20) y cumpliendo metas.</p>
-        </div>
-    </div>
+    <section class="section cols c21">
+        <div class="panel"><p class="kicker">Siguiente paso</p>${nextStep()}</div>
+        <div class="panel tint"><p class="kicker">Hitos · ${done} de ${MILESTONES.length}</p>
+            <ul class="miles">${MILESTONES.map(m => `<li class="${m.on() ? "on" : ""}">${m.name}</li>`).join("")}</ul></div>
+    </section>
 
-    <div class="sec-head"><div><p class="eyebrow">Logros</p><h2>${done}/${BADGES.length} desbloqueados</h2></div></div>
-    <div class="card"><div class="badges">${BADGES.map(b => `<div class="badge ${b.on() ? "on" : ""}"><i>${b.ico}</i>${b.name}</div>`).join("")}</div></div>
-
-    ${S.goals.length ? `<div class="sec-head"><div><p class="eyebrow">Tus metas</p><h2>Así vas</h2></div><a class="btn ghost small" href="#/metas">Ver todas</a></div>
-    <div class="grid g3">${S.goals.slice(0, 3).map(goalCard).join("")}</div>` : ""}
-    ${disclaimer()}`;
+    ${S.goals.length ? `<section class="section"><div class="sec-head"><div><p class="kicker">Cartera de objetivos</p><h2>Situación actual</h2></div><a class="link" href="#/objetivos">Ver todos</a></div>
+        <div class="cols c3">${S.goals.slice(0, 3).map(goalCard).join("")}</div></section>` : ""}`;
 }
 
 function goalCard(g) {
-    const st = goalStatus(g), p = progress(g);
-    const ml = monthsLeft(g);
+    const st = goalStatus(g), p = progress(g), ml = monthsLeft(g);
     const need = requiredMonthly(g.target, saved(g), ml, 5);
-    return `<article class="card goal">
-        <div class="goal-top">
-            <div class="ring" style="--p:${p}"><span>${esc(g.emoji)}</span></div>
-            <div style="min-width:0"><h3>${esc(g.name)}</h3><span class="pill ${st.cls}">${st.txt}</span></div>
-        </div>
-        <div>
-            <div class="row spread"><b>${fmt(saved(g))}</b><span class="muted">de ${fmt(g.target)} · ${pct(p)}</span></div>
-            <div class="bar" style="margin-top:6px"><i style="width:${p}%"></i></div>
-        </div>
-        <p class="muted small-t">${isDone(g) ? "Objetivo alcanzado 🎉" : `Meta para ${g.year} · con tu ritmo llegarías en <b>${etaLabel(monthsToReach(g, 0))}</b> sin rentabilidad${need > g.monthly ? ` · para ir justo en plazo: <b>${fmt(roundUp5(need))}/mes</b> (con 5% hipotético)` : ""}.`}</p>
-        <div class="row">
-            <button class="btn small" data-act="contribute" data-id="${g.id}">+ Aportar</button>
-            <button class="btn ghost small" data-act="goalDetail" data-id="${g.id}">Detalle</button>
-            <button class="btn ghost small" data-act="simGoal" data-id="${g.id}">Simular</button>
-        </div>
+    return `<article class="goal">
+        <div class="row between" style="align-items:flex-start"><div><p class="goal-cat">${CATS[g.category]}</p><h3>${esc(g.name)}</h3></div><span class="tag ${st.cls}">${st.txt}</span></div>
+        <div><div class="amt"><strong>${fmt(saved(g))}</strong><span>de ${fmt(g.target)}</span></div><div class="bar"><i style="width:${p}%"></i></div></div>
+        <dl class="meta">
+            <div><dt>Horizonte</dt><dd>Dic. ${g.year}</dd></div>
+            <div><dt>Aportación</dt><dd>${fmt(g.monthly)}/mes</dd></div>
+            <div><dt>Avance</dt><dd>${pct(Math.round(p * 10) / 10)}</dd></div>
+            <div><dt>${isDone(g) ? "Estado" : need > g.monthly ? "Necesario (5 % hip.)" : "Fecha estimada"}</dt><dd>${isDone(g) ? "Completado" : need > g.monthly ? `${fmt(roundUp5(need))}/mes` : etaLabel(monthsToReach(g, 0))}</dd></div>
+        </dl>
+        <div class="acts"><button class="btn sm" data-act="contribute" data-id="${g.id}">Aportar</button>
+            <button class="link" data-act="goalDetail" data-id="${g.id}">Detalle</button>
+            <button class="link" data-act="simGoal" data-id="${g.id}">Proyectar</button></div>
     </article>`;
 }
 
-function viewMetas() {
-    return `<div class="sec-head" style="margin-top:0"><div><p class="eyebrow">01 · Mis metas</p><h2>Tu dinero tiene un porqué.</h2>
-        <p>Registra lo que aportas de verdad. Lo real y lo simulado nunca se mezclan.</p></div>
-        <button class="btn" data-act="newGoal">+ Nueva meta</button></div>
-    ${S.goals.length ? `<div class="grid g3">${S.goals.map(goalCard).join("")}</div>`
-        : `<div class="empty"><div class="big">🌅</div><h3>Aún no tienes metas</h3><p class="muted">Empieza con una plantilla o crea la tuya.</p>
-        <div class="tpl">${TEMPLATES.map((t, i) => `<button data-act="tpl" data-i="${i}"><span>${t.emoji}</span>${esc(t.name)}<br><small>${fmt(t.target)}</small></button>`).join("")}</div></div>`}
-    ${disclaimer()}`;
+function viewObjetivos() {
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Objetivos</p><h2>Cada euro, con un propósito.</h2>
+        <p>Registra tus aportaciones reales. El seguimiento de lo aportado y las proyecciones se muestran siempre por separado.</p></div>
+        <button class="btn" data-act="newGoal">Nuevo objetivo ${ARROW}</button></div>
+    ${S.goals.length ? `<div class="cols c3">${S.goals.map(goalCard).join("")}</div>`
+        : `<div class="empty"><h3>Todavía no has definido ningún objetivo</h3><p class="muted">Parte de una propuesta o crea uno a medida.</p>
+        <div class="tpl">${TEMPLATES.map((t, i) => `<button data-act="tpl" data-i="${i}"><span class="goal-cat">${CATS[t.category]}</span><b>${esc(t.name)}</b><small>${fmt(t.target)} · ${t.years} año${t.years === 1 ? "" : "s"}</small></button>`).join("")}</div></div>`}
+    </section>`;
 }
 
 /* ---- Simulador ---- */
 const SCENARIOS = [
-    { id: "cero", name: "Sin invertir", rate: 0, c: "--ink2" },
-    { id: "Prudente", name: "Prudente", rate: 2, c: "--good" },
-    { id: "Equilibrado", name: "Equilibrado", rate: 5, c: "--a1" },
-    { id: "Dinámico", name: "Dinámico", rate: 8, c: "--a2" }
+    { id: "cero", name: "Sin rentabilidad", rate: 0, c: "--ink3", dash: true },
+    { id: "Conservador", name: "Conservador", rate: 2, c: "--sky" },
+    { id: "Moderado", name: "Moderado", rate: 5, c: "--blue" },
+    { id: "Dinámico", name: "Dinámico", rate: 8, c: "--navy" }
 ];
 let sim = { initial: null, monthly: 100, years: 10, inflation: 2.5, real: false, goalId: null, hover: null };
+const rangeFmt = { initial: v => fmt(v), monthly: v => fmt(v), years: v => `${v} año${v == 1 ? "" : "s"}`, inflation: v => `${String(v).replace(".", ",")} %` };
 
 function viewSimulador() {
     if (sim.initial === null) sim.initial = Math.round(totalSaved());
-    return `<div class="sec-head" style="margin-top:0"><div><p class="eyebrow">02 · Simulador</p><h2>Mira hacia dónde vas.</h2>
-        <p>Mueve los controles y ve cómo cambia tu futuro. Son hipótesis, no promesas.</p></div></div>
+    const rng = (id, label, min, max, step) => `<div class="ctl"><div class="rv"><label for="sim_${id}">${label}</label><b id="out_${id}">${rangeFmt[id](sim[id])}</b></div>
+        <input type="range" id="sim_${id}" data-input="simRange" data-key="${id}" min="${min}" max="${max}" step="${step}" value="${sim[id]}"></div>`;
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Simulador</p><h2>Proyección de escenarios</h2>
+        <p>Compara cómo podría evolucionar tu ahorro bajo distintas hipótesis de rentabilidad. Son supuestos ilustrativos, no previsiones.</p></div></div>
     <div class="sim">
-        <div class="card">
-            ${S.goals.length ? `<div class="field"><label for="simGoal">Basar en una meta</label><select id="simGoal" data-input="simGoalSel">
-                <option value="">— Libre —</option>${S.goals.map(g => `<option value="${g.id}" ${sim.goalId === g.id ? "selected" : ""}>${esc(g.emoji)} ${esc(g.name)}</option>`).join("")}</select></div>` : ""}
-            ${rng("initial", "Ya tengo", sim.initial, 0, 50000, 100, v => fmt(v))}
-            ${rng("monthly", "Aporto al mes", sim.monthly, 0, 1000, 5, v => fmt(v))}
-            ${rng("years", "Durante", sim.years, 1, 40, 1, v => `${v} año${v == 1 ? "" : "s"}`)}
-            ${rng("inflation", "Inflación hipotética", sim.inflation, 0, 8, .5, v => `${String(v).replace(".", ",")}%`)}
-            <label class="row" style="cursor:pointer;margin-top:6px"><input type="checkbox" id="simReal" data-input="simReal" ${sim.real ? "checked" : ""}> <span><b>Ver valor real</b> <span class="muted small-t">(descontando inflación)</span></span></label>
+        <div class="sim-ctl">
+            ${S.goals.length ? `<div class="field"><label for="simGoal">Vincular a un objetivo</label><select id="simGoal" data-input="simGoalSel">
+                <option value="">Simulación libre</option>${S.goals.map(g => `<option value="${g.id}" ${sim.goalId === g.id ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select></div>` : ""}
+            ${rng("initial", "Capital inicial", 0, 50000, 100)}
+            ${rng("monthly", "Aportación mensual", 0, 1000, 5)}
+            ${rng("years", "Horizonte", 1, 40, 1)}
+            ${rng("inflation", "Inflación supuesta", 0, 8, .5)}
+            <label class="check"><input type="checkbox" data-input="simReal" ${sim.real ? "checked" : ""}> Mostrar en términos reales</label>
         </div>
-        <div class="card">
-            <div class="row spread"><div><p class="eyebrow">Evolución estimada</p><h3 id="simTitle"></h3></div><span class="pill late">SIMULACIÓN</span></div>
-            <div class="canvas-wrap"><canvas class="chart" id="simChart" aria-label="Gráfica de evolución del ahorro según escenarios"></canvas></div>
-            <div class="legend" id="simLegend"></div>
+        <div class="sim-out">
+            <div class="row between" style="margin-bottom:16px"><div><p class="kicker">Evolución estimada</p><h3 id="simTitle" style="font-size:24px"></h3></div></div>
+            <canvas class="chart" id="simChart" aria-label="Gráfico de evolución del capital por escenario"></canvas>
         </div>
     </div>
-    <div class="grid g4" id="simCards" style="margin-top:16px"></div>
-    <div class="insight" id="simInsight" style="margin-top:16px"></div>
-    ${disclaimer()}`;
+    <div class="cols c21" style="margin-top:28px">
+        <div class="tbl-wrap"><table class="tbl" id="simTable"></table></div>
+        <div class="note" id="simNote"></div>
+    </div>
+    <p class="disclaim">Rentabilidades anuales hipotéticas, constantes y sin costes ni fiscalidad. La rentabilidad real puede ser inferior, incluso negativa.</p>
+    </section>`;
 }
-function rng(id, label, val, min, max, step, f) {
-    return `<div class="field"><div class="rv"><label for="sim_${id}">${label}</label><b id="out_${id}">${f(val)}</b></div>
-        <input type="range" id="sim_${id}" data-input="simRange" data-key="${id}" min="${min}" max="${max}" step="${step}" value="${val}"></div>`;
-}
-const rangeFmt = { initial: v => fmt(v), monthly: v => fmt(v), years: v => `${v} año${v == 1 ? "" : "s"}`, inflation: v => `${String(v).replace(".", ",")}%` };
 
 function simSeries(rate) {
     const r = monthlyRate(rate), out = [];
@@ -374,91 +326,102 @@ function drawSim() {
     if (!cv) return;
     const series = SCENARIOS.map(s => ({ ...s, data: simSeries(s.rate), color: cssVar(s.c) }));
     const contributed = sim.initial + sim.monthly * 12 * sim.years;
-    const bal = series.find(s => s.rate === 5).data.at(-1);
-
-    $("#simTitle").textContent = `En ${YEAR + sim.years}: hasta ${fmt(series.at(-1).data.at(-1))}`;
-    $("#simLegend").innerHTML = series.map(s => `<span><i style="background:${s.color}"></i>${s.name} (${s.rate}%)</span>`).join("");
+    const contribShown = sim.real ? contributed / Math.pow(1 + sim.inflation / 100, sim.years) : contributed;
     const mine = S.quiz?.profile;
-    $("#simCards").innerHTML = series.map(s => `<div class="card sc" style="border-left-color:${s.color}">
-        <span class="muted small-t">${s.name} · ${s.rate}% hip.${mine === s.id ? " · <b>tu perfil</b>" : ""}</span>
-        <strong>${fmt(s.data.at(-1))}</strong><span class="muted small-t">${s.rate ? `+${fmt(Math.max(0, s.data.at(-1) - (sim.real ? contributed / Math.pow(1 + sim.inflation / 100, sim.years) : contributed)))} de intereses` : "Solo lo que aportas"}</span></div>`).join("");
+
+    $("#simTitle").textContent = `${YEAR + sim.years}: entre ${fmtR(series[0].data.at(-1))} y ${fmtR(series.at(-1).data.at(-1))}`;
+    $("#simTable").innerHTML = `<thead><tr><th>Escenario</th><th class="r">Rent. hip.</th><th class="r">Capital final</th><th class="r">Rendimiento</th></tr></thead><tbody>
+        ${series.map(s => `<tr class="${mine === s.id ? "hl" : ""}"><td><span class="sw" style="background:${s.color}"></span>${s.name}${mine === s.id ? ` <span class="small muted">· tu perfil</span>` : ""}</td>
+        <td class="r">${s.rate} %</td><td class="r"><b>${fmtR(s.data.at(-1))}</b></td><td class="r">${s.rate ? fmtR(Math.max(0, s.data.at(-1) - contribShown)) : "—"}</td></tr>`).join("")}
+        <tr><td class="muted">Total aportado</td><td></td><td class="r muted">${fmtR(contribShown)}</td><td></td></tr></tbody>`;
 
     const extra = fv(sim.initial, sim.monthly + 20, sim.years, 5) - fv(sim.initial, sim.monthly, sim.years, 5);
-    let ins = `💡 <b>Efecto +20 €/mes:</b> en el escenario equilibrado supondría unos <b>${fmt(extra)}</b> más en ${sim.years} año${sim.years == 1 ? "" : "s"}. Aportas ${fmt(sim.monthly * 12 * sim.years + sim.initial)} en total; la diferencia con el resultado es el efecto del tiempo y del interés compuesto.`;
+    let note = `<p><b>Sensibilidad.</b> Aumentar la aportación en 20 € al mes supondría unos <b>${fmtR(extra)}</b> adicionales en el escenario moderado a ${sim.years} año${sim.years == 1 ? "" : "s"}.</p>`;
     const g = S.goals.find(x => x.id === sim.goalId);
     if (g) {
         const need = requiredMonthly(g.target, sim.initial, sim.years * 12, 5);
-        ins += `<br><br>🎯 Para llegar a <b>${fmt(g.target)}</b> («${esc(g.name)}») en ${sim.years} año${sim.years == 1 ? "" : "s"} con 5% hipotético necesitarías <b>${fmt(Math.ceil(need))}/mes</b>. <button class="link" data-act="simUseNeed" data-v="${Math.ceil(need / 5) * 5}">Usar esa cantidad</button>`;
+        note += `<p style="margin-top:14px"><b>Objetivo «${esc(g.name)}».</b> Para alcanzar ${fmt(g.target)} en ${sim.years} año${sim.years == 1 ? "" : "s"} con un 5 % hipotético se necesitarían <b>${fmt(Math.ceil(need))} al mes</b>. <button class="link" data-act="simUseNeed" data-v="${roundUp5(need)}">Aplicar</button></p>`;
     }
-    $("#simInsight").innerHTML = ins + `<br><span class="muted small-t">${sim.real ? "Valor real: poder adquisitivo de hoy." : "Valor nominal: no descuenta inflación."}</span>`;
+    note += `<p style="margin-top:14px" class="small">${sim.real ? `Importes en euros de hoy, descontada una inflación del ${String(sim.inflation).replace(".", ",")} %.` : "Importes nominales, sin descontar inflación."}</p>`;
+    $("#simNote").innerHTML = note;
 
-    /* canvas */
+    /* gráfico */
     const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
     cv.width = W * dpr; cv.height = H * dpr;
     const ctx = cv.getContext("2d");
     ctx.scale(dpr, dpr);
-    const L = 58, R = 14, T = 14, B = 30, w = W - L - R, h = H - T - B;
+    const L = 62, R = 8, T = 10, B = 28, w = W - L - R, h = H - T - B;
     const raw = Math.max(...series.map(s => Math.max(...s.data)), 1) / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
     const max = 4 * [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
     const X = i => L + (i / sim.years) * w, Y = v => T + h - (v / max) * h;
-    ctx.font = "12px Inter, sans-serif";
-    ctx.strokeStyle = cssVar("--line"); ctx.fillStyle = cssVar("--ink2"); ctx.lineWidth = 1;
+    ctx.font = "11px Inter, sans-serif";
+    ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
-        const v = (max / 4) * i, y = Y(v);
+        const v = (max / 4) * i, y = Math.round(Y(v)) + .5;
+        ctx.strokeStyle = i ? cssVar("--rule2") : cssVar("--ink");
         ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(W - R, y); ctx.stroke();
-        ctx.textAlign = "right"; ctx.fillText(v >= 1000 ? `${Math.round(v / 1000)}k €` : `${Math.round(v)} €`, L - 8, y + 4);
+        ctx.fillStyle = cssVar("--ink3"); ctx.textAlign = "right";
+        ctx.fillText(v >= 1000 ? `${(v / 1000).toLocaleString("es-ES")} mil €` : `${Math.round(v)} €`, L - 10, y + 4);
     }
     ctx.textAlign = "center";
-    const stepX = Math.max(1, Math.ceil(sim.years / 6));
+    const stepX = Math.max(1, Math.ceil(sim.years / 8));
     for (let i = 0; i <= sim.years; i += stepX) ctx.fillText(YEAR + i, X(i), H - 8);
     series.forEach(s => {
-        ctx.beginPath(); ctx.strokeStyle = s.color; ctx.lineWidth = s.rate === 5 ? 3.5 : 2.5;
-        if (!s.rate) ctx.setLineDash([6, 5]); else ctx.setLineDash([]);
+        ctx.beginPath(); ctx.strokeStyle = s.color; ctx.lineWidth = s.rate === 5 ? 2.5 : 1.5;
+        ctx.setLineDash(s.dash ? [4, 4] : []);
         s.data.forEach((v, i) => (i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v))));
         ctx.stroke();
     });
     ctx.setLineDash([]);
     if (sim.hover !== null) {
-        const i = sim.hover, x = X(i);
-        ctx.strokeStyle = cssVar("--ink2"); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T + h); ctx.stroke();
-        series.forEach(s => { ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(x, Y(s.data[i]), 5, 0, 7); ctx.fill(); });
-        const lines = [`${YEAR + i} · año ${i}`, ...series.map(s => `${s.name}: ${fmt(Math.round(s.data[i]))}`)];
-        const bw = 176, bh = lines.length * 18 + 12, bx = Math.min(Math.max(x + 10, L), W - bw - 4), by = T + 6;
-        ctx.fillStyle = cssVar("--ink"); ctx.globalAlpha = .93; ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.fill(); ctx.globalAlpha = 1;
-        ctx.fillStyle = cssVar("--bg"); ctx.textAlign = "left";
-        lines.forEach((l, k) => { ctx.font = `${k ? 500 : 700} 12px Inter, sans-serif`; ctx.fillText(l, bx + 10, by + 20 + k * 18); });
+        const i = sim.hover, x = Math.round(X(i)) + .5;
+        ctx.strokeStyle = cssVar("--ink"); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T + h); ctx.stroke();
+        series.forEach(s => { ctx.fillStyle = s.color; ctx.fillRect(x - 3.5, Y(s.data[i]) - 3.5, 7, 7); });
+        const lines = [`${YEAR + i}`, ...series.map(s => [s.name, fmtR(s.data[i])])];
+        const bw = 196, bh = lines.length * 19 + 14, bx = x + 12 + bw > W ? x - bw - 12 : x + 12, by = T + 4;
+        ctx.fillStyle = cssVar("--ink"); ctx.fillRect(bx, by, bw, bh);
+        lines.forEach((l, k) => {
+            const yy = by + 22 + k * 19;
+            ctx.fillStyle = k ? "#c9d7e0" : "#ffffff"; ctx.font = `${k ? 400 : 600} 12px Inter, sans-serif`; ctx.textAlign = "left";
+            ctx.fillText(k ? l[0] : l, bx + 12, yy);
+            if (k) { ctx.textAlign = "right"; ctx.fillStyle = "#ffffff"; ctx.fillText(l[1], bx + bw - 12, yy); }
+        });
     }
     cv._geom = { L, w };
-    void bal;
 }
 
 /* ---- Círculo ---- */
 let circ = { list: null, err: null, timer: null, last: "" };
+const resetCirc = () => { clearInterval(circ.timer); circ = { list: null, err: null, timer: null, last: "" }; };
+
 function viewCirculo() {
-    const head = `<div class="sec-head" style="margin-top:0"><div><p class="eyebrow">03 · Mi círculo</p><h2>Compartís la meta. <span class="grad-text">No la cartera.</span></h2>
-        <p>Crea un objetivo con tus amigos, invítalos con un código y mirad el progreso juntos. Cada uno solo muestra lo que aporta al objetivo común.</p></div>
-        ${user ? `<div class="row"><button class="btn ghost" data-act="joinCircle">Unirme con código</button><button class="btn" data-act="newCircle">+ Crear círculo</button></div>` : ""}</div>`;
-    if (!user) return head + `<div class="empty"><div class="big">👯</div><h3>Entra para crear tu círculo</h3><p class="muted">Necesitas una cuenta para compartir objetivos con otras personas.</p><br><button class="btn" data-act="auth">Entrar o crear cuenta</button></div>`;
-    if (circ.err) return head + `<div class="err">${esc(circ.err)}</div>`;
-    if (!circ.list) return head + `<p class="muted">Cargando tus círculos…</p>`;
-    if (!circ.list.length) return head + `<div class="empty"><div class="big">🫶</div><h3>Aún no estás en ningún círculo</h3><p class="muted">Crea uno o únete con el código de un amigo.</p></div>`;
-    return head + `<div class="grid g2">${circ.list.map(circleCard).join("")}</div>
-        <div class="card flat" style="margin-top:16px"><b>🔒 Tu cartera sigue siendo tuya.</b> <span class="muted">Nadie decide sobre tu dinero ni ve tus inversiones: el círculo solo comparte motivación y lo que cada persona decide aportar al objetivo.</span></div>`;
+    const head = `<section class="section"><div class="sec-head"><div><p class="kicker">Círculo</p><h2>Un objetivo compartido. Cada cartera, individual.</h2>
+        <p>Fija una meta común con amigos o familia e invítalos con un código. Cada participante solo comparte lo que decide aportar a ese objetivo.</p></div>
+        ${user ? `<div class="row"><button class="btn line" data-act="joinCircle">Unirme con código</button><button class="btn" data-act="newCircle">Crear círculo</button></div>` : ""}</div>`;
+    const privacy = `<div class="panel tint" style="margin-top:24px"><p class="kicker">Privacidad</p><p class="muted">Nadie puede ver ni gestionar tus inversiones. El círculo comparte únicamente el objetivo común y las aportaciones que cada persona decide registrar en él.</p></div>`;
+    let body;
+    if (!user) body = `<div class="empty"><h3>Accede para crear o unirte a un círculo</h3><p class="muted" style="margin-bottom:24px">Los círculos requieren una cuenta para compartir el progreso entre participantes.</p><button class="btn" data-act="auth">Acceder ${ARROW}</button></div>`;
+    else if (circ.err) body = `<div class="err">${esc(circ.err)}</div>`;
+    else if (!circ.list) body = `<p class="muted">Cargando…</p>`;
+    else if (!circ.list.length) body = `<div class="empty"><h3>Aún no participas en ningún círculo</h3><p class="muted">Crea uno o únete con el código que te hayan facilitado.</p></div>`;
+    else body = `<div class="cols c2">${circ.list.map(circleCard).join("")}</div>`;
+    return head + body + privacy + `</section>`;
 }
 function circleCard(c) {
     const p = Math.min(100, (c.total / c.target) * 100);
-    const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? "ahora" : m < 60 ? `${m} min` : m < 1440 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`; };
-    return `<article class="card" style="display:grid;gap:16px">
-        <div class="goal-top"><div class="ring" style="--p:${p}"><span>${esc(c.emoji)}</span></div>
-            <div><h3>${esc(c.name)}</h3><span class="muted">${fmt(c.total)} de ${fmt(c.target)} · ${pct(p)}</span></div></div>
-        <div>${c.members.map(m => `<div class="member"><div class="avatar">${esc(m.username[0].toUpperCase())}</div>
-            <div><b>${esc(m.username)}${m.isMe ? " (tú)" : ""}${m.isOwner ? " 👑" : ""}</b><div class="bar" style="margin-top:4px"><i style="width:${c.total ? (m.contributed / Math.max(c.target / c.members.length, m.contributed)) * 100 : 0}%"></i></div></div>
-            <b>${fmt(m.contributed)}</b></div>`).join("")}</div>
-        <div class="row spread"><span class="muted small-t">Código para invitar</span><span class="code">${esc(c.code)}</span></div>
-        <div class="row"><button class="btn small" data-act="circleContribute" data-code="${c.code}">+ Aportar</button>
-            <button class="btn ghost small" data-act="shareCircle" data-code="${c.code}" data-name="${esc(c.name)}">Invitar</button>
-            <button class="btn danger small" data-act="leaveCircle" data-code="${c.code}">Salir</button></div>
-        <div class="feed">${c.feed.slice(0, 6).map(f => `<div>${esc(f.text)}<small>${ago(f.t)}</small></div>`).join("")}</div>
+    const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? "ahora" : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : `hace ${Math.round(m / 1440)} d`; };
+    return `<article class="goal">
+        <div class="row between" style="align-items:flex-start"><div><p class="goal-cat">${CATS[c.category] || "Objetivo compartido"} · ${c.members.length} participante${c.members.length === 1 ? "" : "s"}</p><h3>${esc(c.name)}</h3></div>
+            ${c.total >= c.target ? `<span class="tag done">Alcanzado</span>` : ""}</div>
+        <div><div class="amt"><strong>${fmt(c.total)}</strong><span>de ${fmt(c.target)} · ${pct(Math.round(p * 10) / 10)}</span></div><div class="bar"><i style="width:${p}%"></i></div></div>
+        <table class="tbl"><thead><tr><th>Participante</th><th class="r">Aportado</th><th class="r">Peso</th></tr></thead><tbody>
+            ${c.members.map(m => `<tr><td><span class="initial">${esc(m.username[0].toUpperCase())}</span>${esc(m.username)}${m.isMe ? ` <span class="muted small">(tú)</span>` : ""}${m.isOwner ? ` <span class="muted small">· administrador</span>` : ""}</td>
+            <td class="r">${fmt(m.contributed)}</td><td class="r muted">${c.total ? pct(Math.round((m.contributed / c.total) * 1000) / 10) : "—"}</td></tr>`).join("")}</tbody></table>
+        <div class="row between"><span class="small muted">Código de invitación</span><span class="code">${esc(c.code)}</span></div>
+        <ul class="feed">${c.feed.slice(0, 6).map(f => `<li><span>${esc(f.text)}</span><time>${ago(f.t)}</time></li>`).join("")}</ul>
+        <div class="acts"><button class="btn sm" data-act="circleContribute" data-code="${c.code}">Aportar</button>
+            <button class="link" data-act="shareCircle" data-code="${c.code}" data-name="${esc(c.name)}">Invitar</button>
+            <button class="link neg" data-act="leaveCircle" data-code="${c.code}">Abandonar</button></div>
     </article>`;
 }
 async function loadCircles(force = false) {
@@ -467,7 +430,7 @@ async function loadCircles(force = false) {
         const { circles } = await api("/circles");
         const sig = JSON.stringify(circles);
         circ.err = null;
-        if (sig !== circ.last || force || !circ.list) { circ.list = circles; circ.last = sig; if (route() === "circulo" && !$(".sheet")) render(false); }
+        if (force || sig !== circ.last || !circ.list) { circ.list = circles; circ.last = sig; if (route() === "circulo" && !$(".sheet")) render(false); }
     } catch (e) { circ.err = e.message; if (route() === "circulo" && !circ.list) render(false); }
 }
 function startCirclePolling() {
@@ -478,78 +441,83 @@ function startCirclePolling() {
 }
 const stopCirclePolling = () => { clearInterval(circ.timer); circ.timer = null; };
 
-/* ---- Aprende ---- */
+/* ---- Formación ---- */
 const LESSONS = [
-    { id: "compuesto", ico: "🌱", title: "Interés compuesto", min: 2,
-      body: "Es ganar intereses sobre tus intereses. Con <b>100 €/mes durante 30 años</b> y un 5% anual hipotético, aportas 36.000 € pero podrías llegar a ~82.000 €. El tiempo trabaja por ti: <b>empezar pronto pesa más que empezar fuerte</b>.",
-      q: "¿Qué pesa más a largo plazo en el interés compuesto?", o: ["Empezar pronto y ser constante", "Acertar el mejor mes para entrar", "Mirar la app cada día"], a: 0, why: "Cuantos más años dejes crecer el dinero, más pesan los intereses sobre intereses." },
-    { id: "inflacion", ico: "📉", title: "Inflación", min: 2,
-      body: "La inflación sube los precios: con un 3% anual, lo que hoy cuesta 100 € costará ~134 € en 10 años. Si tu dinero está parado, <b>compra menos cada año</b>. Por eso el simulador te deja ver el valor «real».",
-      q: "Tienes dinero parado 10 años con inflación del 3%. ¿Qué pasa?", o: ["Gana poder de compra", "Pierde poder de compra", "Nada, los euros son los mismos"], a: 1, why: "Tienes los mismos euros, pero con ellos compras menos cosas." },
-    { id: "riesgo", ico: "⏳", title: "Riesgo y horizonte", min: 2,
-      body: "Más rentabilidad potencial implica más riesgo de pérdida. La clave es <b>cuándo necesitas el dinero</b>: para algo en menos de 3 años suele pesar la estabilidad; a 10+ años puedes tolerar más altibajos.",
-      q: "Necesitas el dinero para un viaje en 6 meses. ¿Qué priorizas?", o: ["Máxima rentabilidad", "Estabilidad y poder disponer de él", "Lo que diga TikTok"], a: 1, why: "Con plazos cortos no hay tiempo de recuperarse de una caída." },
-    { id: "diversificar", ico: "🧺", title: "Diversificación", min: 2,
-      body: "No pongas todos los huevos en la misma cesta. Repartir entre distintos activos, sectores y países <b>reduce el impacto de que uno solo vaya mal</b>. No elimina el riesgo, lo suaviza.",
-      q: "¿Para qué sirve diversificar?", o: ["Para asegurar ganancias", "Para reducir el impacto de un solo activo", "Para pagar menos impuestos"], a: 1, why: "Diversificar no garantiza ganancias: reparte el riesgo." },
-    { id: "emergencia", ico: "🛟", title: "Fondo de emergencia", min: 1,
-      body: "Antes de invertir, ten un colchón de <b>3 a 6 meses de gastos básicos</b> en algo disponible y seguro. Evita vender en mal momento cuando surge un imprevisto.",
-      q: "¿Cuánto suele recomendarse para un fondo de emergencia?", o: ["1 semana de gastos", "3-6 meses de gastos básicos", "5 años de sueldo"], a: 1, why: "Cubre imprevistos habituales sin obligarte a vender inversiones." },
-    { id: "comisiones", ico: "🔍", title: "Comisiones", min: 2,
-      body: "Un 1% más de costes al año parece poco, pero en 30 años con 100 €/mes puede suponer <b>~16% menos</b> de dinero final (5% vs 4%). Mira siempre los gastos antes de contratar.",
-      q: "Una comisión pequeña pero anual, a 30 años…", o: ["No se nota", "Puede restar una parte importante", "Solo afecta al primer año"], a: 1, why: "Los costes se acumulan y además restan al interés compuesto." }
+    { id: "compuesto", title: "Interés compuesto", sub: "Por qué el tiempo es el factor más determinante", min: 2,
+      body: "El interés compuesto consiste en obtener rendimientos sobre los rendimientos ya generados. Con <b>100 € al mes durante 30 años</b> y una rentabilidad hipotética del 5 % anual, se aportan 36.000 € y el capital podría alcanzar unos 82.000 €. <b>Empezar pronto suele pesar más que empezar con importes elevados.</b>",
+      q: "¿Qué factor tiene más peso a largo plazo en el interés compuesto?", o: ["El tiempo y la constancia", "Elegir el mejor momento para entrar", "Revisar la inversión a diario"], a: 0, why: "Cuantos más años se mantiene la inversión, mayor es el efecto de los rendimientos acumulados." },
+    { id: "inflacion", title: "Inflación", sub: "El coste invisible del dinero inmovilizado", min: 2,
+      body: "La inflación reduce el poder adquisitivo: con un 3 % anual, lo que hoy cuesta 100 € costará unos 134 € dentro de diez años. El dinero sin remunerar <b>compra menos cada año</b>. Por eso el simulador permite ver los importes en términos reales.",
+      q: "Mantienes un importe sin remunerar durante 10 años con una inflación del 3 %. ¿Qué ocurre?", o: ["Gana poder adquisitivo", "Pierde poder adquisitivo", "Su valor no cambia"], a: 1, why: "El importe nominal es el mismo, pero permite adquirir menos bienes y servicios." },
+    { id: "riesgo", title: "Riesgo y horizonte temporal", sub: "Cuándo necesitarás el dinero", min: 2,
+      body: "A mayor rentabilidad potencial, mayor riesgo de pérdida. La clave es <b>el plazo en que se necesitará el dinero</b>: en horizontes cortos suele primar la estabilidad; en horizontes largos es posible asumir más volatilidad.",
+      q: "Necesitas el dinero para un viaje dentro de seis meses. ¿Qué priorizas?", o: ["La máxima rentabilidad", "La estabilidad y la disponibilidad", "Seguir recomendaciones de redes sociales"], a: 1, why: "En plazos cortos no hay margen para recuperarse de una caída." },
+    { id: "diversificar", title: "Diversificación", sub: "Repartir para reducir la concentración", min: 2,
+      body: "Diversificar es repartir la inversión entre distintos activos, sectores y regiones para <b>reducir el impacto de que uno de ellos evolucione mal</b>. No elimina el riesgo, pero lo modera.",
+      q: "¿Cuál es el propósito principal de diversificar?", o: ["Garantizar ganancias", "Reducir la dependencia de un único activo", "Reducir impuestos"], a: 1, why: "La diversificación reparte el riesgo; no asegura resultados." },
+    { id: "emergencia", title: "Colchón de emergencia", sub: "La base antes de invertir", min: 1,
+      body: "Antes de invertir conviene disponer de <b>entre tres y seis meses de gastos básicos</b> en un instrumento líquido y de bajo riesgo. Evita tener que deshacer inversiones en un mal momento ante un imprevisto.",
+      q: "¿Qué importe suele recomendarse para un colchón de emergencia?", o: ["Una semana de gastos", "Entre tres y seis meses de gastos básicos", "Cinco años de ingresos"], a: 1, why: "Cubre imprevistos habituales sin necesidad de vender inversiones." },
+    { id: "costes", title: "Costes y comisiones", sub: "Pequeños porcentajes, grandes diferencias", min: 2,
+      body: "Un punto adicional de costes anuales parece poco, pero a 30 años con 100 € al mes puede suponer <b>en torno a un 16 % menos de capital final</b> (5 % frente a 4 %). Revisa siempre los gastos de cualquier producto.",
+      q: "Una comisión reducida pero recurrente, a 30 años…", o: ["No tiene efecto apreciable", "Puede restar una parte significativa del capital", "Solo afecta al primer año"], a: 1, why: "Los costes se acumulan y además reducen la base sobre la que actúa el interés compuesto." }
 ];
 const PROFILE_QS = [
-    { q: "Tu inversión cae un 15% en un mes. ¿Qué haces?", o: ["Vendo todo, no me aguanto", "Espero, pero con nervios", "Aprovecho para aportar más"] },
-    { q: "¿Cuándo necesitarías este dinero?", o: ["En menos de 3 años", "Entre 3 y 8 años", "En más de 8 años"] },
-    { q: "Para ti, ganar un 6% con calma o un 12% con sustos…", o: ["6% con calma, siempre", "Depende del día", "12% aunque haya sustos"] },
-    { q: "¿Cuánto sabes de inversión?", o: ["Empiezo de cero", "Lo básico", "Sigo los mercados"] },
-    { q: "Si pierdes parte de lo invertido, tu situación vital…", o: ["Se complicaría mucho", "Me afectaría pero lo asumo", "No cambiaría nada"] }
+    { q: "Tu inversión cae un 15 % en un mes. ¿Cómo reaccionas?", o: ["Vendo para evitar más pérdidas", "Mantengo, aunque con inquietud", "Mantengo o aporto más"] },
+    { q: "¿En qué plazo prevés necesitar este dinero?", o: ["Menos de 3 años", "Entre 3 y 8 años", "Más de 8 años"] },
+    { q: "¿Qué alternativa prefieres?", o: ["Rentabilidad moderada y estable", "Un equilibrio entre ambas", "Mayor rentabilidad potencial con oscilaciones"] },
+    { q: "¿Cómo describirías tu conocimiento financiero?", o: ["Básico", "Intermedio", "Avanzado"] },
+    { q: "Una pérdida parcial de lo invertido afectaría a tu situación…", o: ["De forma importante", "De forma moderada", "De forma poco relevante"] }
 ];
 const PROFILES = {
-    Prudente: { ico: "🛡️", d: "Priorizas la tranquilidad. Estabilidad, plazos cortos y entender bien cada paso." },
-    Equilibrado: { ico: "⚖️", d: "Aceptas algo de vaivén a cambio de crecer. Mezcla de estabilidad y crecimiento a medio plazo." },
-    Dinámico: { ico: "🚀", d: "Toleras fuertes altibajos si el horizonte es largo. Ojo: más potencial implica más riesgo de pérdida." }
+    Conservador: "Prioridad a la preservación del capital y a la estabilidad. Horizontes cortos y baja tolerancia a las oscilaciones.",
+    Moderado: "Disposición a asumir cierta volatilidad a cambio de crecimiento, con un horizonte de medio plazo.",
+    Dinámico: "Mayor tolerancia a las oscilaciones en busca de crecimiento a largo plazo. Más potencial implica también más riesgo de pérdida."
 };
 
-function viewAprende() {
-    return `<div class="sec-head" style="margin-top:0"><div><p class="eyebrow">04 · Aprende</p><h2>Finanzas en 60 segundos.</h2>
-        <p>Micro-lecciones con mini-test. Cada acierto te da <b>+20 XP</b>.</p></div></div>
-    <div class="grid g3">${LESSONS.map(l => `<button class="lesson ${S.lessons.includes(l.id) ? "done" : ""}" data-act="lesson" data-id="${l.id}"><span class="ic">${l.ico}</span><h3>${l.title}</h3><span class="muted small-t">${l.min} min · mini-test</span></button>`).join("")}</div>
+function viewFormacion() {
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Formación</p><h2>Conceptos esenciales, en dos minutos.</h2>
+        <p>Seis módulos breves con una pregunta de comprobación. ${S.lessons.length} de ${LESSONS.length} completados.</p></div></div>
+    <div class="lessons">${LESSONS.map((l, i) => `<button class="lesson ${S.lessons.includes(l.id) ? "done" : ""}" data-act="lesson" data-id="${l.id}">
+        <span class="n">${String(i + 1).padStart(2, "0")}</span><span><h3>${l.title}</h3><p>${l.sub}</p></span><span class="st">${S.lessons.includes(l.id) ? "Completado" : `${l.min} min`}</span></button>`).join("")}</div>
+    </section>
 
-    <div class="grid g2" style="margin-top:16px">
-        <div class="card"><p class="eyebrow">Test de perfil</p><h3>¿Qué tipo de ahorrador/a eres?</h3>
-            ${S.quiz ? `<p style="margin:10px 0"><b>${PROFILES[S.quiz.profile].ico} ${S.quiz.profile}</b> <span class="muted">· ${PROFILES[S.quiz.profile].d}</span></p>` : `<p class="muted" style="margin:10px 0">5 preguntas, 1 minuto. Sirve para personalizar el simulador.</p>`}
-            <button class="btn small" data-act="quiz">${S.quiz ? "Repetir test" : "Hacer el test (+30 XP)"}</button></div>
-        <div class="card"><p class="eyebrow">Regla 50/30/20</p><h3>Reparte tu dinero</h3>
-            <div class="field" style="margin-top:12px"><label for="income">Ingresos netos al mes (€)</label><input id="income" type="number" min="0" step="10" placeholder="1200" data-input="income"></div>
-            <div id="budgetOut" class="muted small-t">Escribe tus ingresos y te lo calculo.</div></div>
-    </div>
+    <section class="section cols c2">
+        <div class="panel"><p class="kicker">Perfil de inversor</p><h3>${S.quiz ? `Perfil ${S.quiz.profile.toLowerCase()}` : "Conoce tu perfil"}</h3>
+            <p class="muted" style="margin:8px 0 22px">${S.quiz ? PROFILES[S.quiz.profile] : "Cinco preguntas para orientar el escenario de referencia del simulador. Ejercicio educativo, no evaluación de idoneidad."}</p>
+            <button class="btn ${S.quiz ? "line" : ""}" data-act="quiz">${S.quiz ? "Repetir cuestionario" : `Iniciar cuestionario ${ARROW}`}</button></div>
+        <div class="panel"><p class="kicker">Regla 50 / 30 / 20</p><h3>Distribuye tus ingresos</h3>
+            <div class="field" style="margin-top:16px"><label for="income">Ingresos netos mensuales</label><input id="income" type="number" min="0" step="10" placeholder="1.200" data-input="income"></div>
+            <div id="budgetOut" class="muted small">Introduce un importe para ver la distribución orientativa.</div></div>
+    </section>
 
-    <div class="sec-head"><div><p class="eyebrow">Contexto</p><h2>Datos de referencia</h2><p>Separamos lo observado de lo simulado. Cifras del prototipo: verifica siempre la fuente oficial.</p></div></div>
-    <div class="grid g4">
-        ${[["Inflación zona euro", "3,3%", "Ago 2026 · Eurostat"], ["Objetivo de inflación BCE", "2,0%", "Medio plazo · BCE"], ["CaixaBank Destino 2026", "6,54%", "Rentabilidad histórica 1 año"], ["CaixaBank Selección Tendencias", "24,64%", "Rentabilidad histórica 1 año"]]
-            .map(([a, b, c]) => `<div class="card stat"><span>${a}</span><strong>${b}</strong><small>${c}</small></div>`).join("")}
-    </div>
-    <div class="insight" style="margin-top:16px">💡 Con una inflación del 3,3%, <b>1.000 € parados valdrían ~${fmt(Math.round(1000 / Math.pow(1.033, 10)))}</b> en poder de compra dentro de 10 años.</div>
-    <p class="disclaimer" style="margin-top:14px">Las rentabilidades pasadas no son un indicador fiable de rentabilidades futuras. Lo observado no se usa como promesa sobre el futuro de ninguna meta.</p>
-    ${disclaimer(true)}`;
+    <section class="section"><div class="sec-head"><div><p class="kicker">Contexto de mercado</p><h2>Datos de referencia</h2>
+        <p>Diferenciamos los datos observados de las hipótesis del simulador. Cifras recogidas para el prototipo: contrástalas siempre con la fuente oficial.</p></div></div>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Indicador</th><th>Referencia</th><th class="r">Valor</th></tr></thead><tbody>
+            <tr><td>Inflación zona euro</td><td class="muted">Agosto 2026 · Eurostat</td><td class="r"><b>3,3 %</b></td></tr>
+            <tr><td>Objetivo de inflación del BCE</td><td class="muted">Medio plazo · BCE</td><td class="r"><b>2,0 %</b></td></tr>
+            <tr><td>CaixaBank Destino 2026</td><td class="muted">Rentabilidad histórica a 1 año</td><td class="r"><b>6,54 %</b></td></tr>
+            <tr><td>CaixaBank Selección Tendencias</td><td class="muted">Rentabilidad histórica a 1 año</td><td class="r"><b>24,64 %</b></td></tr>
+        </tbody></table></div>
+        <div class="note" style="margin-top:24px">Con una inflación del 3,3 %, <b>1.000 € sin remunerar equivaldrían a unos ${fmtR(1000 / Math.pow(1.033, 10))}</b> de poder adquisitivo actual dentro de diez años.</div>
+        <p class="disclaim">Las rentabilidades pasadas no son un indicador fiable de rentabilidades futuras. La información sobre fondos se muestra con fines ilustrativos y no constituye una recomendación.</p>
+    </section>`;
 }
-const disclaimer = skip => skip ? "" : `<p class="disclaimer">Horizonte es un prototipo académico con fines educativos del reto CaixaBank Asset Management × Google. Las simulaciones usan hipótesis ilustrativas, no constituyen asesoramiento financiero ni garantizan resultados. Invertir conlleva riesgo de pérdida.</p>`;
 
 /* =========================================================
    Render + router
 ========================================================= */
-const VIEWS = { inicio: viewInicio, metas: viewMetas, simulador: viewSimulador, circulo: viewCirculo, aprende: viewAprende };
+const VIEWS = { resumen: viewResumen, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, formacion: viewFormacion };
+const TITLES = { resumen: "Resumen", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", formacion: "Formación" };
 let lastRoute = null;
 function render(animate = true) {
-    const r = VIEWS[route()] ? route() : "inicio";
+    const r = VIEWS[route()] ? route() : "resumen";
     const el = $("#view");
     const changed = r !== lastRoute;
     el.innerHTML = VIEWS[r]();
-    if (animate && changed) { el.classList.remove("view-in"); void el.offsetWidth; el.classList.add("view-in"); window.scrollTo(0, 0); }
-    $$("#tabs a").forEach(a => { a.classList.toggle("on", a.dataset.tab === r); a.toggleAttribute("aria-current", a.dataset.tab === r); });
-    if (changed) { stopCirclePolling(); if (r === "circulo") startCirclePolling(); document.title = `Horizonte | ${r[0].toUpperCase() + r.slice(1)}`; }
+    if (animate && changed) { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
+    $$("#nav a").forEach(a => { const on = a.dataset.tab === r; a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
+    if (changed) { stopCirclePolling(); if (r === "circulo") startCirclePolling(); document.title = `Horizonte · ${TITLES[r]}`; }
     lastRoute = r;
     if (r === "simulador") { sim.hover = null; requestAnimationFrame(drawSim); }
     paintChrome();
@@ -560,59 +528,53 @@ addEventListener("resize", () => route() === "simulador" && drawSim());
 /* =========================================================
    Acciones
 ========================================================= */
-const EMOJIS = ["🎯", "✈️", "🏠", "🎓", "🚗", "🎮", "💍", "🛟", "🎸", "📱", "🌴", "👟"];
 const find = id => S.goals.find(g => g.id === id);
 
 function goalForm(g = {}) {
-    return `<p class="eyebrow">${g.id ? "Editar meta" : "Nueva meta"}</p><h2>${g.id ? "Ajusta tu meta" : "¿Para qué quieres ahorrar?"}</h2>
-    <form data-form="goal" style="margin-top:16px" novalidate>
-        <input type="hidden" name="id" value="${esc(g.id || "")}"><input type="hidden" name="emoji" value="${esc(g.emoji || "🎯")}">
-        <div class="field"><label>Elige un emoji</label><div class="emoji-pick">${EMOJIS.map(e => `<button type="button" data-act="pickEmoji" data-e="${e}" class="${(g.emoji || "🎯") === e ? "on" : ""}">${e}</button>`).join("")}</div></div>
-        <div class="field"><label for="gName">Nombre</label><input id="gName" name="name" maxlength="40" placeholder="Ej. Viaje a Japón" value="${esc(g.name || "")}" required></div>
-        <div class="grid g2" style="gap:12px">
-            <div class="field"><label for="gTarget">Objetivo (€)</label><input id="gTarget" name="target" type="number" min="1" step="0.01" placeholder="3000" value="${g.target ?? ""}" required></div>
-            <div class="field"><label for="gYear">Año objetivo</label><input id="gYear" name="year" type="number" min="${YEAR}" max="${YEAR + 60}" value="${g.year ?? YEAR + 2}" required></div>
+    const cat = g.category || "otro";
+    return `<p class="kicker">${g.id ? "Editar objetivo" : "Nuevo objetivo"}</p><h2>${g.id ? "Ajusta los parámetros" : "¿Para qué quieres ahorrar?"}</h2>
+    <form data-form="goal" style="margin-top:24px" novalidate>
+        <input type="hidden" name="id" value="${esc(g.id || "")}">
+        <div class="field"><label for="gCat">Categoría</label><select id="gCat" name="category">${Object.entries(CATS).map(([k, v]) => `<option value="${k}" ${k === cat ? "selected" : ""}>${v}</option>`).join("")}</select></div>
+        <div class="field"><label for="gName">Nombre del objetivo</label><input id="gName" name="name" maxlength="40" placeholder="Ej. Viaje a Japón" value="${esc(g.name || "")}" required></div>
+        <div class="cols c2" style="gap:0 16px">
+            <div class="field"><label for="gTarget">Importe objetivo (€)</label><input id="gTarget" name="target" type="number" min="1" step="0.01" placeholder="3000" value="${g.target ?? ""}" required></div>
+            <div class="field"><label for="gYear">Año</label><input id="gYear" name="year" type="number" min="${YEAR}" max="${YEAR + 60}" value="${g.year ?? YEAR + 2}" required></div>
         </div>
         <div class="field"><label for="gMonthly">Aportación mensual prevista (€)</label><input id="gMonthly" name="monthly" type="number" min="0" step="0.01" placeholder="100" value="${g.monthly ?? ""}"></div>
-        <p class="err" hidden id="goalErr"></p>
-        <button class="btn block" type="submit">${g.id ? "Guardar cambios" : "Crear meta (+15 XP)"}</button>
+        <p class="err" hidden></p>
+        <button class="btn full" type="submit">${g.id ? "Guardar cambios" : "Crear objetivo"}</button>
     </form>`;
 }
 
 const ACTIONS = {
     closeSheet: closeSheet,
     closeSheetBg: (el, e) => { if (e.target === el) closeSheet(); },
-    theme: () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"),
 
     newGoal: () => openSheet(goalForm()),
     tpl: el => {
         const t = TEMPLATES[+el.dataset.i];
-        openSheet(goalForm({ emoji: t.emoji, name: t.name, target: t.target, year: YEAR + t.years, monthly: t.monthly }));
-    },
-    pickEmoji: el => {
-        $("input[name=emoji]", el.closest("form")).value = el.dataset.e;
-        $$(".emoji-pick button", el.closest("form")).forEach(b => b.classList.toggle("on", b === el));
+        openSheet(goalForm({ category: t.category, name: t.name, target: t.target, year: YEAR + t.years, monthly: t.monthly }));
     },
     editGoal: el => openSheet(goalForm(find(el.dataset.id))),
     deleteGoal: el => {
         const g = find(el.dataset.id);
-        if (!confirm(`¿Eliminar «${g.name}» y todas sus aportaciones? No se puede deshacer.`)) return;
-        S.goals = S.goals.filter(x => x !== g); save(); closeSheet(); render(false); toast("Meta eliminada");
+        if (!confirm(`¿Eliminar «${g.name}» y todas sus aportaciones? Esta acción no se puede deshacer.`)) return;
+        S.goals = S.goals.filter(x => x !== g); save(); closeSheet(); render(false); toast("Objetivo eliminado.");
     },
 
     contribute: el => {
         const g = find(el.dataset.id);
-        const sug = [10, 25, 50, 100];
-        if (g.monthly > 0 && !sug.includes(g.monthly)) sug.unshift(g.monthly);
-        openSheet(`<p class="eyebrow">Nueva aportación</p><h2>${esc(g.emoji)} ${esc(g.name)}</h2>
-        <p class="muted">Llevas ${fmt(saved(g))} de ${fmt(g.target)}.</p>
-        <form data-form="contrib" style="margin-top:16px" novalidate><input type="hidden" name="id" value="${g.id}">
-            <div class="chips" style="margin-bottom:14px">${sug.slice(0, 5).map(v => `<button type="button" class="chip" data-act="quickAmt" data-v="${v}">${fmt(v)}</button>`).join("")}</div>
-            <div class="field"><label for="cAmt">Cantidad (€)</label><input id="cAmt" name="amount" type="number" min="0.01" step="0.01" required placeholder="25"></div>
-            <div class="field"><label for="cNote">Nota (opcional)</label><input id="cNote" name="note" maxlength="60" placeholder="Ej. propina del finde"></div>
-            <p class="err" hidden></p><button class="btn block" type="submit">Registrar (+10 XP)</button></form>`);
+        const sug = [...new Set([g.monthly > 0 ? g.monthly : null, 25, 50, 100, 250].filter(Boolean))].slice(0, 4);
+        openSheet(`<p class="kicker">Registrar aportación</p><h2>${esc(g.name)}</h2>
+        <p class="muted">Acumulado: ${fmt(saved(g))} de ${fmt(g.target)}.</p>
+        <form data-form="contrib" style="margin-top:24px" novalidate><input type="hidden" name="id" value="${g.id}">
+            <div class="opts">${sug.map(v => `<button type="button" data-act="quickAmt" data-v="${v}">${fmt(v)}</button>`).join("")}</div>
+            <div class="field"><label for="cAmt">Importe (€)</label><input id="cAmt" name="amount" type="number" min="0.01" step="0.01" required></div>
+            <div class="field"><label for="cNote">Concepto (opcional)</label><input id="cNote" name="note" maxlength="60" placeholder="Ej. nómina de octubre"></div>
+            <p class="err" hidden></p><button class="btn full" type="submit">Registrar</button></form>`);
     },
-    quickAmt: el => { const i = $("#cAmt"); i.value = el.dataset.v; i.focus(); },
+    quickAmt: el => { $("#cAmt").value = el.dataset.v; $$(".opts button").forEach(b => b.classList.toggle("on", b === el)); },
     goalDetail: el => showDetail(el.dataset.id),
     delContrib: el => {
         const g = find(el.dataset.id);
@@ -630,63 +592,63 @@ const ACTIONS = {
     authSwitch: el => authSheet(el.dataset.mode),
     profile: () => profileSheet(),
     logout: async () => {
-        try { await api("/auth/logout", { method: "POST", body: {} }); } catch { /* ignora */ }
-        user = null; S = normalize(lsGet("hz_guest")); circ = { list: null, err: null, timer: null, last: "" };
-        closeSheet(); lastRoute = null; render(false); toast("Sesión cerrada");
+        try { await api("/auth/logout", { method: "POST", body: {} }); } catch { /* ignorar */ }
+        user = null; S = normalize(lsGet("hz_guest")); resetCirc();
+        closeSheet(); lastRoute = null; render(false); toast("Sesión cerrada.");
     },
     demo: () => {
         const d = n => { const x = new Date(); x.setDate(x.getDate() - n); return isoDate(x); };
-        const mk = (name, emoji, target, year, monthly, list) => ({ id: uid() + name.length, name, emoji, target, year, monthly, contribs: list.map(([n, a]) => ({ id: uid() + n, amount: a, date: d(n), note: "" })) });
+        const mk = (category, name, target, year, monthly, list) => ({ id: uid() + name.length, category, name, target, year, monthly, contribs: list.map(([n, a]) => ({ id: uid() + n, amount: a, date: d(n), note: "" })) });
         S.goals.push(
-            mk("Entrada de mi casa", "🏠", 25000, YEAR + 6, 300, [[75, 1200], [50, 300], [22, 300], [15, 300], [8, 300], [1, 300]]),
-            mk("Viaje a Japón", "✈️", 3000, YEAR + 1, 150, [[40, 400], [20, 150], [3, 150]]),
-            mk("Fondo de emergencia", "🛟", 3000, YEAR + 2, 125, [[30, 500], [9, 125]])
+            mk("vivienda", "Entrada de vivienda", 25000, YEAR + 6, 300, [[75, 1200], [50, 300], [22, 300], [15, 300], [8, 300], [1, 300]]),
+            mk("viaje", "Viaje a Japón", 3000, YEAR + 1, 150, [[40, 400], [20, 150], [3, 150]]),
+            mk("emergencia", "Colchón de emergencia", 3000, YEAR + 2, 125, [[30, 500], [9, 125]])
         );
-        addXp(60); save(); closeSheet(); render(false); toast("Datos demo cargados 🎬");
+        save(); closeSheet(); render(false); toast("Datos de demostración cargados.");
     },
     reset: () => {
-        if (!confirm("¿Borrar TODOS tus datos (metas, XP, logros)? No se puede deshacer.")) return;
-        S = blank(); save(); closeSheet(); render(false); toast("Datos borrados");
+        if (!confirm("¿Eliminar todos tus datos (objetivos, aportaciones y progreso)? Esta acción no se puede deshacer.")) return;
+        S = blank(); save(); closeSheet(); render(false); toast("Datos eliminados.");
     },
     exportData: () => {
         const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], { type: "application/json" })), download: "horizonte-datos.json" });
         a.click(); URL.revokeObjectURL(a.href);
     },
 
-    newCircle: () => openSheet(`<p class="eyebrow">Nuevo círculo</p><h2>Una meta, tu gente</h2>
-        <form data-form="circle" style="margin-top:16px" novalidate><input type="hidden" name="emoji" value="🎯">
-            <div class="field"><label>Emoji</label><div class="emoji-pick">${EMOJIS.map((e, i) => `<button type="button" data-act="pickEmoji" data-e="${e}" class="${i ? "" : "on"}">${e}</button>`).join("")}</div></div>
-            <div class="field"><label for="ccName">Nombre del objetivo común</label><input id="ccName" name="name" maxlength="40" placeholder="Ej. Interrail verano" required></div>
-            <div class="field"><label for="ccT">Objetivo conjunto (€)</label><input id="ccT" name="target" type="number" min="1" step="1" placeholder="4000" required></div>
-            <p class="err" hidden></p><button class="btn block" type="submit">Crear círculo</button></form>`),
-    joinCircle: () => openSheet(`<p class="eyebrow">Unirme</p><h2>Introduce el código</h2>
-        <form data-form="join" style="margin-top:16px" novalidate><div class="field"><label for="jc">Código de 6 caracteres</label>
-        <input id="jc" name="code" maxlength="6" autocomplete="off" style="text-transform:uppercase;letter-spacing:.3em;font-size:1.3rem;text-align:center" required></div>
-        <p class="err" hidden></p><button class="btn block" type="submit">Unirme</button></form>`),
+    newCircle: () => openSheet(`<p class="kicker">Nuevo círculo</p><h2>Objetivo compartido</h2>
+        <form data-form="circle" style="margin-top:24px" novalidate>
+            <div class="field"><label for="ccCat">Categoría</label><select id="ccCat" name="category">${Object.entries(CATS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
+            <div class="field"><label for="ccName">Nombre</label><input id="ccName" name="name" maxlength="40" placeholder="Ej. Interrail de verano" required></div>
+            <div class="field"><label for="ccT">Importe objetivo conjunto (€)</label><input id="ccT" name="target" type="number" min="1" step="1" placeholder="4000" required></div>
+            <p class="err" hidden></p><button class="btn full" type="submit">Crear círculo</button></form>`),
+    joinCircle: () => openSheet(`<p class="kicker">Unirme a un círculo</p><h2>Código de invitación</h2>
+        <form data-form="join" style="margin-top:24px" novalidate><div class="field"><label for="jc">Código de 6 caracteres</label>
+        <input id="jc" name="code" maxlength="6" autocomplete="off" style="text-transform:uppercase;letter-spacing:.3em;font-family:var(--serif);font-size:22px;text-align:center" required></div>
+        <p class="err" hidden></p><button class="btn full" type="submit">Unirme</button></form>`),
     circleContribute: el => {
         const c = circ.list.find(x => x.code === el.dataset.code);
-        openSheet(`<p class="eyebrow">Aportar al círculo</p><h2>${esc(c.emoji)} ${esc(c.name)}</h2>
-        <form data-form="circleContrib" style="margin-top:16px" novalidate><input type="hidden" name="code" value="${c.code}">
-            <div class="field"><label for="ccA">Cantidad (€)</label><input id="ccA" name="amount" type="number" min="0.01" step="0.01" required></div>
-            <p class="muted small-t" style="margin-bottom:12px">Solo se comparte esta cantidad, no el resto de tu cartera.</p>
-            <p class="err" hidden></p><button class="btn block" type="submit">Aportar (+10 XP)</button></form>`);
+        openSheet(`<p class="kicker">Aportación al círculo</p><h2>${esc(c.name)}</h2>
+        <form data-form="circleContrib" style="margin-top:24px" novalidate><input type="hidden" name="code" value="${c.code}">
+            <div class="field"><label for="ccA">Importe (€)</label><input id="ccA" name="amount" type="number" min="0.01" step="0.01" required></div>
+            <p class="muted small" style="margin-bottom:18px">Solo se comparte este importe con los participantes. El resto de tu información permanece privada.</p>
+            <p class="err" hidden></p><button class="btn full" type="submit">Registrar aportación</button></form>`);
     },
     shareCircle: async el => {
-        const text = `Únete a mi círculo «${el.dataset.name}» en Horizonte con el código ${el.dataset.code}`;
+        const text = `Te invito a mi círculo «${el.dataset.name}» en Horizonte. Código: ${el.dataset.code}`;
         try { if (navigator.share) return await navigator.share({ text }); } catch { return; }
-        try { await navigator.clipboard.writeText(text); toast("Invitación copiada 📋"); } catch { prompt("Copia la invitación:", text); }
+        try { await navigator.clipboard.writeText(text); toast("Invitación copiada al portapapeles."); } catch { prompt("Copia la invitación:", text); }
     },
     leaveCircle: async el => {
-        if (!confirm("¿Salir de este círculo?")) return;
-        try { await api(`/circles/${el.dataset.code}/leave`, { method: "POST", body: {} }); await loadCircles(true); toast("Has salido del círculo"); }
+        if (!confirm("¿Abandonar este círculo?")) return;
+        try { await api(`/circles/${el.dataset.code}/leave`, { method: "POST", body: {} }); await loadCircles(true); toast("Has abandonado el círculo."); }
         catch (e) { toast(e.message); }
     },
 
     lesson: el => lessonSheet(LESSONS.find(l => l.id === el.dataset.id)),
     quizAnswer: el => answerLesson(el),
     quiz: () => profileQuiz(0, []),
-    quizPick: el => profileQuiz(+el.dataset.step + 1, [...JSON.parse(el.dataset.acc), +el.dataset.v]),
-    newGoalFromBudget: el => { closeSheet(); openSheet(goalForm({ monthly: +el.dataset.v })); },
+    quizPick: el => profileQuiz(+el.dataset.step + 1, [...el.dataset.acc.split(",").filter(Boolean).map(Number), +el.dataset.v]),
+    newGoalFromBudget: el => openSheet(goalForm({ monthly: +el.dataset.v })),
 
     coach: () => coachSheet(),
     coachChip: el => sendCoach(el.dataset.q)
@@ -696,111 +658,106 @@ function showDetail(id) {
     const g = find(id);
     if (!g) return closeSheet();
     const hist = [...g.contribs].sort((a, b) => b.date.localeCompare(a.date));
-    openSheet(`<p class="eyebrow">${esc(g.emoji)} Detalle</p><h2>${esc(g.name)}</h2>
-    <div class="grid g3" style="gap:10px;margin:14px 0">
-        <div class="stat"><span>Ahorrado</span><strong style="font-size:1.3rem">${fmt(saved(g))}</strong></div>
-        <div class="stat"><span>Objetivo</span><strong style="font-size:1.3rem">${fmt(g.target)}</strong></div>
-        <div class="stat"><span>Mensual</span><strong style="font-size:1.3rem">${fmt(g.monthly)}</strong></div></div>
-    <div class="bar"><i style="width:${progress(g)}%"></i></div>
-    <h3 style="margin:20px 0 10px;font-size:1.1rem">Historial (${hist.length})</h3>
-    <div class="hist">${hist.length ? hist.map(c => `<div><span>${new Date(c.date + "T12:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}${c.note ? ` · <span class="muted">${esc(c.note)}</span>` : ""}</span>
-        <span><b>${fmt(c.amount)}</b> <button class="x" data-act="delContrib" data-id="${g.id}" data-cid="${c.id}" aria-label="Eliminar aportación">✕</button></span></div>`).join("") : `<p class="muted">Aún no has aportado nada.</p>`}</div>
-    <div class="row" style="margin-top:20px"><button class="btn small" data-act="contribute" data-id="${g.id}">+ Aportar</button>
-        <button class="btn ghost small" data-act="editGoal" data-id="${g.id}">Editar</button>
-        <button class="btn danger small" data-act="deleteGoal" data-id="${g.id}">Eliminar</button></div>`);
+    openSheet(`<p class="kicker">${CATS[g.category]}</p><h2>${esc(g.name)}</h2>
+    <div class="facts" style="border-top:1px solid var(--rule);margin:20px 0;grid-template-columns:repeat(3,1fr)">
+        <div class="fact" style="padding:16px 12px 16px 0"><span>Acumulado</span><strong style="font-size:24px">${fmt(saved(g))}</strong></div>
+        <div class="fact" style="padding:16px 12px"><span>Objetivo</span><strong style="font-size:24px">${fmt(g.target)}</strong></div>
+        <div class="fact" style="padding:16px 0 16px 12px;border-top:0"><span>Mensual</span><strong style="font-size:24px">${fmt(g.monthly)}</strong></div></div>
+    <p class="kicker" style="margin-top:8px">Movimientos</p>
+    ${hist.length ? `<div class="tbl-wrap" style="max-height:260px;overflow:auto"><table class="tbl"><thead><tr><th>Fecha</th><th>Concepto</th><th class="r">Importe</th><th class="r"></th></tr></thead><tbody>
+        ${hist.map(c => `<tr><td>${longDate(c.date)}</td><td class="muted">${esc(c.note) || "—"}</td><td class="r"><b>${fmt(c.amount)}</b></td><td class="r"><button class="x" data-act="delContrib" data-id="${g.id}" data-cid="${c.id}">Anular</button></td></tr>`).join("")}</tbody></table></div>`
+        : `<p class="muted">Todavía no hay aportaciones registradas.</p>`}
+    <div class="row" style="margin-top:28px;gap:20px"><button class="btn sm" data-act="contribute" data-id="${g.id}">Aportar</button>
+        <button class="link" data-act="editGoal" data-id="${g.id}">Editar</button>
+        <button class="link neg" data-act="deleteGoal" data-id="${g.id}">Eliminar</button></div>`);
 }
 
 function authSheet(mode) {
     const reg = mode === "register";
-    openSheet(`<p class="eyebrow">${reg ? "Nueva cuenta" : "Bienvenido/a de nuevo"}</p><h2>${reg ? "Crea tu cuenta" : "Entra a Horizonte"}</h2>
-    <p class="muted">Tus metas se guardan y sincronizan. Tu contraseña se almacena cifrada (scrypt).</p>
-    <form data-form="${reg ? "register" : "login"}" style="margin-top:16px" novalidate>
+    openSheet(`<p class="kicker">${reg ? "Alta de usuario" : "Acceso"}</p><h2>${reg ? "Crea tu cuenta" : "Accede a Horizonte"}</h2>
+    <p class="muted">Tus objetivos se sincronizan entre dispositivos. Las contraseñas se almacenan cifradas.</p>
+    <form data-form="${reg ? "register" : "login"}" style="margin-top:24px" novalidate>
         <div class="field"><label for="aU">Usuario</label><input id="aU" name="username" autocomplete="username" maxlength="40" required></div>
-        <div class="field"><label for="aP">Contraseña ${reg ? "(mín. 8)" : ""}</label><input id="aP" name="password" type="password" autocomplete="${reg ? "new-password" : "current-password"}" minlength="8" required></div>
-        ${reg ? `<div class="field"><label for="aP2">Repite la contraseña</label><input id="aP2" name="password2" type="password" autocomplete="new-password" required></div>` : ""}
-        <p class="err" hidden></p><button class="btn block" type="submit">${reg ? "Crear cuenta" : "Entrar"}</button></form>
-    <p style="text-align:center;margin-top:16px" class="muted">${reg ? "¿Ya tienes cuenta?" : "¿Nuevo por aquí?"} <button class="link" data-act="authSwitch" data-mode="${reg ? "login" : "register"}">${reg ? "Entrar" : "Crear cuenta"}</button></p>`);
+        <div class="field"><label for="aP">Contraseña${reg ? " (mínimo 8 caracteres)" : ""}</label><input id="aP" name="password" type="password" autocomplete="${reg ? "new-password" : "current-password"}" minlength="8" required></div>
+        ${reg ? `<div class="field"><label for="aP2">Confirmar contraseña</label><input id="aP2" name="password2" type="password" autocomplete="new-password" required></div>` : ""}
+        <p class="err" hidden></p><button class="btn full" type="submit">${reg ? "Crear cuenta" : "Acceder"}</button></form>
+    <p style="margin-top:20px" class="muted small">${reg ? "¿Ya tienes cuenta?" : "¿Aún no tienes cuenta?"} <button class="link" data-act="authSwitch" data-mode="${reg ? "login" : "register"}">${reg ? "Accede" : "Regístrate"}</button></p>`);
 }
 
 function profileSheet() {
-    const b = BADGES.filter(x => x.on()).length;
-    openSheet(`<p class="eyebrow">Mi perfil</p><h2>${user ? esc(user.username) : "Invitado/a"}</h2>
-    <p class="muted">Nivel ${level()} · ${levelName()} · ${S.xp} XP · ${b}/${BADGES.length} logros</p>
-    ${user ? `<p class="small-t muted" style="margin-top:8px">☁️ Datos sincronizados con tu cuenta.</p>` : `<p class="small-t muted" style="margin-top:8px">💾 Datos guardados solo en este dispositivo. <button class="link" data-act="auth">Entra</button> para sincronizarlos.</p>`}
-    <div style="display:grid;gap:10px;margin-top:20px">
-        ${S.goals.length ? "" : `<button class="btn ghost" data-act="demo">🎬 Cargar datos demo</button>`}
-        <button class="btn ghost" data-act="exportData">⬇️ Exportar mis datos</button>
-        <button class="btn danger" data-act="reset">🗑️ Borrar mis datos</button>
+    openSheet(`<p class="kicker">Mi cuenta</p><h2>${user ? esc(user.username) : "Usuario invitado"}</h2>
+    <p class="muted">${user ? "Datos sincronizados con tu cuenta." : `Datos guardados solo en este dispositivo. <button class="link" data-act="auth">Accede</button> para sincronizarlos.`}</p>
+    <table class="tbl" style="margin:24px 0"><tbody>
+        <tr><td>Objetivos activos</td><td class="r"><b>${S.goals.length}</b></td></tr>
+        <tr><td>Perfil de inversor</td><td class="r"><b>${S.quiz ? S.quiz.profile : "Pendiente"}</b></td></tr>
+        <tr><td>Formación</td><td class="r"><b>${S.lessons.length} de ${LESSONS.length}</b></td></tr>
+    </tbody></table>
+    <div style="display:grid;gap:10px">
+        ${S.goals.length ? "" : `<button class="btn line" data-act="demo">Cargar datos de demostración</button>`}
+        <button class="btn quiet" data-act="exportData">Exportar mis datos (JSON)</button>
+        <button class="btn danger" data-act="reset">Eliminar mis datos</button>
         ${user ? `<button class="btn" data-act="logout">Cerrar sesión</button>` : ""}
     </div>`);
 }
 
 function lessonSheet(l) {
-    openSheet(`<p class="eyebrow">Micro-lección · ${l.min} min</p><h2>${l.ico} ${l.title}</h2><p style="margin:12px 0 20px;line-height:1.6">${l.body}</p>
-    <h3 style="font-size:1.1rem;margin-bottom:12px">${l.q}</h3>
-    ${l.o.map((o, i) => `<button class="quiz-opt" data-act="quizAnswer" data-lesson="${l.id}" data-i="${i}">${o}</button>`).join("")}
-    <p id="quizMsg" class="muted" style="margin-top:8px" aria-live="polite"></p>`);
+    const i = LESSONS.indexOf(l) + 1;
+    openSheet(`<p class="kicker">Módulo ${String(i).padStart(2, "0")} · ${l.min} min</p><h2>${l.title}</h2><p style="margin:16px 0 28px;line-height:1.75">${l.body}</p>
+    <p class="kicker">Comprobación</p><h3 style="font-size:20px;margin-bottom:16px">${l.q}</h3>
+    ${l.o.map((o, k) => `<button class="qopt" data-act="quizAnswer" data-lesson="${l.id}" data-i="${k}">${o}</button>`).join("")}
+    <p id="quizMsg" class="muted" style="margin-top:12px" aria-live="polite"></p>`);
 }
 function answerLesson(el) {
-    const l = LESSONS.find(x => x.id === el.dataset.lesson), i = +el.dataset.i, msg = $("#quizMsg");
-    if (i === l.a) {
-        $$(".quiz-opt").forEach(b => (b.disabled = true));
+    const l = LESSONS.find(x => x.id === el.dataset.lesson), msg = $("#quizMsg");
+    if (+el.dataset.i === l.a) {
+        $$(".qopt").forEach(b => (b.disabled = true));
         el.classList.add("right");
-        const first = !S.lessons.includes(l.id);
-        if (first) { S.lessons.push(l.id); addXp(20); save(); confetti(); paintChrome(); }
-        msg.innerHTML = `✅ <b>¡Correcto!</b> ${l.why}${first ? " <b>+20 XP</b>" : ""}`;
+        if (!S.lessons.includes(l.id)) { S.lessons.push(l.id); save(); }
+        msg.innerHTML = `<b style="color:var(--pos)">Correcto.</b> ${l.why}`;
         render(false);
-    } else { el.classList.add("wrong"); msg.textContent = "❌ Casi. Prueba otra vez."; }
+    } else { el.classList.add("wrong"); msg.textContent = "No es correcto. Inténtalo de nuevo."; }
 }
 
 function profileQuiz(step, acc) {
     if (step >= PROFILE_QS.length) {
-        const score = acc.reduce((a, b) => a + b, 0) + PROFILE_QS.length; // 5..15
-        const profile = score <= 8 ? "Prudente" : score <= 11 ? "Equilibrado" : "Dinámico";
-        const first = !S.quiz;
+        const score = acc.reduce((a, b) => a + b, 0); // 0..10
+        const profile = score <= 3 ? "Conservador" : score <= 6 ? "Moderado" : "Dinámico";
         S.quiz = { profile, score };
-        if (first) addXp(30);
-        save(); confetti(); render(false);
-        const p = PROFILES[profile];
-        return openSheet(`<p class="eyebrow">Tu perfil</p><h2>${p.ico} ${profile}</h2><p style="margin:12px 0">${p.d}</p>
-        <p class="muted small-t">Es un ejercicio educativo orientativo, no una evaluación de idoneidad ni asesoramiento. Resalté tu perfil en el simulador.</p>
-        <a class="btn block" href="#/simulador" data-act="closeSheet" style="display:block;text-align:center;margin-top:16px">Verlo en el simulador</a>`);
+        save(); render(false);
+        return openSheet(`<p class="kicker">Resultado</p><h2>Perfil ${profile.toLowerCase()}</h2><p style="margin:16px 0">${PROFILES[profile]}</p>
+        <p class="muted small">Resultado orientativo con fines educativos. No sustituye la evaluación de idoneidad ni el asesoramiento de un profesional. El simulador destacará este escenario.</p>
+        <a class="btn full" href="#/simulador" data-act="closeSheet" style="margin-top:24px">Ver en el simulador ${ARROW}</a>`);
     }
     const q = PROFILE_QS[step];
-    openSheet(`<p class="eyebrow">Pregunta ${step + 1} de ${PROFILE_QS.length}</p><div class="bar" style="margin:6px 0 16px"><i style="width:${(step / PROFILE_QS.length) * 100}%"></i></div>
-    <h2 style="font-size:1.5rem;margin-bottom:16px">${q.q}</h2>
-    ${q.o.map((o, i) => `<button class="quiz-opt" data-act="quizPick" data-step="${step}" data-v="${i}" data-acc='${JSON.stringify(acc)}'>${o}</button>`).join("")}`);
+    openSheet(`<p class="kicker">Pregunta ${step + 1} de ${PROFILE_QS.length}</p>
+    <div class="steps">${PROFILE_QS.map((_, i) => `<i class="${i <= step ? "on" : ""}"></i>`).join("")}</div>
+    <h2 style="font-size:26px;margin-bottom:24px">${q.q}</h2>
+    ${q.o.map((o, i) => `<button class="qopt" data-act="quizPick" data-step="${step}" data-v="${i}" data-acc="${acc.join(",")}">${o}</button>`).join("")}`);
 }
 
-/* ---- Coach ---- */
-let chat = [{ who: "bot", text: "¡Ey! Soy Hori 👋 tu coach financiero. Pregúntame lo que quieras de ahorro, inflación o tus metas. Solo educación, nada de consejos personalizados de inversión." }];
+/* ---- Asistente ---- */
+let chat = [{ who: "bot", text: "Hola, soy el asistente de Horizonte. Puedo explicarte conceptos como el interés compuesto, la inflación o la diversificación, y comentar la situación de tus objetivos. Mi función es educativa: no realizo recomendaciones de inversión personalizadas." }];
 function coachSheet() {
-    const chips = ["¿Qué es el interés compuesto?", "¿Cómo voy con mis metas?", "¿Por dónde empiezo a invertir?", "Explícame la inflación"];
-    openSheet(`<p class="eyebrow">Coach · IA</p><h2>✨ Hori</h2>
+    const sugg = ["¿Qué es el interés compuesto?", "¿Cómo van mis objetivos?", "¿Por dónde empiezo a invertir?", "¿Cómo me afecta la inflación?"];
+    openSheet(`<p class="kicker">Asistente</p><h2>¿En qué puedo ayudarte?</h2>
     <div class="chat" id="chat" aria-live="polite">${chat.map(chatMsg).join("")}</div>
-    <div class="chips" style="margin-bottom:12px">${chips.map(c => `<button class="chip" data-act="coachChip" data-q="${esc(c)}">${esc(c)}</button>`).join("")}</div>
-    <form class="chat-form" data-form="coach"><input name="message" maxlength="500" placeholder="Pregunta lo que quieras…" autocomplete="off" aria-label="Mensaje para Hori"><button class="btn small" type="submit">Enviar</button></form>`, { wide: true });
+    <div class="sugg">${sugg.map(c => `<button data-act="coachChip" data-q="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+    <form class="chat-form" data-form="coach"><input name="message" maxlength="500" placeholder="Escribe tu pregunta" autocomplete="off" aria-label="Pregunta para el asistente"><button class="btn" type="submit">Enviar</button></form>`, { side: true });
     const c = $("#chat"); c.scrollTop = c.scrollHeight;
 }
-const chatMsg = m => `<div class="msg ${m.who}">${esc(m.text)}${m.src ? `<br><small class="muted">${m.src === "gemini" ? "Gemini" : "modo local"}</small>` : ""}</div>`;
+const chatMsg = m => `<div class="msg ${m.who}">${esc(m.text)}${m.src ? `<small>${m.src === "gemini" ? "Respuesta generada con Gemini" : "Respuesta predefinida"}</small>` : ""}</div>`;
 async function sendCoach(text) {
     text = text.trim();
     if (!text) return;
     chat.push({ who: "me", text });
     const box = $("#chat");
-    if (!box) return coachSheet(), sendCoach2(text);
-    box.insertAdjacentHTML("beforeend", chatMsg(chat.at(-1)) + `<div class="msg bot typing" id="typing"><span></span><span></span><span></span></div>`);
+    box.insertAdjacentHTML("beforeend", chatMsg(chat.at(-1)) + `<div class="msg bot typing" id="typing"></div>`);
     box.scrollTop = box.scrollHeight;
-    await sendCoach2(text, true);
-}
-async function sendCoach2(text, already) {
-    const box = $("#chat");
-    if (!already) box.insertAdjacentHTML("beforeend", `<div class="msg bot typing" id="typing"><span></span><span></span><span></span></div>`);
     let reply;
     try {
         const ctx = { goals: S.goals.map(g => ({ name: g.name, target: g.target, saved: Math.round(saved(g)), monthly: g.monthly, year: g.year })), profile: S.quiz?.profile };
         reply = await api("/coach", { method: "POST", body: { message: text, context: ctx } });
-    } catch (e) { reply = { reply: "Uf, no he podido conectar ahora mismo. Inténtalo de nuevo en un momento 🙏", source: "" }; }
+    } catch { reply = { reply: "No ha sido posible conectar con el asistente. Inténtalo de nuevo en unos instantes.", source: "" }; }
     chat.push({ who: "bot", text: reply.reply, src: reply.source });
     $("#typing")?.remove();
     const b = $("#chat");
@@ -811,68 +768,65 @@ async function sendCoach2(text, already) {
    Formularios
 ========================================================= */
 function formErr(form, msg) { const e = $(".err", form); e.textContent = msg; e.hidden = false; }
-async function afterAuth(res) {
+function afterAuth(res) {
     user = res.user;
     if (res.state && (hasData(normalize(res.state)) || !hasData(S))) S = normalize(res.state);
-    else if (hasData(S)) { /* servidor vacío: sube lo local */ }
-    save();
-    circ = { list: null, err: null, timer: null, last: "" }; lastRoute = null;
+    save(); // si el servidor no tenía datos, se suben los locales
+    resetCirc(); lastRoute = null;
     closeSheet(); render(false);
-    toast(`¡Hola, ${user.username}! 👋`);
+    toast(`Sesión iniciada como ${user.username}.`);
 }
 const FORMS = {
     goal: form => {
         const f = new FormData(form), name = String(f.get("name")).trim(), target = +f.get("target"), year = +f.get("year"), monthly = +f.get("monthly") || 0;
-        if (!name) return formErr(form, "Ponle un nombre a tu meta.");
-        if (!(target > 0)) return formErr(form, "El objetivo debe ser mayor que 0.");
+        if (!name) return formErr(form, "Indica un nombre para el objetivo.");
+        if (!(target > 0)) return formErr(form, "El importe objetivo debe ser mayor que cero.");
         if (!(year >= YEAR && year <= YEAR + 60)) return formErr(form, `El año debe estar entre ${YEAR} y ${YEAR + 60}.`);
         if (monthly < 0) return formErr(form, "La aportación no puede ser negativa.");
-        const id = f.get("id"), data = { name, target, year, monthly, emoji: f.get("emoji") };
-        if (id) { Object.assign(find(id), data); toast("Meta actualizada ✏️"); }
-        else { S.goals.push({ id: uid(), ...data, contribs: [] }); addXp(15); toast("¡Meta creada! +15 XP 🎯"); }
+        const id = f.get("id"), data = { name, target, year, monthly, category: f.get("category") };
+        if (id) { Object.assign(find(id), data); toast("Objetivo actualizado."); }
+        else { S.goals.push({ id: uid(), ...data, contribs: [] }); toast("Objetivo creado."); }
         save(); closeSheet(); render(false);
     },
     contrib: form => {
         const f = new FormData(form), amount = Math.round(+f.get("amount") * 100) / 100, g = find(f.get("id"));
-        if (!(amount > 0) || amount > 1e7) return formErr(form, "Introduce una cantidad válida.");
+        if (!(amount > 0) || amount > 1e7) return formErr(form, "Introduce un importe válido.");
         const before = progress(g);
         g.contribs.push({ id: uid(), amount, date: isoDate(), note: String(f.get("note")).trim() });
-        addXp(10); save();
+        save();
         const after = progress(g), hit = [100, 75, 50, 25].find(m => before < m && after >= m);
         closeSheet(); render(false);
-        if (hit === 100) { toast(`🏆 ¡Has completado «${g.name}»!`, 5000); confetti(); }
-        else if (hit) { toast(`🔥 ${hit}% de «${g.name}»`); confetti(); }
-        else toast(`+${fmt(amount)} guardados · +10 XP 💸`);
+        toast(hit === 100 ? `Objetivo «${g.name}» alcanzado.` : hit ? `«${g.name}» supera el ${hit} % de avance.` : `Aportación de ${fmt(amount)} registrada.`, hit ? 5000 : 3600);
     },
     login: async form => {
         const f = new FormData(form);
-        try { await afterAuth(await api("/auth/login", { method: "POST", body: { username: f.get("username"), password: f.get("password") } })); }
+        try { afterAuth(await api("/auth/login", { method: "POST", body: { username: f.get("username"), password: f.get("password") } })); }
         catch (e) { formErr(form, e.message); }
     },
     register: async form => {
         const f = new FormData(form);
         if (f.get("password") !== f.get("password2")) return formErr(form, "Las contraseñas no coinciden.");
-        try { await afterAuth(await api("/auth/register", { method: "POST", body: { username: f.get("username"), password: f.get("password") } })); }
+        try { afterAuth(await api("/auth/register", { method: "POST", body: { username: f.get("username"), password: f.get("password") } })); }
         catch (e) { formErr(form, e.message); }
     },
     circle: async form => {
         const f = new FormData(form);
         try {
-            await api("/circles", { method: "POST", body: { name: f.get("name"), target: f.get("target"), emoji: f.get("emoji") } });
-            S.flags.circle = true; save(); closeSheet(); await loadCircles(true); toast("Círculo creado 🎉"); confetti();
+            await api("/circles", { method: "POST", body: { name: f.get("name"), target: f.get("target"), category: f.get("category") } });
+            S.flags.circle = true; save(); closeSheet(); await loadCircles(true); toast("Círculo creado. Comparte el código para invitar a otros participantes.");
         } catch (e) { formErr(form, e.message); }
     },
     join: async form => {
         try {
             await api("/circles/join", { method: "POST", body: { code: new FormData(form).get("code") } });
-            S.flags.circle = true; save(); closeSheet(); await loadCircles(true); toast("¡Ya estás dentro! 👯");
+            S.flags.circle = true; save(); closeSheet(); await loadCircles(true); toast("Te has unido al círculo.");
         } catch (e) { formErr(form, e.message); }
     },
     circleContrib: async form => {
         const f = new FormData(form);
         try {
             await api(`/circles/${f.get("code")}/contribute`, { method: "POST", body: { amount: f.get("amount") } });
-            addXp(10); save(); closeSheet(); await loadCircles(true); toast("Aportación al círculo registrada 💪");
+            closeSheet(); await loadCircles(true); toast("Aportación al círculo registrada.");
         } catch (e) { formErr(form, e.message); }
     },
     coach: form => { const i = form.elements.message; const t = i.value; i.value = ""; sendCoach(t); }
@@ -907,10 +861,10 @@ document.addEventListener("input", e => {
         render(false);
     } else if (k === "income") {
         const v = +t.value, out = $("#budgetOut");
-        if (!(v > 0)) { out.textContent = "Escribe tus ingresos y te lo calculo."; return; }
-        out.innerHTML = `<div class="split"><div style="flex:50;background:var(--a1)">50%</div><div style="flex:30;background:var(--a2)">30%</div><div style="flex:20;background:var(--warm);color:#1a1200">20%</div></div>
-        <div class="grid g3" style="gap:8px;margin-top:10px"><div><b>${fmt(v * .5)}</b><br>Necesidades</div><div><b>${fmt(v * .3)}</b><br>Disfrutar</div><div><b>${fmt(v * .2)}</b><br>Ahorro e inversión</div></div>
-        <button class="btn small" style="margin-top:12px" data-act="newGoalFromBudget" data-v="${Math.round(v * .2)}">Crear meta con mi 20%</button>`;
+        if (!(v > 0)) { out.textContent = "Introduce un importe para ver la distribución orientativa."; return; }
+        out.innerHTML = `<div class="split"><div style="flex:50;background:var(--navy)">50 %</div><div style="flex:30;background:var(--blue)">30 %</div><div style="flex:20;background:var(--accent)">20 %</div></div>
+        <table class="tbl"><tbody><tr><td>Necesidades</td><td class="r"><b>${fmt(v * .5)}</b></td></tr><tr><td>Ocio y estilo de vida</td><td class="r"><b>${fmt(v * .3)}</b></td></tr><tr><td>Ahorro e inversión</td><td class="r"><b>${fmt(v * .2)}</b></td></tr></tbody></table>
+        <button class="btn sm line" style="margin-top:16px" data-act="newGoalFromBudget" data-v="${Math.round(v * .2)}">Crear un objetivo con el 20 %</button>`;
     }
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
@@ -919,9 +873,8 @@ function simPointer(e) {
     const cv = e.target.closest?.("#simChart");
     if (!cv || !cv._geom) return;
     const r = cv.getBoundingClientRect(), { L, w } = cv._geom;
-    const x = (e.clientX - r.left - L) / w;
-    sim.hover = Math.min(sim.years, Math.max(0, Math.round(x * sim.years)));
-    drawSim();
+    const i = Math.min(sim.years, Math.max(0, Math.round(((e.clientX - r.left - L) / w) * sim.years)));
+    if (i !== sim.hover) { sim.hover = i; drawSim(); }
 }
 document.addEventListener("pointermove", simPointer);
 document.addEventListener("pointerdown", simPointer);
@@ -931,7 +884,8 @@ document.addEventListener("pointerleave", e => { if (e.target.id === "simChart")
    Arranque
 ========================================================= */
 (async function init() {
-    setTheme(lsGet("hz_theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    const legacy = { "#/inicio": "resumen", "#/metas": "objetivos", "#/aprende": "formacion" }[location.hash];
+    if (legacy) history.replaceState(null, "", "#/" + legacy);
     render();
     try {
         const me = await api("/auth/me");
@@ -941,6 +895,5 @@ document.addEventListener("pointerleave", e => { if (e.target.id === "simChart")
             if (!me.state) save();
             lastRoute = null; render(false);
         }
-    } catch { /* servidor no disponible: modo invitado */ }
-    if (!lsGet("hz_seen") && !hasData(S)) { lsSet("hz_seen", 1); toast("¡Bienvenido/a! Crea una meta o carga datos demo desde tu perfil ✨", 5000); }
+    } catch { /* sin servidor: modo invitado */ }
 })();

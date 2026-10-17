@@ -3,44 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#0b1020">
-    <meta name="description" content="Horizonte: define para qué ahorras, simula tu futuro y alcanza tus metas con tu círculo. Prototipo CaixaBank Asset Management x Google.">
-    <title>Horizonte | Tu futuro empieza hoy</title>
+    <meta name="theme-color" content="#ffffff">
+    <meta name="description" content="Horizonte: planificación de objetivos financieros para la nueva generación de inversores. Prototipo CaixaBank Asset Management × Google.">
+    <title>Horizonte · Planificación de objetivos</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="icon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;1,8..60,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <a class="skip" href="#view">Saltar al contenido</a>
 
+    <div class="topline">
+        <span>CaixaBank Asset Management · Laboratorio Generación Z</span>
+        <span>Prototipo académico · Con la colaboración de Google</span>
+    </div>
+
     <header class="top">
-        <a class="logo" href="#/inicio" aria-label="Horizonte, inicio">horizonte<span>.</span></a>
-        <nav class="tabs" id="tabs" aria-label="Secciones">
-            <a href="#/inicio" data-tab="inicio"><i>🏠</i><b>Inicio</b></a>
-            <a href="#/metas" data-tab="metas"><i>🎯</i><b>Metas</b></a>
-            <a href="#/simulador" data-tab="simulador"><i>🔮</i><b>Simulador</b></a>
-            <a href="#/circulo" data-tab="circulo"><i>👯</i><b>Círculo</b></a>
-            <a href="#/aprende" data-tab="aprende"><i>🧠</i><b>Aprende</b></a>
-        </nav>
-        <div class="top-actions">
-            <button class="level-pill" id="levelPill" data-act="profile" aria-label="Nivel y perfil"></button>
-            <button class="icon-btn" data-act="theme" aria-label="Cambiar tema" id="themeBtn">🌙</button>
-            <button class="btn small" id="authBtn" data-act="auth">Entrar</button>
+        <div class="top-in">
+            <a class="brand" href="#/resumen" aria-label="Horizonte, resumen">
+                <span class="brand-mark" aria-hidden="true"></span>
+                <span class="brand-name">Horizonte</span>
+            </a>
+            <nav class="nav" id="nav" aria-label="Secciones">
+                <a href="#/resumen" data-tab="resumen">Resumen</a>
+                <a href="#/objetivos" data-tab="objetivos">Objetivos</a>
+                <a href="#/simulador" data-tab="simulador">Simulador</a>
+                <a href="#/circulo" data-tab="circulo">Círculo</a>
+                <a href="#/formacion" data-tab="formacion">Formación</a>
+            </nav>
+            <div class="top-actions">
+                <button class="txt-btn" data-act="coach">Asistente</button>
+                <button class="btn sm" id="authBtn" data-act="auth">Acceder</button>
+            </div>
         </div>
     </header>
 
     <main id="view" tabindex="-1"></main>
 
-    <button class="fab" id="coachBtn" data-act="coach" aria-label="Hablar con Hori, tu coach">
-        <span>✨</span><b>Hori</b>
-    </button>
+    <footer class="foot">
+        <div class="foot-in">
+            <div>
+                <p class="brand-name">Horizonte</p>
+                <p class="muted">Planificación de objetivos financieros para la nueva generación de inversores.</p>
+            </div>
+            <p class="legal">Prototipo académico desarrollado en el marco del Reto CaixaBank Asset Management × Google (ICAI). Contenido exclusivamente educativo. Las simulaciones se basan en hipótesis ilustrativas y no constituyen asesoramiento financiero, recomendación de inversión ni garantía de resultados. Invertir conlleva riesgo de pérdida del capital. Rentabilidades pasadas no garantizan rentabilidades futuras.</p>
+        </div>
+    </footer>
+
+    <button class="assist-fab" data-act="coach" aria-label="Abrir asistente">Asistente</button>
 
     <div id="sheetRoot"></div>
     <div id="toasts" aria-live="polite"></div>
-    <canvas id="confetti" aria-hidden="true"></canvas>
 
     <noscript><p style="padding:2rem">Horizonte necesita JavaScript para funcionar.</p></noscript>
     <script src="app.js"></script>
