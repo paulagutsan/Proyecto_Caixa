@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1020">
+    <meta name="description" content="Horizonte: define para qué ahorras, simula tu futuro y alcanza tus metas con tu círculo. Prototipo CaixaBank Asset Management x Google.">
+    <title>Horizonte | Tu futuro empieza hoy</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <a class="skip" href="#view">Saltar al contenido</a>
+
+    <header class="top">
+        <a class="logo" href="#/inicio" aria-label="Horizonte, inicio">horizonte<span>.</span></a>
+        <nav class="tabs" id="tabs" aria-label="Secciones">
+            <a href="#/inicio" data-tab="inicio"><i>🏠</i><b>Inicio</b></a>
+            <a href="#/metas" data-tab="metas"><i>🎯</i><b>Metas</b></a>
+            <a href="#/simulador" data-tab="simulador"><i>🔮</i><b>Simulador</b></a>
+            <a href="#/circulo" data-tab="circulo"><i>👯</i><b>Círculo</b></a>
+            <a href="#/aprende" data-tab="aprende"><i>🧠</i><b>Aprende</b></a>
+        </nav>
+        <div class="top-actions">
+            <button class="level-pill" id="levelPill" data-act="profile" aria-label="Nivel y perfil"></button>
+            <button class="icon-btn" data-act="theme" aria-label="Cambiar tema" id="themeBtn">🌙</button>
+            <button class="btn small" id="authBtn" data-act="auth">Entrar</button>
+        </div>
+    </header>
+
+    <main id="view" tabindex="-1"></main>
+
+    <button class="fab" id="coachBtn" data-act="coach" aria-label="Hablar con Hori, tu coach">
+        <span>✨</span><b>Hori</b>
+    </button>
+
+    <div id="sheetRoot"></div>
+    <div id="toasts" aria-live="polite"></div>
+    <canvas id="confetti" aria-hidden="true"></canvas>
+
+    <noscript><p style="padding:2rem">Horizonte necesita JavaScript para funcionar.</p></noscript>
+    <script src="app.js"></script>
+</body>
+</html>
