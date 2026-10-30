@@ -133,7 +133,7 @@ const MILESTONES = [
     { name: "1.000 € destinados a objetivos", on: () => totalSaved() >= 1000 },
     { name: "Un objetivo alcanzado", on: () => S.goals.some(isDone) },
     { name: "Perfil de inversor completado", on: () => !!S.quiz },
-    { name: "Tres módulos de formación", on: () => S.lessons.length >= 3 },
+    { name: "Tres temas dominados", on: () => topicsDone() >= 3 },
     { name: "Miembro de un círculo", on: () => !!S.flags.circle }
 ];
 
@@ -219,7 +219,7 @@ function viewResumen() {
             <p class="kicker">Planificación de objetivos</p>
             <h1>Invierte en la vida que <em>quieres tener.</em></h1>
             <p class="lead">Define para qué ahorras, proyecta distintos escenarios y avanza con constancia, solo o con tu círculo. Información clara, sin tecnicismos.</p>
-            <div class="row"><button class="btn" data-act="newGoal">Definir un objetivo ${ARROW}</button><a class="btn line" href="#/pulso">Entrar en Pulso</a></div>
+            <div class="row"><button class="btn" data-act="newGoal">Definir un objetivo ${ARROW}</button><a class="btn line" href="#/practica">Practicar 3 minutos</a></div>
         </div>
         <aside class="letter">
             <p class="kicker">Carta de tu yo futuro</p>
@@ -309,6 +309,18 @@ function viewSimulador() {
         <div class="note" id="simNote"></div>
     </div>
     <p class="disclaim">Rentabilidades anuales hipotéticas, constantes y sin costes ni fiscalidad. La rentabilidad real puede ser inferior, incluso negativa.</p>
+    </section>
+
+    <section class="section"><div class="sec-head"><div><p class="kicker">Contexto de mercado</p><h2>Datos de referencia</h2>
+        <p>Diferenciamos los datos observados de las hipótesis del simulador. Cifras recogidas para el prototipo: contrástalas siempre con la fuente oficial.</p></div></div>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Indicador</th><th>Referencia</th><th class="r">Valor</th></tr></thead><tbody>
+            <tr><td>Inflación zona euro</td><td class="muted">Agosto 2026 · Eurostat</td><td class="r"><b>3,3 %</b></td></tr>
+            <tr><td>Objetivo de inflación del BCE</td><td class="muted">Medio plazo · BCE</td><td class="r"><b>2,0 %</b></td></tr>
+            <tr><td>CaixaBank Destino 2026</td><td class="muted">Rentabilidad histórica a 1 año</td><td class="r"><b>6,54 %</b></td></tr>
+            <tr><td>CaixaBank Selección Tendencias</td><td class="muted">Rentabilidad histórica a 1 año</td><td class="r"><b>24,64 %</b></td></tr>
+        </tbody></table></div>
+        <div class="note" style="margin-top:24px">Con una inflación del 3,3 %, <b>1.000 € sin remunerar equivaldrían a unos ${fmtR(1000 / Math.pow(1.033, 10))}</b> de poder adquisitivo actual dentro de diez años.</div>
+        <p class="disclaim">Las rentabilidades pasadas no son un indicador fiable de rentabilidades futuras. La información sobre fondos se muestra con fines ilustrativos y no constituye una recomendación.</p>
     </section>`;
 }
 
@@ -441,27 +453,32 @@ function startCirclePolling() {
 }
 const stopCirclePolling = () => { clearInterval(circ.timer); circ.timer = null; };
 
-/* ---- Formación ---- */
-const LESSONS = [
-    { id: "compuesto", title: "Interés compuesto", sub: "Por qué el tiempo es el factor más determinante", min: 2,
-      body: "El interés compuesto consiste en obtener rendimientos sobre los rendimientos ya generados. Con <b>100 € al mes durante 30 años</b> y una rentabilidad hipotética del 5 % anual, se aportan 36.000 € y el capital podría alcanzar unos 82.000 €. <b>Empezar pronto suele pesar más que empezar con importes elevados.</b>",
-      q: "¿Qué factor tiene más peso a largo plazo en el interés compuesto?", o: ["El tiempo y la constancia", "Elegir el mejor momento para entrar", "Revisar la inversión a diario"], a: 0, why: "Cuantos más años se mantiene la inversión, mayor es el efecto de los rendimientos acumulados." },
-    { id: "inflacion", title: "Inflación", sub: "El coste invisible del dinero inmovilizado", min: 2,
-      body: "La inflación reduce el poder adquisitivo: con un 3 % anual, lo que hoy cuesta 100 € costará unos 134 € dentro de diez años. El dinero sin remunerar <b>compra menos cada año</b>. Por eso el simulador permite ver los importes en términos reales.",
-      q: "Mantienes un importe sin remunerar durante 10 años con una inflación del 3 %. ¿Qué ocurre?", o: ["Gana poder adquisitivo", "Pierde poder adquisitivo", "Su valor no cambia"], a: 1, why: "El importe nominal es el mismo, pero permite adquirir menos bienes y servicios." },
-    { id: "riesgo", title: "Riesgo y horizonte temporal", sub: "Cuándo necesitarás el dinero", min: 2,
-      body: "A mayor rentabilidad potencial, mayor riesgo de pérdida. La clave es <b>el plazo en que se necesitará el dinero</b>: en horizontes cortos suele primar la estabilidad; en horizontes largos es posible asumir más volatilidad.",
-      q: "Necesitas el dinero para un viaje dentro de seis meses. ¿Qué priorizas?", o: ["La máxima rentabilidad", "La estabilidad y la disponibilidad", "Seguir recomendaciones de redes sociales"], a: 1, why: "En plazos cortos no hay margen para recuperarse de una caída." },
-    { id: "diversificar", title: "Diversificación", sub: "Repartir para reducir la concentración", min: 2,
-      body: "Diversificar es repartir la inversión entre distintos activos, sectores y regiones para <b>reducir el impacto de que uno de ellos evolucione mal</b>. No elimina el riesgo, pero lo modera.",
-      q: "¿Cuál es el propósito principal de diversificar?", o: ["Garantizar ganancias", "Reducir la dependencia de un único activo", "Reducir impuestos"], a: 1, why: "La diversificación reparte el riesgo; no asegura resultados." },
-    { id: "emergencia", title: "Colchón de emergencia", sub: "La base antes de invertir", min: 1,
-      body: "Antes de invertir conviene disponer de <b>entre tres y seis meses de gastos básicos</b> en un instrumento líquido y de bajo riesgo. Evita tener que deshacer inversiones en un mal momento ante un imprevisto.",
-      q: "¿Qué importe suele recomendarse para un colchón de emergencia?", o: ["Una semana de gastos", "Entre tres y seis meses de gastos básicos", "Cinco años de ingresos"], a: 1, why: "Cubre imprevistos habituales sin necesidad de vender inversiones." },
-    { id: "costes", title: "Costes y comisiones", sub: "Pequeños porcentajes, grandes diferencias", min: 2,
-      body: "Un punto adicional de costes anuales parece poco, pero a 30 años con 100 € al mes puede suponer <b>en torno a un 16 % menos de capital final</b> (5 % frente a 4 %). Revisa siempre los gastos de cualquier producto.",
-      q: "Una comisión reducida pero recurrente, a 30 años…", o: ["No tiene efecto apreciable", "Puede restar una parte significativa del capital", "Solo afecta al primer año"], a: 1, why: "Los costes se acumulan y además reducen la base sobre la que actúa el interés compuesto." }
+/* ---- Aprende ----
+   Una sola sección: cada tema tiene una explicación breve (teoría) y sus tarjetas
+   de práctica (CARDS, más abajo). No hay tests aparte: practicar es la comprobación. */
+const TOPICS = [
+    { id: "compuesto", title: "Interés compuesto", sub: "Por qué el tiempo es el factor más determinante", cards: ["e30", "eearly", "q72", "m-rich"],
+      body: "El interés compuesto consiste en obtener rendimientos sobre los rendimientos ya generados. Con <b>100 € al mes durante 30 años</b> y una rentabilidad hipotética del 5 % anual, se aportan 36.000 € y el capital podría alcanzar unos 82.000 €. <b>Empezar pronto suele pesar más que empezar con importes elevados.</b>" },
+    { id: "inflacion", title: "Inflación", sub: "El coste invisible del dinero parado", cards: ["einf", "m-cash"],
+      body: "La inflación reduce el poder adquisitivo: con un 3 % anual, lo que hoy cuesta 100 € costará unos 134 € dentro de diez años. El dinero sin remunerar <b>compra menos cada año</b>. Por eso el simulador permite ver los importes en términos reales." },
+    { id: "riesgo", title: "Riesgo y horizonte", sub: "Cuándo necesitarás el dinero", cards: ["h2020", "h2008", "m-past"],
+      body: "A mayor rentabilidad potencial, mayor riesgo de pérdida. La clave es <b>el plazo en que se necesitará el dinero</b>: en horizontes cortos suele primar la estabilidad; en horizontes largos es posible asumir más volatilidad y esperar a que pasen las caídas." },
+    { id: "diversificar", title: "Diversificación", sub: "Repartir para no depender de una sola apuesta", cards: ["h2000", "m-div"],
+      body: "Diversificar es repartir la inversión entre distintos activos, sectores y regiones para <b>reducir el impacto de que uno de ellos evolucione mal</b>. No elimina el riesgo, pero lo modera." },
+    { id: "costes", title: "Costes y comisiones", sub: "Pequeños porcentajes, grandes diferencias", cards: ["efee"],
+      body: "Un punto adicional de costes anuales parece poco, pero a 30 años con 100 € al mes puede suponer <b>en torno a un 16 % menos de capital final</b>. Revisa siempre los gastos de cualquier producto." },
+    { id: "emergencia", title: "Antes de invertir", sub: "Colchón de emergencia y entender lo que compras", cards: ["qemerg", "crypto"],
+      body: "Antes de invertir conviene disponer de <b>entre tres y seis meses de gastos básicos</b> en algo líquido y de bajo riesgo, para no tener que vender en mal momento ante un imprevisto. Y una regla simple: <b>no inviertas en lo que no sabrías explicar</b>." },
+    { id: "estafas", title: "Estafas y apuestas", sub: "Cómo reconocer lo que no es invertir", cards: ["scam1", "scam2", "bet"],
+      body: "Rentabilidad alta y garantizada no existen a la vez. <b>Urgencia, promesas y entidad no registrada</b> son las señales clásicas de un chiringuito financiero: compruébalo siempre en la CNMV. Y apostar no es invertir: su resultado esperado es negativo por diseño." },
+    { id: "habitos", title: "Hábitos de gasto", sub: "Loud budgeting, doom spending y soft saving", cards: ["loud", "doom", "m-soft"],
+      body: "Las decisiones pequeñas y repetidas pesan más que las grandes. Decir en voz alta «no entra en mi presupuesto», <b>esperar 48 horas antes de una compra impulsiva</b> y automatizar una cantidad sostenible permiten ahorrar sin renunciar a vivir." }
 ];
+const MASTERED = 2; // caja de Leitner a partir de la cual una tarjeta se da por dominada (acertada dos veces espaciadas)
+const isMastered = id => (pulseState().box[id] || 0) >= MASTERED;
+const topicDone = t => t.cards.every(isMastered);
+const topicsDone = () => TOPICS.filter(topicDone).length;
+
 const PROFILE_QS = [
     { q: "Tu inversión cae un 15 % en un mes. ¿Cómo reaccionas?", o: ["Vendo para evitar más pérdidas", "Mantengo, aunque con inquietud", "Mantengo o aporto más"] },
     { q: "¿En qué plazo prevés necesitar este dinero?", o: ["Menos de 3 años", "Entre 3 y 8 años", "Más de 8 años"] },
@@ -475,11 +492,29 @@ const PROFILES = {
     Dinámico: "Mayor tolerancia a las oscilaciones en busca de crecimiento a largo plazo. Más potencial implica también más riesgo de pérdida."
 };
 
-function viewFormacion() {
-    return `<section class="section"><div class="sec-head"><div><p class="kicker">Formación</p><h2>Conceptos esenciales, en dos minutos.</h2>
-        <p>Seis módulos breves con una pregunta de comprobación. ${S.lessons.length} de ${LESSONS.length} completados.</p></div></div>
-    <div class="lessons">${LESSONS.map((l, i) => `<button class="lesson ${S.lessons.includes(l.id) ? "done" : ""}" data-act="lesson" data-id="${l.id}">
-        <span class="n">${String(i + 1).padStart(2, "0")}</span><span><h3>${l.title}</h3><p>${l.sub}</p></span><span class="st">${S.lessons.includes(l.id) ? "Completado" : `${l.min} min`}</span></button>`).join("")}</div>
+function viewAprende() {
+    const p = pulseState(), t = today();
+    const due = CARDS.filter(c => p.due[c.id] !== undefined && p.due[c.id] <= t).length;
+    const fresh = CARDS.filter(c => p.due[c.id] === undefined).length;
+    const streak = pulseStreak();
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Aprende</p><h2>Aprende decidiendo, no memorizando.</h2>
+        <p>Cada tarjeta te pide decidir antes de ver la respuesta. Lo que falles vuelve más adelante; lo que aciertes, cada vez más espaciado.</p></div></div>
+        <div class="panel today">
+            <div><p class="kicker">Práctica de hoy · 3 minutos</p>
+                <h3>${due ? `${due} tarjeta${due === 1 ? "" : "s"} para repasar` : fresh ? "Siete tarjetas nuevas" : "Todo al día"}</h3>
+                <p class="muted">${due ? "Primero lo que toca repasar, después contenido nuevo." : fresh ? `Te quedan ${fresh} tarjetas por descubrir.` : "Ya has visto todas las tarjetas. Puedes repasar las que quieras."}</p></div>
+            <dl class="today-stats"><div><dt>Racha</dt><dd>${streak} d</dd></div><div><dt>Precisión</dt><dd>${p.answered ? Math.round((p.correct / p.answered) * 100) : 0} %</dd></div><div><dt>Temas dominados</dt><dd>${topicsDone()}/${TOPICS.length}</dd></div></dl>
+            <div class="row"><button class="btn" data-act="practice">Empezar ${ARROW}</button>${p.saved.length ? `<button class="btn line" data-act="practice" data-saved="1">Repasar guardadas (${p.saved.length})</button>` : ""}</div>
+        </div>
+    </section>
+
+    <section class="section"><div class="sec-head"><div><p class="kicker">Temas</p><h2>Lo esencial, en dos minutos cada uno.</h2>
+        <p>Lee la idea clave y practica solo ese tema. Un tema está dominado cuando aciertas todas sus tarjetas dos veces.</p></div></div>
+    <div class="lessons">${TOPICS.map((tp, i) => {
+        const m = tp.cards.filter(isMastered).length;
+        return `<button class="lesson ${topicDone(tp) ? "done" : ""}" data-act="topic" data-id="${tp.id}">
+        <span class="n">${String(i + 1).padStart(2, "0")}</span><span><h3>${tp.title}</h3><p>${tp.sub}</p></span><span class="st">${topicDone(tp) ? "Dominado" : `${m} de ${tp.cards.length}`}</span></button>`;
+    }).join("")}</div>
     </section>
 
     <section class="section cols c2">
@@ -489,22 +524,10 @@ function viewFormacion() {
         <div class="panel"><p class="kicker">Regla 50 / 30 / 20</p><h3>Distribuye tus ingresos</h3>
             <div class="field" style="margin-top:16px"><label for="income">Ingresos netos mensuales</label><input id="income" type="number" min="0" step="10" placeholder="1.200" data-input="income"></div>
             <div id="budgetOut" class="muted small">Introduce un importe para ver la distribución orientativa.</div></div>
-    </section>
-
-    <section class="section"><div class="sec-head"><div><p class="kicker">Contexto de mercado</p><h2>Datos de referencia</h2>
-        <p>Diferenciamos los datos observados de las hipótesis del simulador. Cifras recogidas para el prototipo: contrástalas siempre con la fuente oficial.</p></div></div>
-        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Indicador</th><th>Referencia</th><th class="r">Valor</th></tr></thead><tbody>
-            <tr><td>Inflación zona euro</td><td class="muted">Agosto 2026 · Eurostat</td><td class="r"><b>3,3 %</b></td></tr>
-            <tr><td>Objetivo de inflación del BCE</td><td class="muted">Medio plazo · BCE</td><td class="r"><b>2,0 %</b></td></tr>
-            <tr><td>CaixaBank Destino 2026</td><td class="muted">Rentabilidad histórica a 1 año</td><td class="r"><b>6,54 %</b></td></tr>
-            <tr><td>CaixaBank Selección Tendencias</td><td class="muted">Rentabilidad histórica a 1 año</td><td class="r"><b>24,64 %</b></td></tr>
-        </tbody></table></div>
-        <div class="note" style="margin-top:24px">Con una inflación del 3,3 %, <b>1.000 € sin remunerar equivaldrían a unos ${fmtR(1000 / Math.pow(1.033, 10))}</b> de poder adquisitivo actual dentro de diez años.</div>
-        <p class="disclaim">Las rentabilidades pasadas no son un indicador fiable de rentabilidades futuras. La información sobre fondos se muestra con fines ilustrativos y no constituye una recomendación.</p>
     </section>`;
 }
 
-/* ---- Pulso: feed vertical de decisiones ----
+/* ---- Práctica: feed vertical de decisiones ----
    No se ve: se decide. Cada tarjeta pide una predicción antes de mostrar la respuesta
    (aprendizaje por error de predicción), los fallos vuelven con repetición espaciada
    (cajas de Leitner) y la sesión termina de forma deliberada. */
@@ -514,7 +537,7 @@ const SESSION_SIZE = 7;
 const shuffle = a => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const x1 = n => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 
-const PULSE = [
+const CARDS = [
     { id: "h2020", type: "decide", kicker: "Momento histórico · Marzo 2020", topic: "las caídas de mercado y el horizonte de inversión",
       title: "La pandemia hunde las bolsas más de un 30 % en cuatro semanas. Tu inversión es a quince años. ¿Qué haces?",
       o: ["Vendo antes de que caiga más", "Mantengo sin tocar nada", "Mantengo y sigo aportando"], good: [1, 2],
@@ -620,11 +643,12 @@ function personalCard() {
             : `Llevas ${fmt(saved(g))} de ${fmt(g.target)}. Cada aportación cuenta: registra la de esta semana.`,
         act: "contribute", cta: "Aportar ahora" };
 }
-function newPulseSession() {
+function newPulseSession(ids) {
+    if (ids) { pulse = { cards: shuffle(CARDS.filter(c => ids.includes(c.id))), results: {}, idx: 0 }; return; }
     const p = pulseState(), t = today();
-    const due = PULSE.filter(c => p.due[c.id] !== undefined && p.due[c.id] <= t).sort((a, b) => (p.box[a.id] || 0) - (p.box[b.id] || 0));
-    const fresh = shuffle(PULSE.filter(c => p.due[c.id] === undefined));
-    const later = shuffle(PULSE.filter(c => p.due[c.id] > t));
+    const due = CARDS.filter(c => p.due[c.id] !== undefined && p.due[c.id] <= t).sort((a, b) => (p.box[a.id] || 0) - (p.box[b.id] || 0));
+    const fresh = shuffle(CARDS.filter(c => p.due[c.id] === undefined));
+    const later = shuffle(CARDS.filter(c => p.due[c.id] > t));
     const cards = [...due, ...fresh, ...later].slice(0, SESSION_SIZE);
     cards.splice(Math.min(3, cards.length), 0, personalCard());
     pulse = { cards, results: {}, idx: 0 };
@@ -672,7 +696,7 @@ function paintPulseEnd() {
         <p class="p-body">${back ? `${back} tarjeta${back === 1 ? "" : "s"} volverá${back === 1 ? "" : "n"} en tu próxima sesión: repasar lo que se falla es lo que fija el aprendizaje.` : "Las tarjetas acertadas volverán más adelante, espaciadas, para que no se olviden."}</p>
         <dl class="p-stats"><div><dt>Racha</dt><dd>${pulseStreak()} día${pulseStreak() === 1 ? "" : "s"}</dd></div><div><dt>Precisión total</dt><dd>${pulseState().answered ? Math.round((pulseState().correct / pulseState().answered) * 100) : 0} %</dd></div><div><dt>Guardadas</dt><dd>${pulseState().saved.length}</dd></div></dl>
         <p class="p-body small">Siete tarjetas al día son suficientes. Vuelve mañana: la constancia vale más que el atracón.</p>
-        <div class="row"><button class="p-opt p-go" data-act="pulseAgain">Otra sesión</button><a class="p-opt" href="#/resumen">Salir</a></div>`;
+        <div class="row"><button class="p-opt p-go" data-act="pulseAgain">Otra sesión</button><a class="p-opt" href="#/aprende">Volver a Aprende</a></div>`;
 }
 
 function viewPulso() {
@@ -680,7 +704,7 @@ function viewPulso() {
     const n = pulse.cards.length;
     return `<div class="pulse">
         <header class="p-top">
-            <a href="#/resumen" class="p-close" aria-label="Salir de Pulso">×</a>
+            <a href="#/aprende" class="p-close" aria-label="Salir de la práctica">×</a>
             <div class="p-bars">${Array.from({ length: n + 1 }, (_, i) => `<i data-b="${i}" class="${i === 0 ? "now" : ""}"></i>`).join("")}</div>
             <span class="p-streak" title="Días seguidos con sesión">${pulseStreak()} d</span>
         </header>
@@ -1011,22 +1035,22 @@ function decFinish() {
 /* =========================================================
    Render + router
 ========================================================= */
-const VIEWS = { pulso: viewPulso, decada: viewDecada, resumen: viewResumen, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, formacion: viewFormacion };
-const TITLES = { pulso: "Pulso", decada: "La Década", resumen: "Resumen", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", formacion: "Formación" };
+const VIEWS = { practica: viewPulso, decada: viewDecada, resumen: viewResumen, aprende: viewAprende, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo };
+const TITLES = { practica: "Práctica", decada: "La Década", resumen: "Resumen", aprende: "Aprende", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo" };
 let lastRoute = null;
 function render(animate = true) {
     const r = VIEWS[route()] ? route() : "resumen";
     const el = $("#view");
     const changed = r !== lastRoute;
-    if (r === "pulso" && !changed && $("#pulseFeed")) return paintChrome(); // no reiniciar el feed
-    if (changed) { pulse?.io?.disconnect(); document.body.classList.toggle("immersive", r === "pulso" || r === "decada"); el.classList.remove("fade"); }
+    if (r === "practica" && !changed && $("#pulseFeed")) return paintChrome(); // no reiniciar el feed
+    if (changed) { pulse?.io?.disconnect(); document.body.classList.toggle("immersive", r === "practica" || r === "decada"); el.classList.remove("fade"); }
     el.innerHTML = VIEWS[r]();
-    if (animate && changed && r !== "pulso" && r !== "decada") { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
-    $$("#nav a").forEach(a => { const on = a.dataset.tab === r; a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
+    if (animate && changed && r !== "practica" && r !== "decada") { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
+    $$("#nav a").forEach(a => { const on = a.dataset.tab === (r === "practica" ? "aprende" : r); a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
     if (changed) { stopCirclePolling(); if (r === "circulo") startCirclePolling(); document.title = `Horizonte · ${TITLES[r]}`; }
     lastRoute = r;
     if (r === "simulador") { sim.hover = null; requestAnimationFrame(drawSim); }
-    if (r === "pulso") mountPulse();
+    if (r === "practica") mountPulse();
     if (r === "decada") paintDec();
     paintChrome();
 }
@@ -1152,8 +1176,13 @@ const ACTIONS = {
         catch (e) { toast(e.message); }
     },
 
-    lesson: el => lessonSheet(LESSONS.find(l => l.id === el.dataset.id)),
-    quizAnswer: el => answerLesson(el),
+    topic: el => topicSheet(TOPICS.find(t => t.id === el.dataset.id)),
+    practice: el => {
+        const tp = TOPICS.find(t => t.id === el.dataset.topic);
+        newPulseSession(tp ? tp.cards : el.dataset.saved ? pulseState().saved : undefined);
+        closeSheet(); lastRoute = null;
+        route() === "practica" ? render(false) : (location.hash = "#/practica");
+    },
     quiz: () => profileQuiz(0, []),
     quizPick: el => profileQuiz(+el.dataset.step + 1, [...el.dataset.acc.split(",").filter(Boolean).map(Number), +el.dataset.v]),
     newGoalFromBudget: el => openSheet(goalForm({ monthly: +el.dataset.v })),
@@ -1229,7 +1258,7 @@ function profileSheet() {
     <table class="tbl" style="margin:24px 0"><tbody>
         <tr><td>Objetivos activos</td><td class="r"><b>${S.goals.length}</b></td></tr>
         <tr><td>Perfil de inversor</td><td class="r"><b>${S.quiz ? S.quiz.profile : "Pendiente"}</b></td></tr>
-        <tr><td>Formación</td><td class="r"><b>${S.lessons.length} de ${LESSONS.length}</b></td></tr>
+        <tr><td>Temas dominados</td><td class="r"><b>${topicsDone()} de ${TOPICS.length}</b></td></tr>
     </tbody></table>
     <div style="display:grid;gap:10px">
         ${S.goals.length ? "" : `<button class="btn line" data-act="demo">Cargar datos de demostración</button>`}
@@ -1239,22 +1268,11 @@ function profileSheet() {
     </div>`);
 }
 
-function lessonSheet(l) {
-    const i = LESSONS.indexOf(l) + 1;
-    openSheet(`<p class="kicker">Módulo ${String(i).padStart(2, "0")} · ${l.min} min</p><h2>${l.title}</h2><p style="margin:16px 0 28px;line-height:1.75">${l.body}</p>
-    <p class="kicker">Comprobación</p><h3 style="font-size:20px;margin-bottom:16px">${l.q}</h3>
-    ${l.o.map((o, k) => `<button class="qopt" data-act="quizAnswer" data-lesson="${l.id}" data-i="${k}">${o}</button>`).join("")}
-    <p id="quizMsg" class="muted" style="margin-top:12px" aria-live="polite"></p>`);
-}
-function answerLesson(el) {
-    const l = LESSONS.find(x => x.id === el.dataset.lesson), msg = $("#quizMsg");
-    if (+el.dataset.i === l.a) {
-        $$(".qopt").forEach(b => (b.disabled = true));
-        el.classList.add("right");
-        if (!S.lessons.includes(l.id)) { S.lessons.push(l.id); save(); }
-        msg.innerHTML = `<b style="color:var(--pos)">Correcto.</b> ${l.why}`;
-        render(false);
-    } else { el.classList.add("wrong"); msg.textContent = "No es correcto. Inténtalo de nuevo."; }
+function topicSheet(tp) {
+    const i = TOPICS.indexOf(tp) + 1, m = tp.cards.filter(isMastered).length;
+    openSheet(`<p class="kicker">Tema ${String(i).padStart(2, "0")} · ${m} de ${tp.cards.length} tarjetas dominadas</p><h2>${tp.title}</h2>
+    <p style="margin:16px 0 28px;line-height:1.75">${tp.body}</p>
+    <button class="btn" data-act="practice" data-topic="${tp.id}">Practicar este tema · ${tp.cards.length} tarjeta${tp.cards.length === 1 ? "" : "s"} ${ARROW}</button>`);
 }
 
 function profileQuiz(step, acc) {
@@ -1438,7 +1456,7 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("keydown", e => {
     if (e.key === "Escape") return closeSheet();
-    if (route() !== "pulso" || $(".sheet") || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (route() !== "practica" || $(".sheet") || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
     if (["ArrowDown", "PageDown", "j"].includes(e.key)) { e.preventDefault(); pulseGo(1); }
     if (["ArrowUp", "PageUp", "k"].includes(e.key)) { e.preventDefault(); pulseGo(-1); }
 });
@@ -1458,7 +1476,7 @@ document.addEventListener("pointerleave", e => { if (e.target.id === "simChart")
    Arranque
 ========================================================= */
 (async function init() {
-    const legacy = { "#/inicio": "resumen", "#/metas": "objetivos", "#/aprende": "formacion" }[location.hash];
+    const legacy = { "#/inicio": "resumen", "#/metas": "objetivos", "#/formacion": "aprende", "#/pulso": "practica" }[location.hash];
     if (legacy) history.replaceState(null, "", "#/" + legacy);
     render();
     try {
