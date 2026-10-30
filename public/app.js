@@ -746,24 +746,288 @@ function answerPulse(el) {
 }
 
 /* =========================================================
+   La Década: liga fantasy de carteras sobre una década real oculta.
+   Haces tu draft, juegas diez años de mercado sin saber cuáles son
+   y decides tras cada año. El rival a batir es tu propio pánico.
+========================================================= */
+const D_FROM = 2000, D_YEARS = 10, D_START = 10000, D_ADD = 1000;
+// Rentabilidades anuales aproximadas 2000-2024 (%, en dólares, ilustrativas):
+// MSCI World, MSCI Emerging Markets, Bloomberg US Aggregate, oro y letras del Tesoro de EE. UU.
+const D_ASSETS = [
+    { k: "acc", name: "Acciones globales", role: "Delantero", color: "#007eae",
+        r: [-13.2, -16.8, -19.9, 33.1, 14.7, 9.5, 20.1, 9.0, -40.7, 30.0, 11.8, -5.5, 15.8, 26.7, 4.9, -0.9, 7.5, 22.4, -8.7, 27.7, 15.9, 21.8, -18.1, 23.8, 18.7] },
+    { k: "emg", name: "Bolsa emergente", role: "Extremo", color: "#ff8300",
+        r: [-30.6, -2.4, -6.0, 56.3, 25.9, 34.5, 32.6, 39.8, -53.2, 79.0, 19.2, -18.2, 18.6, -2.3, -1.8, -14.6, 11.6, 37.8, -14.2, 18.9, 18.7, -2.5, -20.0, 10.3, 7.5] },
+    { k: "bon", name: "Bonos", role: "Defensa", color: "#7fb8d4",
+        r: [11.6, 8.4, 10.3, 4.1, 4.3, 2.4, 4.3, 7.0, 5.2, 5.9, 6.5, 7.8, 4.2, -2.0, 6.0, 0.5, 2.6, 3.5, 0.0, 8.7, 7.5, -1.5, -13.0, 5.5, 1.3] },
+    { k: "oro", name: "Oro", role: "Comodín", color: "#c9a227",
+        r: [-5.4, 0.8, 24.8, 19.1, 5.2, 18.2, 22.8, 31.4, 5.5, 24.0, 29.5, 10.1, 7.0, -28.0, -1.5, -10.4, 8.6, 13.1, -1.6, 18.3, 25.1, -3.6, -0.3, 13.1, 27.2] },
+    { k: "liq", name: "Liquidez", role: "Portero", color: "#8497a3",
+        r: [5.8, 3.8, 1.6, 1.0, 1.4, 3.2, 4.8, 4.7, 1.5, 0.1, 0.1, 0.0, 0.1, 0.0, 0.0, 0.0, 0.3, 0.9, 1.9, 2.3, 0.6, 0.0, 1.5, 5.0, 5.2] }
+];
+const D_NEWS = [
+    "Las puntocom que valían miles de millones empiezan a desplomarse.",
+    "Atentados en Nueva York: la bolsa estadounidense cierra cuatro días.",
+    "Escándalos contables hunden a varias grandes empresas.",
+    "Los bancos centrales dejan los tipos en mínimos y vuelve el apetito por el riesgo.",
+    "Crecimiento global sólido; China acelera.",
+    "El precio de la vivienda marca máximos en medio mundo.",
+    "Las materias primas se disparan.",
+    "Primeros avisos en las hipotecas de alto riesgo en EE. UU.",
+    "Quiebra un banco de inversión con 158 años de historia.",
+    "Rescates y estímulos masivos. Nadie se fía del rebote.",
+    "Grecia pide un rescate y se duda del futuro del euro.",
+    "Rebajan la nota de la deuda de EE. UU.; crisis de deuda en Europa.",
+    "El BCE promete hacer «lo que sea necesario» para salvar el euro.",
+    "La Reserva Federal anuncia que retirará estímulos; el oro se hunde.",
+    "El petróleo cae a la mitad en unos meses.",
+    "Devaluación sorpresa en China y un verano de sobresaltos.",
+    "Un referéndum decide la salida de un país de la Unión Europea.",
+    "Un año de calma inusual: la volatilidad toca mínimos.",
+    "Guerra comercial, subidas de tipos y un diciembre negro.",
+    "Los bancos centrales vuelven a bajar tipos.",
+    "Una pandemia paraliza el planeta.",
+    "Reapertura, euforia y acciones meme.",
+    "La inflación se dispara: subidas de tipos más rápidas en décadas.",
+    "La IA generativa entra en escena; caen varios bancos regionales.",
+    "Récords en bolsa impulsados por la tecnología."
+];
+const D_PRESETS = [
+    { name: "Prudente", w: { acc: 20, emg: 0, bon: 50, oro: 0, liq: 30 } },
+    { name: "Equilibrada", w: { acc: 40, emg: 10, bon: 40, oro: 10, liq: 0 } },
+    { name: "Ofensiva", w: { acc: 60, emg: 30, bon: 0, oro: 10, liq: 0 } }
+];
+const D_LAST = D_ASSETS[0].r.length - D_YEARS; // último año de inicio posible (índice)
+const dCode = s => (s * 7919 + 4242).toString(36).toUpperCase();
+function dDecode(code) {
+    const n = parseInt(String(code || ""), 36) - 4242;
+    return n >= 0 && n % 7919 === 0 && n / 7919 <= D_LAST ? n / 7919 : null;
+}
+const dSigned = n => `${n > 0 ? "+" : n < 0 ? "−" : ""}${pct(Math.abs(Math.round(n * 10) / 10))}`;
+const dX = n => n.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const dTone = n => n > 0 ? "pos" : n < 0 ? "neg" : "";
+
+function dStats(a) {
+    const g = Math.pow(a.r.reduce((p, x) => p * (1 + x / 100), 1), 1 / a.r.length) - 1;
+    const m = a.r.reduce((s, x) => s + x, 0) / a.r.length;
+    const vol = Math.sqrt(a.r.reduce((s, x) => s + (x - m) ** 2, 0) / a.r.length);
+    return { mean: g * 100, worst: Math.min(...a.r), best: Math.max(...a.r), vol };
+}
+const D_STATS = Object.fromEntries(D_ASSETS.map(a => [a.k, dStats(a)]));
+
+let dec = null;
+function decNew(start) {
+    const code = location.hash.match(/[?&]r=([A-Z0-9]+)/i)?.[1]?.toUpperCase();
+    const s = start ?? dDecode(code);
+    dec = { phase: "intro", challenged: s !== null && start === undefined, start: s ?? Math.floor(Math.random() * (D_LAST + 1)),
+        w: { ...D_PRESETS[1].w }, hold: {}, n: 0, hist: [], adds: [], log: [], inCash: false, panic: 0, dips: 0, last: null, board: null };
+    dec.code = dCode(dec.start);
+}
+const decValue = () => Object.values(dec.hold).reduce((s, x) => s + x, 0);
+const decWSum = () => Object.values(dec.w).reduce((s, x) => s + x, 0);
+const decContributed = () => D_START + D_ADD * dec.adds.length;
+function decSpread(total, w = dec.w) { dec.hold = Object.fromEntries(D_ASSETS.map(a => [a.k, total * (w[a.k] || 0) / 100])); }
+const decIdx = i => dec.start + i;
+
+function decPlay() {
+    const y = decIdx(dec.n), before = decValue();
+    D_ASSETS.forEach(a => { dec.hold[a.k] *= 1 + a.r[y] / 100; });
+    const after = decValue();
+    dec.last = { i: dec.n, y, ret: (after / before - 1) * 100, before, after };
+    dec.n++; dec.hist.push(after);
+}
+function decDecide(act) {
+    const fell = dec.last && dec.last.ret < 0, v = decValue();
+    if (act === "rebal") decSpread(v);
+    if (act === "add") {
+        dec.adds.push(dec.n);
+        if (fell) dec.dips++;
+        if (dec.inCash) dec.hold.liq += D_ADD; else decSpread(v + D_ADD);
+    }
+    if (act === "sell") { if (fell) dec.panic++; dec.inCash = true; decSpread(v, { liq: 100 }); }
+    if (act === "back") { dec.inCash = false; decSpread(v); }
+    dec.log.push({ i: dec.n, act });
+    decPlay();
+}
+// Misma década y mismas aportaciones, con una estrategia fija rebalanceada cada año.
+function decBench(w) {
+    let v = D_START;
+    for (let i = 0; i < D_YEARS; i++) {
+        if (dec.adds.includes(i)) v += D_ADD;
+        v *= 1 + D_ASSETS.reduce((s, a) => s + (w[a.k] || 0) / 100 * a.r[decIdx(i)], 0) / 100;
+    }
+    return v;
+}
+
+function decChart() {
+    const pts = [D_START, ...dec.hist], max = Math.max(...pts, D_START * 1.2), min = Math.min(...pts, D_START * .7);
+    const X = i => (i / D_YEARS) * 300, Y = v => 96 - ((v - min) / (max - min)) * 88;
+    const line = pts.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+    const end = pts.at(-1);
+    return `<svg class="d-chart" viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">
+        <line x1="0" x2="300" y1="${Y(D_START)}" y2="${Y(D_START)}" class="d-base"/>
+        ${Array.from({ length: D_YEARS - 1 }, (_, i) => `<line x1="${X(i + 1)}" x2="${X(i + 1)}" y1="0" y2="100" class="d-grid"/>`).join("")}
+        <polyline points="${line}" class="d-line ${end >= D_START ? "" : "down"}"/>
+        <rect x="${X(pts.length - 1) - 3}" y="${Y(end) - 3}" width="6" height="6" class="d-dot"/>
+    </svg>`;
+}
+function decTop() {
+    return `<header class="d-top">
+        <a href="#/resumen" class="p-close" aria-label="Salir de La Década">×</a>
+        <div class="p-bars">${Array.from({ length: D_YEARS }, (_, i) => `<i class="${i < dec.n ? "past" : i === dec.n && dec.phase === "play" ? "now" : ""}"></i>`).join("")}</div>
+        <span class="p-streak">Liga ${dec.code}</span>
+    </header>`;
+}
+
+function decIntro() {
+    const st = S.decada || {};
+    return `<div class="d-a"><p class="p-kicker">${dec.challenged ? "Te han retado" : "La Década · Liga de carteras"}</p>
+        <h1 class="d-h1">Diez años reales de mercado.<br>No sabes cuáles.</h1>
+        <p class="p-body">${dec.challenged ? "Vas a jugar exactamente la misma década que quien te ha enviado el enlace. Mismas reglas, mismo punto de partida." : "Te soltamos con 10.000 € ficticios en una década escogida al azar entre 2000 y 2024."} Haces tu draft con cinco tipos de activo, juegas año a año y, tras cada titular, decides: mantener, rebalancear, aportar o huir a liquidez. Al final descubres qué década era.</p></div>
+        <div class="d-b"><ol class="d-rules">
+            <li><span><b>Draft.</b> Reparte el 100 % entre delanteros, defensas y portero.</span></li>
+            <li><span><b>Temporada.</b> Cada toque juega un año con rentabilidades históricas.</span></li>
+            <li><span><b>Liga.</b> Comparte el código y compara resultados con tu grupo en la misma década.</span></li>
+        </ol>
+        <p class="d-quote">Aquí nadie pierde dinero de verdad. Tu único rival es tu propio pánico.</p>
+        <button class="p-opt p-go" data-act="decStart">Hacer mi draft →</button>
+        ${st.played ? `<p class="small d-muted" style="margin-top:14px">Has jugado ${st.played} década${st.played === 1 ? "" : "s"}. Mejor resultado: ×${dX(st.best)} sobre lo aportado.</p>` : ""}</div>`;
+}
+function decDraft() {
+    const sum = decWSum();
+    return `<p class="p-kicker">Paso 1 · Draft</p>
+        <h2 class="p-title">Elige tu alineación.</h2>
+        <div class="d-presets">${D_PRESETS.map((p, i) => `<button class="d-chip" data-act="decPreset" data-i="${i}">${p.name}</button>`).join("")}</div>
+        <div class="d-squad">${D_ASSETS.map(a => {
+            const s = D_STATS[a.k], w = dec.w[a.k];
+            return `<div class="d-player ${w ? "on" : ""}" style="--c:${a.color}">
+                <div class="d-ph"><span class="d-role">${a.role}</span><b>${a.name}</b></div>
+                <dl class="d-attr">
+                    <div><dt>Media anual</dt><dd>${dSigned(s.mean)}</dd></div>
+                    <div><dt>Peor año</dt><dd class="neg">${dSigned(s.worst)}</dd></div>
+                    <div><dt>Mejor año</dt><dd class="pos">${dSigned(s.best)}</dd></div>
+                </dl>
+                <div class="d-vol" title="Volatilidad"><span>Sobresaltos</span><i style="width:${Math.min(100, s.vol * 3)}%"></i></div>
+                <div class="d-stepper">
+                    <button data-act="decW" data-k="${a.k}" data-d="-10" ${w <= 0 ? "disabled" : ""} aria-label="Menos ${a.name}">−</button>
+                    <output>${w} %</output>
+                    <button data-act="decW" data-k="${a.k}" data-d="10" ${sum >= 100 ? "disabled" : ""} aria-label="Más ${a.name}">+</button>
+                </div>
+            </div>`;
+        }).join("")}</div>
+        <div class="d-mix">${D_ASSETS.map(a => `<i style="flex:${dec.w[a.k]};background:${a.color}"></i>`).join("")}${sum < 100 ? `<i style="flex:${100 - sum}" class="d-empty"></i>` : ""}</div>
+        <p class="small d-muted">Estadísticas aproximadas de 2000 a 2024, en dólares. Volatilidad = cuánto se mueve de un año a otro.</p>
+        <button class="p-opt p-go" data-act="decGo" ${sum !== 100 ? "disabled" : ""}>${sum === 100 ? "Cerrar draft y empezar la temporada →" : `Te falta repartir un ${100 - sum} %`}</button>`;
+}
+function decPlayHTML() {
+    const v = decValue(), c = decContributed(), L = dec.last;
+    const head = `<div class="d-a"><div class="d-score">
+            <p class="p-kicker">${dec.n ? `Fin del año ${dec.n} de ${D_YEARS}` : "Temporada lista"}</p>
+            <output id="dVal" class="d-val">${fmtR(v)}</output>
+            <p class="d-sub">Aportado ${fmtR(c)} · <span class="${dTone(v - c)}">${v >= c ? "+" : "−"}${fmtR(Math.abs(v - c))}</span>${dec.inCash ? ` · <b class="d-cash">En liquidez</b>` : ""}</p>
+        </div>${decChart()}</div>`;
+    if (!L) return `${head}<div class="d-b"><p class="p-body">Tu draft está cerrado. A partir de aquí cada decisión juega un año completo de mercado.</p>
+        <button class="p-opt p-go" data-act="decNext">Jugar el año 1 →</button></div>`;
+    const news = `<div class="d-b"><div class="d-news ${dTone(L.ret)}">
+            <p class="d-tag">Año ${L.i + 1} · Titular</p>
+            <h2 class="d-headline">${D_NEWS[L.y]}</h2>
+            <p class="d-ret">Tu cartera: <b class="${dTone(L.ret)}">${dSigned(L.ret)}</b></p>
+            <ul class="d-assets">${D_ASSETS.map(a => `<li class="${dec.inCash && a.k !== "liq" ? "out" : (dec.hold[a.k] > 0.5 || a.k === "liq" ? "" : "out")}"><i style="background:${a.color}"></i>${a.name}<b class="${dTone(a.r[L.y])}">${dSigned(a.r[L.y])}</b></li>`).join("")}</ul>
+        </div>`;
+    if (dec.n >= D_YEARS) return `${head}${news}<button class="p-opt p-go" data-act="decEnd">Descubrir qué década era →</button></div>`;
+    return `${head}${news}
+        <p class="d-ask">¿Qué haces antes del año ${dec.n + 1}?</p>
+        <div class="d-acts">
+            <button class="p-opt" data-act="decAct" data-v="hold"><b>Mantener</b><small>No tocar nada</small></button>
+            <button class="p-opt" data-act="decAct" data-v="rebal" ${dec.inCash ? "disabled" : ""}><b>Rebalancear</b><small>Volver a tu draft</small></button>
+            <button class="p-opt" data-act="decAct" data-v="add"><b>Aportar ${fmtR(D_ADD)}</b><small>${L.ret < 0 ? "Comprar en la caída" : "Seguir sumando"}</small></button>
+            ${dec.inCash
+                ? `<button class="p-opt" data-act="decAct" data-v="back"><b>Volver a invertir</b><small>Según tu draft</small></button>`
+                : `<button class="p-opt d-panic" data-act="decAct" data-v="sell"><b>Vender todo</b><small>Pasar a liquidez</small></button>`}
+        </div></div>`;
+}
+function decEndHTML() {
+    const v = decValue(), c = decContributed(), mult = v / c;
+    const y0 = D_FROM + dec.start, y1 = y0 + D_YEARS - 1;
+    const rows = [
+        { name: "Tú", v, me: true },
+        { name: "Tu draft sin tocarlo (rebalanceo anual)", v: decBench(dec.w) },
+        { name: "Todo en liquidez", v: decBench({ liq: 100 }) },
+        { name: "Todo en acciones globales", v: decBench({ acc: 100 }) }
+    ];
+    const calm = decBench(dec.w), gap = v - calm;
+    const profile = dec.panic ? { t: "Vendedor en pánico", d: `Vendiste todo después de un año negativo ${dec.panic === 1 ? "una vez" : `${dec.panic} veces`}. Es la reacción más humana y, históricamente, una de las más caras: los mejores años suelen llegar justo después de los peores.` }
+        : dec.dips ? { t: "Comprador en las caídas", d: `Aportaste ${dec.dips === 1 ? "una vez" : `${dec.dips} veces`} justo después de un año negativo. Comprar cuando todo el mundo vende exige sangre fría y suele recompensarse a largo plazo.` }
+        : { t: "Mano firme", d: "No vendiste por miedo en ningún momento. La disciplina aburrida es, con diferencia, la estrategia que mejor resiste a las décadas difíciles." };
+    const st = S.decada || {};
+    return `<div class="d-a"><p class="p-kicker">La década era</p>
+        <h1 class="d-h1 d-years">${y0}–${y1}</h1>
+        <p class="p-body">${fmtR(c)} aportados se han convertido en <b class="d-white">${fmtR(v)}</b>: <b class="${dTone(mult - 1)}">×${dX(Math.round(mult * 100) / 100)}</b> sobre lo aportado.</p>
+        ${decChart()}
+        <table class="d-table"><tbody>${rows.sort((a, b) => b.v - a.v).map((r, i) => `<tr class="${r.me ? "me" : ""}"><td>${i + 1}</td><td>${r.name}</td><td class="r">${fmtR(r.v)}</td></tr>`).join("")}</tbody></table></div>
+        <div class="d-b"><div class="d-profile"><p class="d-tag">Tu perfil esta temporada</p><h2 class="d-headline">${profile.t}</h2><p>${profile.d}</p>
+        ${Math.abs(gap) >= 50 ? `<p>Frente a tu propio draft sin tocar: <b class="${dTone(gap)}">${gap >= 0 ? "+" : "−"}${fmtR(Math.abs(gap))}</b>. ${gap < 0 ? "Tus decisiones te costaron dinero: el mercado no era tu rival, lo eras tú." : "Tus decisiones sumaron. Comprueba si fue método o suerte jugando otra década."}</p>` : ""}</div>
+        <div class="d-board" id="decBoard">${decBoardHTML()}</div>
+        <div class="d-row">
+            <button class="p-opt p-go" data-act="decShare">Retar a mi grupo</button>
+            <button class="p-opt" data-act="decAgain">Otra década</button>
+        </div>
+        <p class="small d-muted" style="margin-top:18px">Datos anuales aproximados de índices en dólares, sin comisiones ni impuestos. Juego educativo: rentabilidades pasadas no garantizan rentabilidades futuras. Récord personal: ×${dX(st.best || mult)}.</p></div>`;
+}
+function decBoardHTML() {
+    const b = dec.board;
+    const sendForm = `<form data-form="decScore" class="d-send">${user ? "" : `<input name="name" maxlength="20" placeholder="Tu alias" required aria-label="Tu alias">`}<button class="d-chip">Subir a la liga ${dec.code}</button></form>`;
+    if (!b) return `<p class="d-tag">Clasificación de la liga ${dec.code}</p>${sendForm}`;
+    if (b.error) return `<p class="d-tag">Clasificación de la liga ${dec.code}</p><p class="small d-muted">${esc(b.error)}</p>`;
+    return `<p class="d-tag">Clasificación de la liga ${dec.code}</p>
+        <table class="d-table"><tbody>${b.rows.map((r, i) => `<tr class="${r.me ? "me" : ""}"><td>${i + 1}</td><td>${esc(r.name)}</td><td class="r">×${dX(r.mult)}</td></tr>`).join("") || `<tr><td>Aún no hay resultados.</td></tr>`}</tbody></table>`;
+}
+
+function viewDecada() {
+    const code = location.hash.match(/[?&]r=([A-Z0-9]+)/i)?.[1]?.toUpperCase();
+    if (!dec || dec.phase === "intro" || (code && code !== dec.code && dec.phase !== "play")) decNew();
+    return `<div class="dec"><div class="d-scroll">${decTop()}<div class="d-in" id="decRoot"></div></div></div>`;
+}
+function paintDec(anim) {
+    const root = $("#decRoot");
+    if (!root) return;
+    $(".d-top")?.replaceWith(Object.assign(document.createElement("div"), { innerHTML: decTop() }).firstElementChild);
+    root.innerHTML = { intro: decIntro, draft: decDraft, play: decPlayHTML, end: decEndHTML }[dec.phase]();
+    root.className = `d-in d-${dec.phase}`;
+    if (anim && dec.last) {
+        const out = $("#dVal"), prev = dec.last.before, to = decValue(), t0 = performance.now();
+        root.classList.add(dec.last.ret >= 0 ? "flash-pos" : "flash-neg");
+        const step = t => { const k = Math.min(1, (t - t0) / 700), e = 1 - (1 - k) ** 3; out.textContent = fmtR(prev + (to - prev) * e); if (k < 1) requestAnimationFrame(step); };
+        requestAnimationFrame(step);
+    }
+}
+function decFinish() {
+    const mult = decValue() / decContributed(), st = S.decada || {};
+    S.decada = { played: (st.played || 0) + 1, best: Math.max(st.best || 0, Math.round(mult * 100) / 100) };
+    save();
+    dec.phase = "end";
+}
+
+/* =========================================================
    Render + router
 ========================================================= */
-const VIEWS = { pulso: viewPulso, resumen: viewResumen, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, formacion: viewFormacion };
-const TITLES = { pulso: "Pulso", resumen: "Resumen", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", formacion: "Formación" };
+const VIEWS = { pulso: viewPulso, decada: viewDecada, resumen: viewResumen, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, formacion: viewFormacion };
+const TITLES = { pulso: "Pulso", decada: "La Década", resumen: "Resumen", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", formacion: "Formación" };
 let lastRoute = null;
 function render(animate = true) {
     const r = VIEWS[route()] ? route() : "resumen";
     const el = $("#view");
     const changed = r !== lastRoute;
     if (r === "pulso" && !changed && $("#pulseFeed")) return paintChrome(); // no reiniciar el feed
-    if (changed) { pulse?.io?.disconnect(); document.body.classList.toggle("immersive", r === "pulso"); el.classList.remove("fade"); }
+    if (changed) { pulse?.io?.disconnect(); document.body.classList.toggle("immersive", r === "pulso" || r === "decada"); el.classList.remove("fade"); }
     el.innerHTML = VIEWS[r]();
-    if (animate && changed && r !== "pulso") { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
+    if (animate && changed && r !== "pulso" && r !== "decada") { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
     $$("#nav a").forEach(a => { const on = a.dataset.tab === r; a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
     if (changed) { stopCirclePolling(); if (r === "circulo") startCirclePolling(); document.title = `Horizonte · ${TITLES[r]}`; }
     lastRoute = r;
     if (r === "simulador") { sim.hover = null; requestAnimationFrame(drawSim); }
     if (r === "pulso") mountPulse();
+    if (r === "decada") paintDec();
     paintChrome();
 }
 addEventListener("hashchange", () => render());
@@ -909,6 +1173,22 @@ const ACTIONS = {
         try { await navigator.clipboard.writeText(text); toast("Tarjeta copiada al portapapeles."); } catch { /* sin portapapeles */ }
     },
 
+    decStart: () => { dec.phase = "draft"; paintDec(); },
+    decPreset: el => { dec.w = { ...D_PRESETS[+el.dataset.i].w }; paintDec(); },
+    decW: el => { const k = el.dataset.k; dec.w[k] = Math.max(0, Math.min(100, dec.w[k] + +el.dataset.d)); paintDec(); },
+    decGo: () => { if (decWSum() !== 100) return; dec.phase = "play"; decSpread(D_START); paintDec(); $(".dec")?.scrollTo(0, 0); },
+    decNext: () => { decPlay(); paintDec(true); },
+    decAct: el => { decDecide(el.dataset.v); paintDec(true); $(".dec")?.scrollTo({ top: 0, behavior: "smooth" }); },
+    decEnd: () => { decFinish(); paintDec(); $(".dec")?.scrollTo(0, 0); },
+    decAgain: () => { history.replaceState(null, "", "#/decada"); decNew(); dec.phase = "draft"; paintDec(); $(".dec")?.scrollTo(0, 0); },
+    decShare: async () => {
+        const url = `${location.origin}${location.pathname}#/decada?r=${dec.code}`;
+        const text = `He jugado una década oculta de los mercados en Horizonte: ×${dX(Math.round(decValue() / decContributed() * 100) / 100)} sobre lo aportado. ¿Lo superas? Liga ${dec.code}`;
+        try { if (navigator.share) return await navigator.share({ text, url }); } catch { return; }
+        try { await navigator.clipboard.writeText(`${text}
+${url}`); toast("Reto copiado. Pégalo en el chat de tu grupo."); } catch { toast(url, 8000); }
+    },
+
     coach: () => coachSheet(),
     coachChip: el => sendCoach(el.dataset.q)
 };
@@ -1004,7 +1284,23 @@ function coachSheet() {
     <form class="chat-form" data-form="coach"><input name="message" maxlength="500" placeholder="Escribe tu pregunta" autocomplete="off" aria-label="Pregunta para el asistente"><button class="btn" type="submit">Enviar</button></form>`, { side: true });
     const c = $("#chat"); c.scrollTop = c.scrollHeight;
 }
-const chatMsg = m => `<div class="msg ${m.who}">${esc(m.text)}${m.src ? `<small>${m.src === "gemini" ? "Respuesta generada con Gemini" : "Respuesta predefinida"}</small>` : ""}</div>`;
+const chatSrc = m => m.src === "local" ? "Respuesta predefinida" : `Respuesta generada con IA${m.model ? ` · ${m.model}` : ""}`;
+const plainText = t => String(t).replace(/\*\*(.+?)\*\*/g, "$1").replace(/^#{1,6}\s*/gm, "").replace(/^\s*[*-]\s+/gm, "· ");
+const chatMsg = m => `<div class="msg ${m.who}">${esc(plainText(m.text))}${m.src ? `<small>${chatSrc(m)}</small>` : ""}</div>`;
+// Sin servidor (por ejemplo, en GitHub Pages) el navegador llama directamente a Pollinations, gratis y sin clave.
+const COACH_SYSTEM = `Eres el asistente de Horizonte, una app de ahorro e inversión para la Generación Z (prototipo CaixaBank Asset Management x Google). Responde en español de España, con tono profesional y cercano, sin emojis, en un máximo de 120 palabras y sin formato markdown. Eres educativo: no des asesoramiento de inversión personalizado, no recomiendes productos concretos ni prometas rentabilidades. Recuerda que invertir implica riesgo de pérdida y que la rentabilidad pasada no garantiza la futura. Si preguntan qué comprar, explica criterios (horizonte, riesgo, diversificación, costes) y sugiere consultar a un asesor.`;
+async function browserCoach(text, ctx, history) {
+    const r = await fetch("https://text.pollinations.ai/openai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "openai", temperature: 0.6, max_tokens: 900, messages: [
+            { role: "system", content: `${COACH_SYSTEM}\nDatos del usuario (JSON): ${JSON.stringify(ctx).slice(0, 2000)}` }, ...history, { role: "user", content: text }] })
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json(), reply = j.choices?.[0]?.message?.content?.trim();
+    if (!reply) throw new Error("respuesta vacía");
+    return { reply, source: "pollinations", model: j.model };
+}
 async function sendCoach(text) {
     text = text.trim();
     if (!text) return;
@@ -1013,11 +1309,15 @@ async function sendCoach(text) {
     box.insertAdjacentHTML("beforeend", chatMsg(chat.at(-1)) + `<div class="msg bot typing" id="typing"></div>`);
     box.scrollTop = box.scrollHeight;
     let reply;
+    const ctx = { goals: S.goals.map(g => ({ name: g.name, target: g.target, saved: Math.round(saved(g)), monthly: g.monthly, year: g.year })), profile: S.quiz?.profile };
+    const history = chat.slice(1, -1).slice(-6).map(m => ({ role: m.who === "me" ? "user" : "assistant", content: m.text }));
     try {
-        const ctx = { goals: S.goals.map(g => ({ name: g.name, target: g.target, saved: Math.round(saved(g)), monthly: g.monthly, year: g.year })), profile: S.quiz?.profile };
-        reply = await api("/coach", { method: "POST", body: { message: text, context: ctx } });
-    } catch { reply = { reply: "No ha sido posible conectar con el asistente. Inténtalo de nuevo en unos instantes.", source: "" }; }
-    chat.push({ who: "bot", text: reply.reply, src: reply.source });
+        reply = await api("/coach", { method: "POST", body: { message: text, context: ctx, history } });
+    } catch (e) {
+        try { if (e.status && e.status < 404) throw e; reply = await browserCoach(text, ctx, history); }
+        catch { reply = { reply: "No ha sido posible conectar con el asistente. Inténtalo de nuevo en unos segundos.", source: "" }; }
+    }
+    chat.push({ who: "bot", text: reply.reply, src: reply.source, model: reply.model });
     $("#typing")?.remove();
     const b = $("#chat");
     if (b) { b.insertAdjacentHTML("beforeend", chatMsg(chat.at(-1))); b.scrollTop = b.scrollHeight; }
@@ -1087,6 +1387,15 @@ const FORMS = {
             await api(`/circles/${f.get("code")}/contribute`, { method: "POST", body: { amount: f.get("amount") } });
             closeSheet(); await loadCircles(true); toast("Aportación al círculo registrada.");
         } catch (e) { formErr(form, e.message); }
+    },
+    decScore: async form => {
+        const name = user?.username || String(new FormData(form).get("name") || "").trim();
+        if (!name) return;
+        try {
+            const r = await api(`/decada/${dec.code}`, { method: "POST", body: { name, value: decValue(), contributed: decContributed() } });
+            dec.board = { rows: r.rows };
+        } catch (e) { dec.board = { error: e.status === 400 ? e.message : "La clasificación compartida necesita el servidor de Horizonte (npm start). Mientras tanto, usa «Retar a mi grupo»." }; }
+        $("#decBoard").innerHTML = decBoardHTML();
     },
     coach: form => { const i = form.elements.message; const t = i.value; i.value = ""; sendCoach(t); }
 };

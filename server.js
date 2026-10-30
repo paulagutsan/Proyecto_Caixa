@@ -3,7 +3,7 @@
    - Auth con scrypt + cookie HttpOnly
    - Estado por usuario sincronizado (/api/state)
    - Círculos compartidos con código de invitación (/api/circles)
-   - Coach financiero: Gemini si hay GEMINI_API_KEY, reglas locales si no */
+   - Coach financiero con IA gratuita: OpenRouter, Gemini o Pollinations (sin clave); reglas locales si fallan */
 
 const http = require("http");
 const fs = require("fs");
@@ -16,6 +16,7 @@ const DATA = path.join(__dirname, "data");
 const F_USERS = path.join(DATA, "users.json");
 const F_CIRCLES = path.join(DATA, "circles.json");
 const F_SESSIONS = path.join(DATA, "sessions.json");
+const F_LEAGUES = path.join(DATA, "leagues.json");
 const COOKIE = "horizonte_session";
 const WEEK = 7 * 24 * 3600;
 
@@ -31,9 +32,11 @@ function write(f, obj) {
 let users = read(F_USERS, []);
 let circles = read(F_CIRCLES, []);
 let sessions = read(F_SESSIONS, {});
+let leagues = read(F_LEAGUES, {});
 const saveUsers = () => write(F_USERS, users);
 const saveCircles = () => write(F_CIRCLES, circles);
 const saveSessions = () => write(F_SESSIONS, sessions);
+const saveLeagues = () => write(F_LEAGUES, leagues);
 
 /* ---------- seguridad ---------- */
 function hashPassword(pw, salt = crypto.randomBytes(16).toString("hex")) {
@@ -156,31 +159,73 @@ function localCoach(msg, ctx) {
     return "Puedo ayudarte con el interés compuesto, la inflación, el riesgo, la diversificación, el colchón de emergencia o el seguimiento de tus objetivos. ¿Sobre cuál quieres profundizar?";
 }
 
-async function coach(message, context) {
-    const key = process.env.GEMINI_API_KEY;
-    if (!key) return { reply: localCoach(message, context), source: "local" };
+// Proveedores de IA en orden de preferencia; todos tienen opción gratuita:
+//   OPENROUTER_API_KEY  modelos «:free» de OpenRouter (clave gratuita en openrouter.ai)
+//   GEMINI_API_KEY      capa gratuita de Google AI Studio
+//   Pollinations        sin clave ni registro (límite aproximado de 1 petición cada 15 s)
+// Si ninguno responde, se usan las respuestas predefinidas.
+const POLLINATIONS = "https://text.pollinations.ai/openai";
+const OPENROUTER = "https://openrouter.ai/api/v1/chat/completions";
+
+async function openaiChat(url, headers, model, messages) {
+    const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify({ model, messages, temperature: 0.6, max_tokens: 900 }),
+        signal: AbortSignal.timeout(25_000)
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    const text = j.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error("respuesta vacía");
+    return { text, model: j.model || model };
+}
+async function geminiChat(key, messages) {
     const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-    const ctxTxt = context ? `Datos del usuario (JSON): ${JSON.stringify(context).slice(0, 2000)}` : "";
-    try {
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-            body: JSON.stringify({
-                systemInstruction: { parts: [{ text: `${COACH_SYSTEM}\n${ctxTxt}` }] },
-                contents: [{ role: "user", parts: [{ text: message }] }],
-                generationConfig: { temperature: 0.7, maxOutputTokens: 350 }
-            }),
-            signal: AbortSignal.timeout(12_000)
-        });
-        if (!r.ok) throw new Error(`Gemini ${r.status}`);
-        const j = await r.json();
-        const text = j.candidates?.[0]?.content?.parts?.map(p => p.text).join("").trim();
-        if (!text) throw new Error("vacío");
-        return { reply: text, source: "gemini" };
-    } catch (e) {
-        console.warn("Coach: fallback local →", e.message);
-        return { reply: localCoach(message, context), source: "local" };
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+            systemInstruction: { parts: [{ text: messages[0].content }] },
+            contents: messages.slice(1).map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+            generationConfig: { temperature: 0.7, maxOutputTokens: 350 }
+        }),
+        signal: AbortSignal.timeout(12_000)
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    const text = j.candidates?.[0]?.content?.parts?.map(p => p.text).join("").trim();
+    if (!text) throw new Error("respuesta vacía");
+    return { text, model };
+}
+
+function coachProviders() {
+    const list = [], or = process.env.OPENROUTER_API_KEY, gem = process.env.GEMINI_API_KEY;
+    const orHeaders = { Authorization: `Bearer ${or}`, "X-Title": "Horizonte" };
+    if (or) {
+        list.push(["openrouter", m => openaiChat(OPENROUTER, orHeaders, process.env.OPENROUTER_MODEL || "google/gemma-4-31b-it:free", m)]);
+        list.push(["openrouter", m => openaiChat(OPENROUTER, orHeaders, "openrouter/free", m)]); // elige un modelo gratuito disponible
     }
+    if (gem) list.push(["gemini", m => geminiChat(gem, m)]);
+    if (process.env.COACH_POLLINATIONS !== "off") list.push(["pollinations", m => openaiChat(POLLINATIONS, {}, "openai", m)]);
+    return list;
+}
+
+async function coach(message, context, history) {
+    const ctxTxt = context ? `\nDatos del usuario (JSON): ${JSON.stringify(context).slice(0, 2000)}` : "";
+    const past = (Array.isArray(history) ? history : []).slice(-6)
+        .filter(m => m && (m.role === "user" || m.role === "assistant"))
+        .map(m => ({ role: m.role, content: cleanText(m.content, 800) }));
+    const messages = [{ role: "system", content: COACH_SYSTEM + ctxTxt }, ...past, { role: "user", content: message }];
+    for (const [source, run] of coachProviders()) {
+        try {
+            const { text, model } = await run(messages);
+            return { reply: text, source, model };
+        } catch (e) {
+            console.warn(`Coach: ${source} no disponible →`, e.message);
+        }
+    }
+    return { reply: localCoach(message, context), source: "local" };
 }
 
 /* ---------- API ---------- */
@@ -291,11 +336,30 @@ async function api(req, res, url) {
         return send(res, 200, { circle: circleView(c, u) });
     }
 
+    // La Década: clasificación por liga (misma década oculta). Se guarda el mejor resultado de cada alias.
+    const lg = url.pathname.match(/^\/api\/decada\/([A-Z0-9]{2,8})$/);
+    if (lg) {
+        const u = userOf(req), board = leagues[lg[1]] ||= [];
+        const rows = me => board.slice().sort((a, b) => b.mult - a.mult).slice(0, 10).map(r => ({ name: r.name, mult: r.mult, me: r.name === me }));
+        if (req.method === "GET") return send(res, 200, { rows: rows() });
+        if (req.method !== "POST") throw HttpError(405, "Método no permitido.");
+        const b = await body(req, 2_000);
+        const name = u ? u.username : cleanText(b.name, 20);
+        const value = clampNum(b.value, 0, 10_000_000), contributed = clampNum(b.contributed, 10_000, 100_000);
+        if (!name || value === null || contributed === null) throw HttpError(400, "Resultado no válido.");
+        const mult = Math.round((value / contributed) * 100) / 100;
+        const prev = board.find(r => r.name.toLowerCase() === name.toLowerCase());
+        if (prev) prev.mult = Math.max(prev.mult, mult); else board.push({ name, mult, t: Date.now() });
+        leagues[lg[1]] = board.sort((a, b) => b.mult - a.mult).slice(0, 100);
+        saveLeagues();
+        return send(res, 200, { rows: rows(name) });
+    }
+
     if (route === "POST /api/coach") {
         const b = await body(req, 8_000);
         const message = cleanText(b.message, 500);
         if (!message) throw HttpError(400, "Escribe algo.");
-        return send(res, 200, await coach(message, b.context));
+        return send(res, 200, await coach(message, b.context, b.history));
     }
 
     throw HttpError(404, "Endpoint no encontrado.");
@@ -330,5 +394,5 @@ http.createServer(async (req, res) => {
     }
     serve(req, res, url.pathname);
 }).listen(PORT, () => {
-    console.log(`Horizonte en http://localhost:${PORT}  ·  Coach: ${process.env.GEMINI_API_KEY ? "Gemini" : "modo local (define GEMINI_API_KEY para activar Gemini)"}`);
+    console.log(`Horizonte en http://localhost:${PORT}  ·  Coach: ${coachProviders().map(([n]) => n).join(" → ") || "solo respuestas predefinidas"}`);
 });

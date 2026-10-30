@@ -328,3 +328,107 @@ a.p-opt { text-align: center; }
 .p-stats dt { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #8fb0c0; }
 .p-stats dd { margin: 4px 0 0; font-family: var(--serif); font-size: 26px; color: #fff; }
 @media (max-height: 640px) { .p-title { font-size: 22px; margin-bottom: 18px; } .p-card { padding-top: 60px; } }
+
+/* ---------- La Década: liga fantasy de carteras ---------- */
+.dec { position: fixed; inset: 0; z-index: 60; background: #041722; color: #eaf3f8; overflow-y: auto; overscroll-behavior: contain; }
+.d-scroll { width: min(560px, 100%); margin: 0 auto; min-height: 100%; background: linear-gradient(175deg, #00344f, #041722 55%); }
+@media (min-width: 700px) { .d-scroll { border-left: 1px solid rgba(255,255,255,.08); border-right: 1px solid rgba(255,255,255,.08); } }
+.d-top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: #041722e6; border-bottom: 1px solid rgba(255,255,255,.08); }
+.d-in { padding: 32px 24px 48px; }
+.d-h1 { font-family: var(--serif); font-size: clamp(32px, 8vw, 44px); line-height: 1.08; color: #fff; margin-bottom: 22px; }
+.d-years { font-size: clamp(54px, 15vw, 84px); letter-spacing: -.02em; margin-bottom: 14px; animation: up .5s cubic-bezier(.2,.8,.2,1) both; }
+.d-rules { list-style: none; counter-reset: r; padding: 0; margin: 0 0 24px; border-top: 1px solid rgba(255,255,255,.12); }
+.d-rules li { counter-increment: r; display: grid; grid-template-columns: 34px 1fr; padding: 13px 0; border-bottom: 1px solid rgba(255,255,255,.12); color: #c4d6e0; font-size: 14px; }
+.d-rules li::before { content: "0" counter(r); font-family: var(--serif); color: var(--accent); }
+.d-rules b { color: #fff; font-weight: 600; }
+.d-quote { font-family: var(--serif); font-style: italic; font-size: 19px; color: #fff; border-left: 2px solid var(--accent); padding-left: 14px; margin-bottom: 26px; }
+.d-muted { color: #8fb0c0; }
+.d-white { color: #fff; }
+.dec .pos { color: #7fe0c2; } .dec .neg { color: #ffb4ac; }
+
+.d-presets { display: flex; gap: 6px; margin: -10px 0 18px; flex-wrap: wrap; }
+.d-chip { background: none; border: 1px solid rgba(255,255,255,.25); color: #fff; padding: 7px 12px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.d-chip:hover { border-color: #fff; }
+.d-squad { display: grid; gap: 8px; margin-bottom: 14px; }
+.d-player { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; padding: 14px 14px 14px 16px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.12); border-left: 3px solid var(--c); transition: background .15s; }
+.d-player.on { background: rgba(255,255,255,.075); }
+.d-ph { display: grid; }
+.d-ph b { font-family: var(--serif); font-weight: 400; font-size: 19px; color: #fff; }
+.d-role { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--c); font-weight: 600; }
+.d-attr { grid-column: 1; display: flex; gap: 18px; margin: 0; }
+.d-attr dt { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #8fb0c0; }
+.d-attr dd { margin: 2px 0 0; font-size: 14px; font-weight: 600; color: #fff; }
+.d-vol { grid-column: 1; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #8fb0c0; }
+.d-vol i { display: block; height: 3px; background: var(--c); }
+.d-stepper { grid-column: 2; grid-row: 1 / span 3; align-self: center; display: grid; justify-items: center; gap: 4px; }
+.d-stepper button { width: 38px; height: 34px; background: none; border: 1px solid rgba(255,255,255,.28); color: #fff; font-size: 18px; line-height: 1; }
+.d-stepper button:hover:not(:disabled) { border-color: #fff; background: rgba(255,255,255,.08); }
+.d-stepper button:disabled { opacity: .3; cursor: default; }
+.d-stepper output { font-family: var(--serif); font-size: 22px; color: #fff; min-width: 58px; text-align: center; }
+.d-mix { display: flex; height: 8px; background: rgba(255,255,255,.08); margin-bottom: 10px; }
+.d-mix i { transition: flex .25s; } .d-mix .d-empty { background: repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 4px, transparent 4px 8px); }
+.d-draft .p-go { margin-top: 18px; }
+.p-go:disabled { opacity: .4; }
+
+.d-score { margin-bottom: 8px; }
+.d-val { display: block; font-family: var(--serif); font-size: clamp(46px, 13vw, 64px); line-height: 1; color: #fff; letter-spacing: -.02em; }
+.d-sub { margin-top: 8px; font-size: 14px; color: #c4d6e0; }
+.d-cash { color: var(--accent); font-weight: 600; }
+.d-chart { display: block; width: 100%; height: 120px; margin: 18px 0 22px; overflow: visible; }
+.d-chart .d-base { stroke: rgba(255,255,255,.3); stroke-dasharray: 3 3; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.d-chart .d-grid { stroke: rgba(255,255,255,.06); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.d-chart .d-line { fill: none; stroke: #7fe0c2; stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.d-chart .d-line.down { stroke: #ffb4ac; }
+.d-chart .d-dot { fill: var(--accent); }
+.d-news { padding: 20px 18px; background: rgba(255,255,255,.05); border-left: 3px solid #7fb8d4; margin-bottom: 22px; animation: up .4s cubic-bezier(.2,.8,.2,1) both; }
+.d-news.pos { border-left-color: #4fc3a1; color: inherit; } .d-news.neg { border-left-color: #ff8a80; color: inherit; }
+.d-tag { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #9cc7dc; margin-bottom: 10px; }
+.d-headline { font-family: var(--serif); font-size: clamp(21px, 5.6vw, 26px); line-height: 1.25; color: #fff; margin-bottom: 14px; }
+.d-ret { font-size: 15px; color: #c4d6e0; margin-bottom: 12px; }
+.d-ret b { font-size: 20px; }
+.d-assets { list-style: none; margin: 0; padding: 0; border-top: 1px solid rgba(255,255,255,.1); }
+.d-assets li { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.1); font-size: 14px; color: #dbe8ef; }
+.d-assets li i { width: 10px; height: 10px; }
+.d-assets li.out { opacity: .4; }
+.d-ask { font-family: var(--serif); font-size: 20px; color: #fff; margin-bottom: 12px; }
+.d-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.d-acts .p-opt { display: grid; gap: 2px; padding: 14px; }
+.d-acts .p-opt b { font-weight: 600; }
+.d-acts .p-opt small { color: #8fb0c0; font-size: 12px; }
+.d-acts .d-panic { border-color: rgba(255,138,128,.45); }
+.d-acts .d-panic:hover { border-color: #ff8a80; background: rgba(255,138,128,.08); }
+.flash-pos .d-val { animation: flashp .9s; } .flash-neg .d-val { animation: flashn .9s; }
+@keyframes flashp { 0%, 40% { color: #7fe0c2; } }
+@keyframes flashn { 0%, 40% { color: #ff8a80; } 10%, 30% { transform: translateX(-3px); } 20% { transform: translateX(3px); } }
+
+.d-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px; }
+.d-table td { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.12); color: #c4d6e0; }
+.d-table td:first-child { width: 28px; color: #6f93a5; }
+.d-table td.r { text-align: right; color: #fff; font-weight: 600; }
+.d-table tr.me td { color: #fff; } .d-table tr.me td:first-child { color: var(--accent); }
+.d-profile { padding: 20px 18px; border: 1px solid rgba(255,255,255,.14); border-top: 3px solid var(--accent); margin-bottom: 24px; color: #c4d6e0; font-size: 15px; line-height: 1.65; }
+.d-profile p + p { margin-top: 10px; }
+.d-board { margin-bottom: 22px; }
+.d-send { display: flex; gap: 8px; }
+.d-send input { flex: 1; min-width: 0; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.25); color: #fff; padding: 9px 12px; }
+.d-send input:focus { outline: none; border-color: #fff; }
+.d-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.d-row .p-go { margin-top: 0; }
+
+/* La Década en pantallas anchas: dos columnas, marcador fijo a la izquierda */
+@media (min-width: 1000px) {
+    .d-scroll { width: min(1240px, 100%); }
+    .d-in { padding: 56px 56px 72px; }
+    .d-intro, .d-play, .d-end { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 72px; align-items: start; }
+    .d-a { position: sticky; top: 112px; }
+    .d-intro .d-b { padding-top: 40px; }
+    .d-h1 { font-size: 56px; }
+    .d-years { font-size: 104px; }
+    .d-val { font-size: 84px; }
+    .d-chart { height: 240px; margin-top: 28px; }
+    .d-squad { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .d-player { grid-template-columns: 1fr; }
+    .d-stepper { grid-column: 1; grid-row: auto; grid-template-columns: auto 1fr auto; width: 100%; justify-self: stretch; margin-top: 6px; }
+    .d-draft > .p-kicker, .d-draft > .p-title, .d-draft > .d-presets { max-width: 640px; }
+    .d-draft .p-go { max-width: 420px; }
+}
