@@ -162,7 +162,7 @@ function viewJuegos() {
           status: g.draft.played ? `${g.draft.played} partida${g.draft.played === 1 ? "" : "s"} jugada${g.draft.played === 1 ? "" : "s"}` : "De 2 a 5 jugadores" }
     ];
     return `<section class="section"><div class="sec-head"><div><p class="kicker">Juegos</p><h2>Dos minutos al día. Pica a tus amigos.</h2>
-        <p>Minijuegos con datos reales de mercado y dinero ficticio. Los retos diarios son iguales para todos: compara tu resultado con tu grupo.</p></div>
+        <p>Datos reales de mercado y dinero de mentira. Los retos diarios son los mismos para todo el mundo, así que podéis compararos en el grupo.</p></div>
         <div class="g-streak" title="Días seguidos con algún reto diario jugado"><b>${gStreak()}</b><span>día${gStreak() === 1 ? "" : "s"} de racha</span></div></div>
         <div class="g-grid">${tiles.map(o => `<a class="g-tile t-${o.id}" href="#/${o.id}">
             <span class="g-badge">${o.badge}</span><span class="g-emoji" aria-hidden="true">${o.e}</span>

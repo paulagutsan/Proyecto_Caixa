@@ -217,14 +217,13 @@ function viewResumen() {
     const fl = futureLetter();
     const prog = totalTarget() ? (totalSaved() / totalTarget()) * 100 : 0;
     const done = MILESTONES.filter(m => m.on()).length, streak = weekStreak();
-    const hour = NOW.getHours(), hi = hour < 14 ? "Buenos días" : hour < 21 ? "Buenas tardes" : "Buenas noches";
-    return `
+        return `
     <section class="bento" aria-label="Resumen">
         <div class="b-hero">
-            <p class="hello">${hi}${user ? `, ${esc(user.username)}` : ""} 👋</p>
-            <h1>Invierte en la vida que <em>quieres tener.</em></h1>
-            <p class="lead">Ponle nombre a tu dinero, mira hacia dónde vas y avanza a tu ritmo, solo o con tu gente. Sin jerga y sin letra pequeña.</p>
-            <div class="row"><button class="btn" data-act="newGoal">Crear un objetivo ${ARROW}</button><a class="btn ghost" href="#/practica">Practicar 3 min</a></div>
+            ${user ? `<p class="hello">Hola, ${esc(user.username)}</p>` : ""}
+            <h1>Invierte en la vida que <span class="scribble">quieres tener</span>.</h1>
+            <p class="lead">Apunta para qué ahorras, cuánto llevas y cuándo llegarás. Lo demás lo vamos viendo juntos, paso a paso.</p>
+            <div class="row"><button class="btn" data-act="newGoal">Crear un objetivo ${ARROW}</button><a class="btn ghost" href="#/practica">Practicar 3 minutos</a></div>
         </div>
         <aside class="letter b-letter">
             <p class="kicker">Carta de tu yo futuro</p>
@@ -234,11 +233,11 @@ function viewResumen() {
         <div class="tile t-money"><span>Ahorrado en objetivos</span><strong class="money">${fmtR(totalSaved())}</strong><small>${S.goals.length} objetivo${S.goals.length === 1 ? "" : "s"} activo${S.goals.length === 1 ? "" : "s"}</small></div>
         <div class="tile"><span>Aportas al mes</span><strong class="money">${fmtR(totalMonthly())}</strong><small>Planificado</small></div>
         <div class="tile t-ring"><div class="ring" style="--p:${Math.min(100, prog)}"><b>${Math.round(prog)}%</b></div><div><span>Avance total</span><small class="money">de ${fmtR(totalTarget())}</small></div></div>
-        <div class="tile t-streak"><span>Racha</span><strong>${streak} <em>🔥</em></strong><small>${streak === 1 ? "semana seguida" : "semanas seguidas"} aportando</small></div>
+        <div class="tile t-streak"><span>Racha</span><strong>${streak}</strong><small>${streak === 1 ? "semana seguida" : "semanas seguidas"} aportando</small></div>
         <div class="panel b-next"><p class="kicker">Tu siguiente paso</p>${nextStep()}</div>
         <div class="panel b-miles"><div class="row between"><p class="kicker">Hitos</p><b class="small">${done} de ${MILESTONES.length}</b></div>
             <div class="bar" style="margin:4px 0 16px"><i style="width:${done / MILESTONES.length * 100}%"></i></div>
-            <ul class="chips">${MILESTONES.map(m => `<li class="${m.on() ? "on" : ""}">${m.on() ? "✓ " : ""}${m.name}</li>`).join("")}</ul></div>
+            <ul class="chips">${MILESTONES.map(m => `<li class="${m.on() ? "on" : ""}">${m.name}</li>`).join("")}</ul></div>
     </section>
 
     ${S.goals.length ? `<section class="section"><div class="sec-head"><div><p class="kicker">Tus objetivos</p><h2>Cómo vas</h2></div><a class="link" href="#/objetivos">Ver todos</a></div>
@@ -263,7 +262,7 @@ function goalCard(g) {
 }
 
 function viewObjetivos() {
-    return `<section class="section"><div class="sec-head"><div><p class="kicker">Objetivos</p><h2>Cada euro, con un propósito.</h2>
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Objetivos</p><h2>Para qué estás ahorrando</h2>
         <p>Registra tus aportaciones reales. El seguimiento de lo aportado y las proyecciones se muestran siempre por separado.</p></div>
         <button class="btn" data-act="newGoal">Nuevo objetivo ${ARROW}</button></div>
     ${S.goals.length ? `<div class="cols c3">${S.goals.map(goalCard).join("")}</div>`
@@ -286,7 +285,7 @@ function viewSimulador() {
     if (sim.initial === null) sim.initial = Math.round(totalSaved());
     const rng = (id, label, min, max, step) => `<div class="ctl"><div class="rv"><label for="sim_${id}">${label}</label><b id="out_${id}">${rangeFmt[id](sim[id])}</b></div>
         <input type="range" id="sim_${id}" data-input="simRange" data-key="${id}" min="${min}" max="${max}" step="${step}" value="${sim[id]}"></div>`;
-    return `<section class="section"><div class="sec-head"><div><p class="kicker">Simulador</p><h2>Proyección de escenarios</h2>
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Simulador</p><h2>¿Y si sigues así?</h2>
         <p>Compara cómo podría evolucionar tu ahorro bajo distintas hipótesis de rentabilidad. Son supuestos ilustrativos, no previsiones.</p></div></div>
     <div class="sim">
         <div class="sim-ctl">
@@ -406,7 +405,7 @@ let circ = { list: null, err: null, timer: null, last: "" };
 const resetCirc = () => { clearInterval(circ.timer); circ = { list: null, err: null, timer: null, last: "" }; };
 
 function viewCirculo() {
-    const head = `<section class="section"><div class="sec-head"><div><p class="kicker">Círculo</p><h2>Un objetivo compartido. Cada cartera, individual.</h2>
+    const head = `<section class="section"><div class="sec-head"><div><p class="kicker">Círculo</p><h2>Ahorrad juntos para lo mismo</h2>
         <p>Fija una meta común con amigos o familia e invítalos con un código. Cada participante solo comparte lo que decide aportar a ese objetivo.</p></div>
         ${user ? `<div class="row"><button class="btn line" data-act="joinCircle">Unirme con código</button><button class="btn" data-act="newCircle">Crear círculo</button></div>` : ""}</div>`;
     const privacy = `<div class="panel tint" style="margin-top:24px"><p class="kicker">Privacidad</p><p class="muted">Nadie puede ver ni gestionar tus inversiones. El círculo comparte únicamente el objetivo común y las aportaciones que cada persona decide registrar en él.</p></div>`;
@@ -496,7 +495,7 @@ function viewAprende() {
     const due = CARDS.filter(c => p.due[c.id] !== undefined && p.due[c.id] <= t).length;
     const fresh = CARDS.filter(c => p.due[c.id] === undefined).length;
     const streak = pulseStreak();
-    return `<section class="section"><div class="sec-head"><div><p class="kicker">Aprende</p><h2>Aprende decidiendo, no memorizando.</h2>
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Aprende</p><h2>Tres minutos al día, con casos reales.</h2>
         <p>Cada tarjeta te pide decidir antes de ver la respuesta. Lo que falles vuelve más adelante; lo que aciertes, cada vez más espaciado.</p></div></div>
         <div class="panel today">
             <div><p class="kicker">Práctica de hoy · 3 minutos</p>
@@ -507,7 +506,7 @@ function viewAprende() {
         </div>
     </section>
 
-    <section class="section"><div class="sec-head"><div><p class="kicker">Temas</p><h2>Lo esencial, en dos minutos cada uno.</h2>
+    <section class="section"><div class="sec-head"><div><p class="kicker">Temas</p><h2>Las ideas que más te van a servir</h2>
         <p>Lee la idea clave y practica solo ese tema. Un tema está dominado cuando aciertas todas sus tarjetas dos veces.</p></div></div>
     <div class="lessons">${TOPICS.map((tp, i) => {
         const m = tp.cards.filter(isMastered).length;
