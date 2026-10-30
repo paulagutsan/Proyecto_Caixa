@@ -160,6 +160,10 @@ function closeSheet() {
     document.body.style.overflow = "";
 }
 function paintChrome() {
+    const dark = document.documentElement.dataset.theme === "dark", priv = document.documentElement.classList.contains("private");
+    const tb = $("#themeBtn"), pb = $("#privBtn");
+    if (tb) { const l = dark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"; tb.title = l; tb.setAttribute("aria-label", l); }
+    if (pb) { const l = priv ? "Mostrar importes" : "Ocultar importes"; pb.title = l; pb.setAttribute("aria-label", l); pb.setAttribute("aria-pressed", priv); }
     const b = $("#authBtn");
     b.textContent = user ? user.username : "Acceder";
     b.dataset.act = user ? "profile" : "auth";
@@ -212,48 +216,43 @@ function nextStep() {
 function viewResumen() {
     const fl = futureLetter();
     const prog = totalTarget() ? (totalSaved() / totalTarget()) * 100 : 0;
-    const done = MILESTONES.filter(m => m.on()).length;
+    const done = MILESTONES.filter(m => m.on()).length, streak = weekStreak();
+    const hour = NOW.getHours(), hi = hour < 14 ? "Buenos días" : hour < 21 ? "Buenas tardes" : "Buenas noches";
     return `
-    <section class="hero">
-        <div class="hero-l">
-            <p class="kicker">Planificación de objetivos</p>
+    <section class="bento" aria-label="Resumen">
+        <div class="b-hero">
+            <p class="hello">${hi}${user ? `, ${esc(user.username)}` : ""} 👋</p>
             <h1>Invierte en la vida que <em>quieres tener.</em></h1>
-            <p class="lead">Define para qué ahorras, proyecta distintos escenarios y avanza con constancia, solo o con tu círculo. Información clara, sin tecnicismos.</p>
-            <div class="row"><button class="btn" data-act="newGoal">Definir un objetivo ${ARROW}</button><a class="btn line" href="#/practica">Practicar 3 minutos</a></div>
+            <p class="lead">Ponle nombre a tu dinero, mira hacia dónde vas y avanza a tu ritmo, solo o con tu gente. Sin jerga y sin letra pequeña.</p>
+            <div class="row"><button class="btn" data-act="newGoal">Crear un objetivo ${ARROW}</button><a class="btn ghost" href="#/practica">Practicar 3 min</a></div>
         </div>
-        <aside class="letter">
+        <aside class="letter b-letter">
             <p class="kicker">Carta de tu yo futuro</p>
             <blockquote>${esc(fl.q)}</blockquote>
             <small>${esc(fl.note)}</small>
         </aside>
+        <div class="tile t-money"><span>Ahorrado en objetivos</span><strong class="money">${fmtR(totalSaved())}</strong><small>${S.goals.length} objetivo${S.goals.length === 1 ? "" : "s"} activo${S.goals.length === 1 ? "" : "s"}</small></div>
+        <div class="tile"><span>Aportas al mes</span><strong class="money">${fmtR(totalMonthly())}</strong><small>Planificado</small></div>
+        <div class="tile t-ring"><div class="ring" style="--p:${Math.min(100, prog)}"><b>${Math.round(prog)}%</b></div><div><span>Avance total</span><small class="money">de ${fmtR(totalTarget())}</small></div></div>
+        <div class="tile t-streak"><span>Racha</span><strong>${streak} <em>🔥</em></strong><small>${streak === 1 ? "semana seguida" : "semanas seguidas"} aportando</small></div>
+        <div class="panel b-next"><p class="kicker">Tu siguiente paso</p>${nextStep()}</div>
+        <div class="panel b-miles"><div class="row between"><p class="kicker">Hitos</p><b class="small">${done} de ${MILESTONES.length}</b></div>
+            <div class="bar" style="margin:4px 0 16px"><i style="width:${done / MILESTONES.length * 100}%"></i></div>
+            <ul class="chips">${MILESTONES.map(m => `<li class="${m.on() ? "on" : ""}">${m.on() ? "✓ " : ""}${m.name}</li>`).join("")}</ul></div>
     </section>
 
-    <section class="facts" aria-label="Indicadores">
-        <div class="fact"><span>Capital en objetivos</span><strong>${fmtR(totalSaved())}</strong><small>${S.goals.length} objetivo${S.goals.length === 1 ? "" : "s"} activo${S.goals.length === 1 ? "" : "s"}</small></div>
-        <div class="fact"><span>Aportación mensual</span><strong>${fmtR(totalMonthly())}</strong><small>Planificada</small></div>
-        <div class="fact"><span>Grado de avance</span><strong>${pct(Math.round(prog * 10) / 10)}</strong><small>Sobre ${fmtR(totalTarget())}</small></div>
-        <div class="fact"><span>Constancia</span><strong>${weekStreak()}</strong><small>Semanas consecutivas</small></div>
-    </section>
-
-    <section class="section cols c21">
-        <div class="panel"><p class="kicker">Siguiente paso</p>${nextStep()}</div>
-        <div class="panel tint"><p class="kicker">Hitos · ${done} de ${MILESTONES.length}</p>
-            <ul class="miles">${MILESTONES.map(m => `<li class="${m.on() ? "on" : ""}">${m.name}</li>`).join("")}</ul></div>
-    </section>
-
-    ${S.goals.length ? `<section class="section"><div class="sec-head"><div><p class="kicker">Cartera de objetivos</p><h2>Situación actual</h2></div><a class="link" href="#/objetivos">Ver todos</a></div>
+    ${S.goals.length ? `<section class="section"><div class="sec-head"><div><p class="kicker">Tus objetivos</p><h2>Cómo vas</h2></div><a class="link" href="#/objetivos">Ver todos</a></div>
         <div class="cols c3">${S.goals.slice(0, 3).map(goalCard).join("")}</div></section>` : ""}`;
 }
-
 function goalCard(g) {
     const st = goalStatus(g), p = progress(g), ml = monthsLeft(g);
     const need = requiredMonthly(g.target, saved(g), ml, 5);
     return `<article class="goal">
         <div class="row between" style="align-items:flex-start"><div><p class="goal-cat">${CATS[g.category]}</p><h3>${esc(g.name)}</h3></div><span class="tag ${st.cls}">${st.txt}</span></div>
-        <div><div class="amt"><strong>${fmt(saved(g))}</strong><span>de ${fmt(g.target)}</span></div><div class="bar"><i style="width:${p}%"></i></div></div>
+        <div><div class="amt money"><strong>${fmt(saved(g))}</strong><span>de ${fmt(g.target)}</span></div><div class="bar"><i style="width:${p}%"></i></div></div>
         <dl class="meta">
             <div><dt>Horizonte</dt><dd>Dic. ${g.year}</dd></div>
-            <div><dt>Aportación</dt><dd>${fmt(g.monthly)}/mes</dd></div>
+            <div><dt>Aportación</dt><dd class="money">${fmt(g.monthly)}/mes</dd></div>
             <div><dt>Avance</dt><dd>${pct(Math.round(p * 10) / 10)}</dd></div>
             <div><dt>${isDone(g) ? "Estado" : need > g.monthly ? "Necesario (5 % hip.)" : "Fecha estimada"}</dt><dd>${isDone(g) ? "Completado" : need > g.monthly ? `${fmt(roundUp5(need))}/mes` : etaLabel(monthsToReach(g, 0))}</dd></div>
         </dl>
@@ -276,9 +275,9 @@ function viewObjetivos() {
 /* ---- Simulador ---- */
 const SCENARIOS = [
     { id: "cero", name: "Sin rentabilidad", rate: 0, c: "--ink3", dash: true },
-    { id: "Conservador", name: "Conservador", rate: 2, c: "--sky" },
+    { id: "Conservador", name: "Conservador", rate: 2, c: "--c-con" },
     { id: "Moderado", name: "Moderado", rate: 5, c: "--blue" },
-    { id: "Dinámico", name: "Dinámico", rate: 8, c: "--navy" }
+    { id: "Dinámico", name: "Dinámico", rate: 8, c: "--c-dyn" }
 ];
 let sim = { initial: null, monthly: 100, years: 10, inflation: 2.5, real: false, goalId: null, hover: null };
 const rangeFmt = { initial: v => fmt(v), monthly: v => fmt(v), years: v => `${v} año${v == 1 ? "" : "s"}`, inflation: v => `${String(v).replace(".", ",")} %` };
@@ -391,7 +390,7 @@ function drawSim() {
         series.forEach(s => { ctx.fillStyle = s.color; ctx.fillRect(x - 3.5, Y(s.data[i]) - 3.5, 7, 7); });
         const lines = [`${YEAR + i}`, ...series.map(s => [s.name, fmtR(s.data[i])])];
         const bw = 196, bh = lines.length * 19 + 14, bx = x + 12 + bw > W ? x - bw - 12 : x + 12, by = T + 4;
-        ctx.fillStyle = cssVar("--ink"); ctx.fillRect(bx, by, bw, bh);
+        ctx.fillStyle = "#0a2433"; ctx.fillRect(bx, by, bw, bh);
         lines.forEach((l, k) => {
             const yy = by + 22 + k * 19;
             ctx.fillStyle = k ? "#c9d7e0" : "#ffffff"; ctx.font = `${k ? 400 : 600} 12px Inter, sans-serif`; ctx.textAlign = "left";
@@ -425,10 +424,10 @@ function circleCard(c) {
     return `<article class="goal">
         <div class="row between" style="align-items:flex-start"><div><p class="goal-cat">${CATS[c.category] || "Objetivo compartido"} · ${c.members.length} participante${c.members.length === 1 ? "" : "s"}</p><h3>${esc(c.name)}</h3></div>
             ${c.total >= c.target ? `<span class="tag done">Alcanzado</span>` : ""}</div>
-        <div><div class="amt"><strong>${fmt(c.total)}</strong><span>de ${fmt(c.target)} · ${pct(Math.round(p * 10) / 10)}</span></div><div class="bar"><i style="width:${p}%"></i></div></div>
+        <div><div class="amt money"><strong>${fmt(c.total)}</strong><span>de ${fmt(c.target)} · ${pct(Math.round(p * 10) / 10)}</span></div><div class="bar"><i style="width:${p}%"></i></div></div>
         <table class="tbl"><thead><tr><th>Participante</th><th class="r">Aportado</th><th class="r">Peso</th></tr></thead><tbody>
             ${c.members.map(m => `<tr><td><span class="initial">${esc(m.username[0].toUpperCase())}</span>${esc(m.username)}${m.isMe ? ` <span class="muted small">(tú)</span>` : ""}${m.isOwner ? ` <span class="muted small">· administrador</span>` : ""}</td>
-            <td class="r">${fmt(m.contributed)}</td><td class="r muted">${c.total ? pct(Math.round((m.contributed / c.total) * 1000) / 10) : "—"}</td></tr>`).join("")}</tbody></table>
+            <td class="r money">${fmt(m.contributed)}</td><td class="r muted">${c.total ? pct(Math.round((m.contributed / c.total) * 1000) / 10) : "—"}</td></tr>`).join("")}</tbody></table>
         <div class="row between"><span class="small muted">Código de invitación</span><span class="code">${esc(c.code)}</span></div>
         <ul class="feed">${c.feed.slice(0, 6).map(f => `<li><span>${esc(f.text)}</span><time>${ago(f.t)}</time></li>`).join("")}</ul>
         <div class="acts"><button class="btn sm" data-act="circleContribute" data-code="${c.code}">Aportar</button>
@@ -705,6 +704,7 @@ function viewPulso() {
     return `<div class="pulse">
         <header class="p-top">
             <a href="#/aprende" class="p-close" aria-label="Salir de la práctica">×</a>
+            <img class="imm-logo" src="brand/horizonte-logo-oscuro-transparente.svg" alt="Horizonte" width="96" height="30">
             <div class="p-bars">${Array.from({ length: n + 1 }, (_, i) => `<i data-b="${i}" class="${i === 0 ? "now" : ""}"></i>`).join("")}</div>
             <span class="p-streak" title="Días seguidos con sesión">${pulseStreak()} d</span>
         </header>
@@ -781,7 +781,7 @@ function render(animate = true) {
     const el = $("#view");
     const changed = r !== lastRoute;
     if (!changed && ((r === "practica" && $("#pulseFeed")) || (GAME_MOUNT[r] && $("#gRoot")))) return paintChrome(); // no reiniciar el feed ni la partida
-    if (changed) { pulse?.io?.disconnect(); gameLeave(); document.body.classList.toggle("immersive", IMMERSIVE.includes(r)); el.classList.remove("fade"); }
+    if (changed) { if ($(".sheet")) closeSheet(); pulse?.io?.disconnect(); gameLeave(); document.body.classList.toggle("immersive", IMMERSIVE.includes(r)); el.classList.remove("fade"); }
     el.innerHTML = VIEWS[r]();
     if (animate && changed && !IMMERSIVE.includes(r)) { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
     $$("#nav a").forEach(a => { const on = a.dataset.tab === (r === "practica" ? "aprende" : GAME_MOUNT[r] ? "juegos" : r); a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
@@ -940,6 +940,15 @@ const ACTIONS = {
         try { await navigator.clipboard.writeText(text); toast("Tarjeta copiada al portapapeles."); } catch { /* sin portapapeles */ }
     },
 
+    theme: () => {
+        const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+        document.documentElement.dataset.theme = t; lsSet("hz_theme", t); paintChrome();
+        if (route() === "simulador") drawSim();
+    },
+    privacy: () => {
+        const on = document.documentElement.classList.toggle("private"); lsSet("hz_private", on); paintChrome();
+        toast(on ? "Importes ocultos. Pulsa el ojo para volver a verlos." : "Importes visibles.");
+    },
     coach: () => coachSheet(),
     coachChip: el => sendCoach(el.dataset.q),
     ...GAME_ACTIONS

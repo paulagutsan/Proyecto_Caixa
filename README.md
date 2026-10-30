@@ -34,6 +34,13 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
 - **Asistente**: conversacional con IA gratuita (OpenRouter, Gemini o Pollinations; reglas locales si no hay conexión), recuerda la conversación y tiene guardarraíles: educativo, sin asesoramiento personalizado.
 - **Cuentas**: registro/login (scrypt, cookie HttpOnly); los datos se sincronizan por usuario. Modo invitado en localStorage.
 
+## Diseño
+
+- Logo de Horizonte en `public/brand/` (cabecera, pie, favicon, icono de la app y pantallas inmersivas). El logo no se modifica.
+- Sistema visual pensado para la Generación Z: tarjetas redondeadas, inicio en formato bento, tipografía Inter con acentos en Source Serif 4, navegación inferior en móvil y **modo oscuro** (sigue al sistema o se cambia con la luna).
+- **Modo privado** (icono del ojo): difumina los importes para mirar la app en público o sin agobiarse.
+- Sin patrones oscuros: nada de confeti por invertir, ni notificaciones push, ni urgencias falsas; los juegos usan dinero ficticio.
+
 ## Estructura
 
 - `server.js` API + estáticos (los datos viven en `data/`, ignorado por git)

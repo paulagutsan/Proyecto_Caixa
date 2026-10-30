@@ -1,10 +1,13 @@
 {
-  "name": "Horizonte",
+  "name": "Horizonte · Fondos de inversión",
   "short_name": "Horizonte",
   "description": "Define para qué ahorras y mira hacia dónde vas.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4f8fb",
-  "theme_color": "#f4f8fb",
-  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+  "background_color": "#f4f6fb",
+  "theme_color": "#00344f",
+  "icons": [
+    { "src": "brand/horizonte-icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "brand/estrella.png", "sizes": "312x258", "type": "image/png", "purpose": "any" }
+  ]
 }
