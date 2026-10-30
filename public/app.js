@@ -770,339 +770,26 @@ function answerPulse(el) {
 }
 
 /* =========================================================
-   La Década: liga fantasy de carteras sobre una década real oculta.
-   Haces tu draft, juegas diez años de mercado sin saber cuáles son
-   y decides tras cada año. El rival a batir es tu propio pánico.
-========================================================= */
-const D_FROM = 2000, D_YEARS = 10, D_START = 10000, D_ADD = 1000;
-// Rentabilidades anuales aproximadas 2000-2024 (%, en dólares, ilustrativas):
-// MSCI World, MSCI Emerging Markets, Bloomberg US Aggregate, oro y letras del Tesoro de EE. UU.
-const D_ASSETS = [
-    { k: "acc", short: "Acciones", x: 50, y: 18, bio: "El goleador. A largo plazo es quien más marca, pero tiene temporadas muy malas.", name: "Acciones globales", role: "Delantero", color: "#007eae",
-        r: [-13.2, -16.8, -19.9, 33.1, 14.7, 9.5, 20.1, 9.0, -40.7, 30.0, 11.8, -5.5, 15.8, 26.7, 4.9, -0.9, 7.5, 22.4, -8.7, 27.7, 15.9, 21.8, -18.1, 23.8, 18.7] },
-    { k: "emg", short: "Emergentes", x: 78, y: 30, bio: "Jugadas espectaculares y fallos igual de grandes. El más imprevisible.", name: "Bolsa emergente", role: "Extremo", color: "#ff8300",
-        r: [-30.6, -2.4, -6.0, 56.3, 25.9, 34.5, 32.6, 39.8, -53.2, 79.0, 19.2, -18.2, 18.6, -2.3, -1.8, -14.6, 11.6, 37.8, -14.2, 18.9, 18.7, -2.5, -20.0, 10.3, 7.5] },
-    { k: "bon", short: "Bonos", x: 50, y: 66, bio: "Sólido y constante. Rara vez brilla, rara vez falla.", name: "Bonos", role: "Defensa", color: "#7fb8d4",
-        r: [11.6, 8.4, 10.3, 4.1, 4.3, 2.4, 4.3, 7.0, 5.2, 5.9, 6.5, 7.8, 4.2, -2.0, 6.0, 0.5, 2.6, 3.5, 0.0, 8.7, 7.5, -1.5, -13.0, 5.5, 1.3] },
-    { k: "oro", short: "Oro", x: 22, y: 42, bio: "Suele aparecer cuando hay crisis. Irregular el resto del tiempo.", name: "Oro", role: "Centrocampista", color: "#c9a227",
-        r: [-5.4, 0.8, 24.8, 19.1, 5.2, 18.2, 22.8, 31.4, 5.5, 24.0, 29.5, 10.1, 7.0, -28.0, -1.5, -10.4, 8.6, 13.1, -1.6, 18.3, 25.1, -3.6, -0.3, 13.1, 27.2] },
-    { k: "liq", short: "Liquidez", x: 50, y: 85, bio: "No encaja casi nunca, pero tampoco marca. Tu dinero, quieto y a salvo.", name: "Liquidez", role: "Portero", color: "#8497a3",
-        r: [5.8, 3.8, 1.6, 1.0, 1.4, 3.2, 4.8, 4.7, 1.5, 0.1, 0.1, 0.0, 0.1, 0.0, 0.0, 0.0, 0.3, 0.9, 1.9, 2.3, 0.6, 0.0, 1.5, 5.0, 5.2] }
-];
-const D_NEWS = [
-    "Las puntocom que valían miles de millones empiezan a desplomarse.",
-    "Atentados en Nueva York: la bolsa estadounidense cierra cuatro días.",
-    "Escándalos contables hunden a varias grandes empresas.",
-    "Los bancos centrales dejan los tipos en mínimos y vuelve el apetito por el riesgo.",
-    "Crecimiento global sólido; China acelera.",
-    "El precio de la vivienda marca máximos en medio mundo.",
-    "Las materias primas se disparan.",
-    "Primeros avisos en las hipotecas de alto riesgo en EE. UU.",
-    "Quiebra un banco de inversión con 158 años de historia.",
-    "Rescates y estímulos masivos. Nadie se fía del rebote.",
-    "Grecia pide un rescate y se duda del futuro del euro.",
-    "Rebajan la nota de la deuda de EE. UU.; crisis de deuda en Europa.",
-    "El BCE promete hacer «lo que sea necesario» para salvar el euro.",
-    "La Reserva Federal anuncia que retirará estímulos; el oro se hunde.",
-    "El petróleo cae a la mitad en unos meses.",
-    "Devaluación sorpresa en China y un verano de sobresaltos.",
-    "Un referéndum decide la salida de un país de la Unión Europea.",
-    "Un año de calma inusual: la volatilidad toca mínimos.",
-    "Guerra comercial, subidas de tipos y un diciembre negro.",
-    "Los bancos centrales vuelven a bajar tipos.",
-    "Una pandemia paraliza el planeta.",
-    "Reapertura, euforia y acciones meme.",
-    "La inflación se dispara: subidas de tipos más rápidas en décadas.",
-    "La IA generativa entra en escena; caen varios bancos regionales.",
-    "Récords en bolsa impulsados por la tecnología."
-];
-const D_PRESETS = [
-    { name: "Defensiva", desc: "Prioriza no perder", w: { acc: 20, emg: 0, bon: 50, oro: 0, liq: 30 } },
-    { name: "Equilibrada", desc: "Un poco de todo", w: { acc: 40, emg: 10, bon: 40, oro: 10, liq: 0 } },
-    { name: "Al ataque", desc: "Más goles, más sustos", w: { acc: 60, emg: 30, bon: 0, oro: 10, liq: 0 } }
-];
-const D_LAST = D_ASSETS[0].r.length - D_YEARS; // último año de inicio posible (índice)
-const dCode = s => (s * 7919 + 4242).toString(36).toUpperCase();
-function dDecode(code) {
-    const n = parseInt(String(code || ""), 36) - 4242;
-    return n >= 0 && n % 7919 === 0 && n / 7919 <= D_LAST ? n / 7919 : null;
-}
-const dSigned = n => `${n > 0 ? "+" : n < 0 ? "−" : ""}${pct(Math.abs(Math.round(n * 10) / 10))}`;
-const dX = n => n.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const dTone = n => n > 0 ? "pos" : n < 0 ? "neg" : "";
-
-function dStats(a) {
-    const g = Math.pow(a.r.reduce((p, x) => p * (1 + x / 100), 1), 1 / a.r.length) - 1;
-    const m = a.r.reduce((s, x) => s + x, 0) / a.r.length;
-    const vol = Math.sqrt(a.r.reduce((s, x) => s + (x - m) ** 2, 0) / a.r.length);
-    return { mean: g * 100, worst: Math.min(...a.r), best: Math.max(...a.r), vol };
-}
-const D_STATS = Object.fromEntries(D_ASSETS.map(a => [a.k, dStats(a)]));
-const dClamp = n => Math.max(1, Math.min(5, Math.round(n)));
-const dRate = k => ({ atk: dClamp(D_STATS[k].mean / 2.2), risk: dClamp(D_STATS[k].vol / 6) });
-const dDots = (n, cls = "") => `<span class="d-dots ${cls}" aria-label="${n} de 5">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span>`;
-const dResult = r => r >= 1 ? { t: "Victoria", c: "pos" } : r <= -1 ? { t: "Derrota", c: "neg" } : { t: "Empate", c: "" };
-
-let dec = null;
-function decNew(start) {
-    const code = location.hash.match(/[?&]r=([A-Z0-9]+)/i)?.[1]?.toUpperCase();
-    const s = start ?? dDecode(code);
-    dec = { phase: "intro", challenged: s !== null && start === undefined, start: s ?? Math.floor(Math.random() * (D_LAST + 1)),
-        w: { ...D_PRESETS[1].w }, hold: {}, n: 0, hist: [], adds: [], log: [], inCash: false, panic: 0, dips: 0, last: null, board: null };
-    dec.code = dCode(dec.start);
-}
-const decValue = () => Object.values(dec.hold).reduce((s, x) => s + x, 0);
-const decWSum = () => Object.values(dec.w).reduce((s, x) => s + x, 0);
-const decContributed = () => D_START + D_ADD * dec.adds.length;
-function decSpread(total, w = dec.w) { dec.hold = Object.fromEntries(D_ASSETS.map(a => [a.k, total * (w[a.k] || 0) / 100])); }
-const decIdx = i => dec.start + i;
-
-function decPlay() {
-    const y = decIdx(dec.n), before = decValue();
-    D_ASSETS.forEach(a => { dec.hold[a.k] *= 1 + a.r[y] / 100; });
-    const after = decValue();
-    dec.last = { i: dec.n, y, ret: (after / before - 1) * 100, before, after };
-    dec.n++; dec.hist.push(after);
-}
-function decDecide(act) {
-    const fell = dec.last && dec.last.ret < 0, v = decValue();
-    if (act === "rebal") decSpread(v);
-    if (act === "add") {
-        dec.adds.push(dec.n);
-        if (fell) dec.dips++;
-        if (dec.inCash) dec.hold.liq += D_ADD; else decSpread(v + D_ADD);
-    }
-    if (act === "sell") { if (fell) dec.panic++; dec.inCash = true; decSpread(v, { liq: 100 }); }
-    if (act === "back") { dec.inCash = false; decSpread(v); }
-    dec.log.push({ i: dec.n, act });
-    decPlay();
-}
-// Misma década y mismas aportaciones, con una estrategia fija rebalanceada cada año.
-function decBench(w) {
-    let v = D_START;
-    for (let i = 0; i < D_YEARS; i++) {
-        if (dec.adds.includes(i)) v += D_ADD;
-        v *= 1 + D_ASSETS.reduce((s, a) => s + (w[a.k] || 0) / 100 * a.r[decIdx(i)], 0) / 100;
-    }
-    return v;
-}
-
-function decChart() {
-    const pts = [D_START, ...dec.hist], max = Math.max(...pts, D_START * 1.2), min = Math.min(...pts, D_START * .7);
-    const X = i => (i / D_YEARS) * 300, Y = v => 96 - ((v - min) / (max - min)) * 88;
-    const line = pts.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
-    const end = pts.at(-1);
-    return `<div class="d-chartbox"><svg class="d-chart" viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">
-        <line x1="0" x2="300" y1="${Y(D_START)}" y2="${Y(D_START)}" class="d-base"/>
-        ${Array.from({ length: D_YEARS - 1 }, (_, i) => `<line x1="${X(i + 1)}" x2="${X(i + 1)}" y1="0" y2="100" class="d-grid"/>`).join("")}
-        <polyline points="${line}" class="d-line ${end >= D_START ? "" : "down"}"/>
-    </svg><div class="d-axis">${Array.from({ length: D_YEARS }, (_, i) => `<span class="${i < dec.n ? "on" : ""}">T${i + 1}</span>`).join("")}</div></div>`;
-}
-// Campo de juego: cada jugador es una ficha cuyo tamaño depende de cuánto dinero lleva.
-function decPitch(w, tags = null) {
-    return `<div class="d-pitch ${tags ? "live" : ""}" role="img" aria-label="Tu equipo en el campo">
-        <i class="d-pl mid"></i><i class="d-pl circ"></i><i class="d-pl box top"></i><i class="d-pl box bot"></i>
-        ${D_ASSETS.map(a => {
-            const p = Math.round(w[a.k] || 0);
-            return `<div class="d-tok ${p ? "" : "off"}" style="--c:${a.color};left:${a.x}%;top:${a.y}%;--s:${Math.round(tags ? 36 + p * .4 : 44 + p * .55)}px">
-                <b>${p}%</b><span>${a.short}${tags ? ` ${tags[a.k]}` : ""}</span></div>`;
-        }).join("")}
-    </div>`;
-}
-const decShares = () => { const v = decValue() || 1; return Object.fromEntries(D_ASSETS.map(a => [a.k, dec.hold[a.k] / v * 100])); };
-
-function decTop() {
-    const label = { intro: "Portada", draft: "Fichajes", play: dec.n ? `Temporada ${dec.n} de ${D_YEARS}` : "Pitido inicial", end: "Final" }[dec.phase];
-    return `<header class="d-top">
-        <a href="#/resumen" class="p-close" aria-label="Salir del juego">×</a>
-        <div class="d-season" aria-label="${label}">${Array.from({ length: D_YEARS }, (_, i) => `<i class="${i < dec.n ? "past" : i === dec.n && dec.phase === "play" ? "now" : ""}">${i + 1}</i>`).join("")}</div>
-        <span class="d-liga" title="Comparte este código para jugar la misma década">Liga ${dec.code}</span>
-    </header>`;
-}
-
-function decIntro() {
-    const st = S.decada || {};
-    return `<div class="d-a">
-        <div class="d-badges"><span>Juego</span><span>10 temporadas</span><span>5 minutos</span><span>Dinero ficticio</span></div>
-        <h1 class="d-h1 d-logo">La Década</h1>
-        <p class="p-body d-lead">Ficha un equipo de inversiones y llévalo a través de <b class="d-white">diez años reales de mercado</b>. No sabes cuáles: lo descubres al final.</p>
-        ${decPitch(D_PRESETS[1].w)}
-    </div>
-    <div class="d-b">
-        ${dec.challenged ? `<div class="d-challenge"><b>Te han retado.</b> Vas a jugar exactamente la misma década que quien te ha enviado el enlace.</div>` : ""}
-        <p class="d-tag">Cómo se juega</p>
-        <ol class="d-steps">
-            <li><b>1</b><div><h3>Ficha tu equipo</h3><p>Tienes 10.000 € ficticios. Repártelos entre cinco jugadores: unos marcan más goles, otros defienden mejor.</p></div></li>
-            <li><b>2</b><div><h3>Juega 10 temporadas</h3><p>Cada temporada es un año real entre 2000 y 2024. Verás la noticia del año, cómo ha jugado cada uno y elegirás tu jugada.</p></div></li>
-            <li><b>3</b><div><h3>Gana la liga</h3><p>Al final descubres qué década era, ganas una medalla y te comparas con tu grupo.</p></div></li>
-        </ol>
-        <button class="p-opt p-go d-big" data-act="decStart">Empezar a jugar →</button>
-        <p class="d-quote">Aquí nadie pierde dinero de verdad. Tu único rival es tu propio pánico.</p>
-        ${st.played ? `<p class="small d-muted">Has jugado ${st.played} década${st.played === 1 ? "" : "s"}. Tu récord: ×${dX(st.best)} sobre lo aportado.</p>` : ""}
-    </div>`;
-}
-
-function decDraft() {
-    const sum = decWSum(), left = 100 - sum;
-    const preset = D_PRESETS.findIndex(p => D_ASSETS.every(a => (p.w[a.k] || 0) === dec.w[a.k]));
-    return `<div class="d-a">
-        <p class="p-kicker">Paso 1 de 2 · Fichajes</p>
-        <h2 class="p-title">Ficha tu equipo.</h2>
-        ${decPitch(dec.w)}
-        <div class="d-budget">
-            <div class="row between"><span>Presupuesto fichado</span><b>${fmtR(D_START * sum / 100)} <small>de ${fmtR(D_START)}</small></b></div>
-            <div class="d-mix">${D_ASSETS.map(a => `<i style="flex:${dec.w[a.k]};background:${a.color}"></i>`).join("")}${left > 0 ? `<i style="flex:${left}" class="d-empty"></i>` : ""}</div>
-        </div>
-    </div>
-    <div class="d-b">
-        <p class="d-tag">Elige una táctica o hazla a tu medida</p>
-        <div class="d-tactics">${D_PRESETS.map((p, i) => `<button class="d-tactic ${i === preset ? "on" : ""}" data-act="decPreset" data-i="${i}"><b>${p.name}</b><small>${p.desc}</small></button>`).join("")}</div>
-        <div class="d-squad">${D_ASSETS.map(a => {
-            const w = dec.w[a.k], r = dRate(a.k);
-            return `<div class="d-player ${w ? "on" : ""}" style="--c:${a.color}">
-                <div class="d-ph"><span class="d-role">${a.role}</span><b>${a.name}</b><p>${a.bio}</p></div>
-                <div class="d-attr">
-                    <span>Goles ${dDots(r.atk)}</span>
-                    <span>Sustos ${dDots(r.risk, "risk")}</span>
-                    <span>Peor año <b class="neg">${dSigned(D_STATS[a.k].worst)}</b></span>
-                </div>
-                <div class="d-stepper">
-                    <button data-act="decW" data-k="${a.k}" data-d="-10" ${w <= 0 ? "disabled" : ""} aria-label="Quitar 1.000 € a ${a.name}">−</button>
-                    <output>${fmtR(D_START * w / 100)}</output>
-                    <button data-act="decW" data-k="${a.k}" data-d="10" ${sum >= 100 ? "disabled" : ""} aria-label="Dar 1.000 € a ${a.name}">+</button>
-                </div>
-            </div>`;
-        }).join("")}</div>
-        <p class="small d-muted">Goles = rentabilidad media; sustos = cuánto sube y baja de un año a otro. Datos aproximados de 2000 a 2024.</p>
-        <button class="p-opt p-go d-big" data-act="decGo" ${sum !== 100 ? "disabled" : ""}>${sum === 100 ? "Saltar al campo →" : `Te quedan ${fmtR(D_START * left / 100)} por fichar`}</button>
-    </div>`;
-}
-
-function decPlayHTML() {
-    const v = decValue(), c = decContributed(), L = dec.last, gain = v - c;
-    const res = L && dResult(L.ret);
-    const tags = L ? Object.fromEntries(D_ASSETS.map(a => [a.k, `<em class="${dTone(a.r[L.y])}">${dSigned(a.r[L.y])}</em>`])) : null;
-    const head = `<div class="d-a">
-        <div class="d-scoreboard">
-            <p class="p-kicker">${L ? `Resultado · Temporada ${L.i + 1}` : "Paso 2 de 2 · Temporada"}</p>
-            ${L ? `<p class="d-result ${res.c}">${res.t} <b>${dSigned(L.ret)}</b></p>` : ""}
-            <output id="dVal" class="d-val">${fmtR(v)}</output>
-            <p class="d-sub">Has puesto ${fmtR(c)} · <span class="${dTone(gain)}">${gain >= 0 ? "ganas" : "pierdes"} ${fmtR(Math.abs(gain))}</span>${dec.inCash ? ` · <b class="d-cash">Equipo en el banquillo</b>` : ""}</p>
-        </div>
-        ${decChart()}
-        ${decPitch(decShares(), tags)}
-    </div>`;
-    if (!L) return `${head}<div class="d-b">
-        <div class="d-news"><p class="d-tag">Pitido inicial</p>
-            <h2 class="d-headline">Tu equipo ya está en el campo.</h2>
-            <p class="p-body">Cada temporada es un año real de mercado. Verás la noticia que marcó ese año, cómo jugó cada uno de tus jugadores y después eliges tu jugada para la siguiente.</p></div>
-        <button class="p-opt p-go d-big" data-act="decNext">Jugar la temporada 1 →</button></div>`;
-    const news = `<div class="d-b"><div class="d-news ${dTone(L.ret)}">
-            <p class="d-tag">La noticia de la temporada ${L.i + 1}</p>
-            <h2 class="d-headline">«${D_NEWS[L.y]}»</h2>
-            <p class="small d-muted">Bajo cada jugador del campo ves cuánto ganó o perdió este año.</p>
-        </div>`;
-    if (dec.n >= D_YEARS) return `${head}${news}<button class="p-opt p-go d-big" data-act="decEnd">Fin de la liga: descubrir la década →</button></div>`;
-    const act = (v, ico, t, d, extra = "") => `<button class="p-opt d-act ${extra}" data-act="decAct" data-v="${v}"><i>${ico}</i><b>${t}</b><small>${d}</small></button>`;
-    return `${head}${news}
-        <p class="d-ask">Tu jugada para la temporada ${dec.n + 1}</p>
-        <div class="d-acts">
-            ${act("hold", "▶", "Seguir igual", "No tocas nada y dejas jugar al equipo.")}
-            ${dec.inCash
-                ? act("back", "↺", "Volver al campo", "Reinviertes todo con tu reparto inicial.")
-                : `<button class="p-opt d-act" data-act="decAct" data-v="rebal"><i>⇄</i><b>Recolocar el equipo</b><small>Vuelves al reparto con el que empezaste.</small></button>`}
-            ${act("add", "+", `Fichar ${fmtR(D_ADD)} más`, L.ret < 0 ? "Metes más dinero, ahora que todo está más barato." : "Metes más dinero al equipo.")}
-            ${dec.inCash ? "" : act("sell", "■", "Al banquillo", "Lo vendes todo y te quedas en liquidez.", "d-panic")}
-        </div></div>`;
-}
-
-function decEndHTML() {
-    const v = decValue(), c = decContributed(), mult = v / c;
-    const y0 = D_FROM + dec.start, y1 = y0 + D_YEARS - 1;
-    const rows = [
-        { name: "Tú", sub: "Con tus jugadas", v, me: true },
-        { name: "Tu equipo fantasma", sub: "Tu fichaje inicial, sin tocarlo", v: decBench(dec.w) },
-        { name: "Equipo Portero", sub: "Todo en liquidez", v: decBench({ liq: 100 }) },
-        { name: "Equipo Goleador", sub: "Todo en acciones", v: decBench({ acc: 100 }) }
-    ].sort((a, b) => b.v - a.v);
-    const pos = rows.findIndex(r => r.me);
-    const medal = [{ t: "Oro", c: "gold" }, { t: "Plata", c: "silver" }, { t: "Bronce", c: "bronze" }, { t: "4.º puesto", c: "none" }][pos];
-    const calm = decBench(dec.w), gap = v - calm;
-    const profile = dec.panic ? { t: "Entrenador nervioso", d: `Mandaste el equipo al banquillo después de una derrota ${dec.panic === 1 ? "una vez" : `${dec.panic} veces`}. Es la reacción más humana y, históricamente, una de las más caras: las mejores temporadas suelen llegar justo después de las peores.` }
-        : dec.dips ? { t: "Fichador en las caídas", d: `Metiste más dinero justo después de una derrota ${dec.dips === 1 ? "una vez" : `${dec.dips} veces`}. Comprar cuando todos venden exige sangre fría y suele recompensarse a largo plazo.` }
-        : { t: "Mano firme", d: "No vendiste por miedo en ningún momento. La disciplina aburrida es la estrategia que mejor resiste las décadas difíciles." };
-    const st = S.decada || {};
-    return `<div class="d-a">
-        <p class="p-kicker">Fin de la liga · La década era</p>
-        <h1 class="d-h1 d-years">${y0}–${y1}</h1>
-        <div class="d-medal ${medal.c}"><span>${pos + 1}</span><div><b>${pos < 3 ? `Medalla de ${medal.t.toLowerCase()}` : medal.t}</b><small>${fmtR(c)} puestos → ${fmtR(v)} · <span class="${dTone(mult - 1)}">×${dX(Math.round(mult * 100) / 100)}</span></small></div></div>
-        ${decChart()}
-        <p class="d-tag">Clasificación contra los rivales</p>
-        <table class="d-table"><tbody>${rows.map((r, i) => `<tr class="${r.me ? "me" : ""}"><td>${i + 1}</td><td>${r.name}<small>${r.sub}</small></td><td class="r">${fmtR(r.v)}</td></tr>`).join("")}</tbody></table>
-    </div>
-    <div class="d-b"><div class="d-profile"><p class="d-tag">Tu estilo de entrenador</p><h2 class="d-headline">${profile.t}</h2><p>${profile.d}</p>
-        ${Math.abs(gap) >= 50 ? `<p>Frente a tu equipo fantasma: <b class="${dTone(gap)}">${gap >= 0 ? "+" : "−"}${fmtR(Math.abs(gap))}</b>. ${gap < 0 ? "Tus jugadas te costaron dinero: el mercado no era tu rival, lo eras tú." : "Tus jugadas sumaron. Comprueba si fue método o suerte jugando otra década."}</p>` : ""}</div>
-        <div class="d-board" id="decBoard">${decBoardHTML()}</div>
-        <div class="d-row">
-            <button class="p-opt p-go" data-act="decShare">Retar a mi grupo</button>
-            <button class="p-opt" data-act="decAgain">Jugar otra década</button>
-        </div>
-        <p class="small d-muted" style="margin-top:18px">Datos anuales aproximados de índices en dólares, sin comisiones ni impuestos. Juego educativo: rentabilidades pasadas no garantizan rentabilidades futuras. Récord personal: ×${dX(st.best || mult)}.</p></div>`;
-}
-function decBoardHTML() {
-    const b = dec.board;
-    const sendForm = `<form data-form="decScore" class="d-send">${user ? "" : `<input name="name" maxlength="20" placeholder="Tu alias" required aria-label="Tu alias">`}<button class="d-chip">Subir a la liga ${dec.code}</button></form>`;
-    if (!b) return `<p class="d-tag">Tu liga · código ${dec.code}</p>${sendForm}`;
-    if (b.error) return `<p class="d-tag">Tu liga · código ${dec.code}</p><p class="small d-muted">${esc(b.error)}</p>`;
-    return `<p class="d-tag">Tu liga · código ${dec.code}</p>
-        <table class="d-table"><tbody>${b.rows.map((r, i) => `<tr class="${r.me ? "me" : ""}"><td>${i + 1}</td><td>${esc(r.name)}</td><td class="r">×${dX(r.mult)}</td></tr>`).join("") || `<tr><td>Aún no hay resultados.</td></tr>`}</tbody></table>`;
-}
-
-function viewDecada() {
-    const code = location.hash.match(/[?&]r=([A-Z0-9]+)/i)?.[1]?.toUpperCase();
-    if (!dec || dec.phase === "intro" || (code && code !== dec.code && dec.phase !== "play")) decNew();
-    return `<div class="dec"><div class="d-scroll">${decTop()}<div class="d-in" id="decRoot"></div></div></div>`;
-}
-function paintDec(anim) {
-    const root = $("#decRoot");
-    if (!root) return;
-    $(".d-top")?.replaceWith(Object.assign(document.createElement("div"), { innerHTML: decTop() }).firstElementChild);
-    root.innerHTML = { intro: decIntro, draft: decDraft, play: decPlayHTML, end: decEndHTML }[dec.phase]();
-    root.className = `d-in d-${dec.phase}`;
-    if (anim && dec.last) {
-        const out = $("#dVal"), prev = dec.last.before, to = decValue(), t0 = performance.now();
-        root.classList.add(dec.last.ret >= 0 ? "flash-pos" : "flash-neg");
-        const step = t => { const k = Math.min(1, (t - t0) / 700), e = 1 - (1 - k) ** 3; out.textContent = fmtR(prev + (to - prev) * e); if (k < 1) requestAnimationFrame(step); };
-        requestAnimationFrame(step);
-    }
-}
-function decFinish() {
-    const mult = decValue() / decContributed(), st = S.decada || {};
-    S.decada = { played: (st.played || 0) + 1, best: Math.max(st.best || 0, Math.round(mult * 100) / 100) };
-    save();
-    dec.phase = "end";
-}
-
-/* =========================================================
    Render + router
 ========================================================= */
-const VIEWS = { practica: viewPulso, decada: viewDecada, resumen: viewResumen, aprende: viewAprende, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo };
-const TITLES = { practica: "Práctica", decada: "La Década", resumen: "Resumen", aprende: "Aprende", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo" };
+const VIEWS = { practica: viewPulso, resumen: viewResumen, aprende: viewAprende, juegos: viewJuegos, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, ...GAME_VIEWS };
+const IMMERSIVE = ["practica", ...GAME_ROUTES];
+const TITLES = { practica: "Práctica", resumen: "Resumen", aprende: "Aprende", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", ...GAME_TITLES };
 let lastRoute = null;
 function render(animate = true) {
     const r = VIEWS[route()] ? route() : "resumen";
     const el = $("#view");
     const changed = r !== lastRoute;
-    if (r === "practica" && !changed && $("#pulseFeed")) return paintChrome(); // no reiniciar el feed
-    if (changed) { pulse?.io?.disconnect(); document.body.classList.toggle("immersive", r === "practica" || r === "decada"); el.classList.remove("fade"); }
+    if (!changed && ((r === "practica" && $("#pulseFeed")) || (GAME_MOUNT[r] && $("#gRoot")))) return paintChrome(); // no reiniciar el feed ni la partida
+    if (changed) { pulse?.io?.disconnect(); gameLeave(); document.body.classList.toggle("immersive", IMMERSIVE.includes(r)); el.classList.remove("fade"); }
     el.innerHTML = VIEWS[r]();
-    if (animate && changed && r !== "practica" && r !== "decada") { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
-    $$("#nav a").forEach(a => { const on = a.dataset.tab === (r === "practica" ? "aprende" : r); a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
+    if (animate && changed && !IMMERSIVE.includes(r)) { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
+    $$("#nav a").forEach(a => { const on = a.dataset.tab === (r === "practica" ? "aprende" : GAME_MOUNT[r] ? "juegos" : r); a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
     if (changed) { stopCirclePolling(); if (r === "circulo") startCirclePolling(); document.title = `Horizonte · ${TITLES[r]}`; }
     lastRoute = r;
     if (r === "simulador") { sim.hover = null; requestAnimationFrame(drawSim); }
     if (r === "practica") mountPulse();
-    if (r === "decada") paintDec();
+    GAME_MOUNT[r]?.();
     paintChrome();
 }
 addEventListener("hashchange", () => render());
@@ -1253,24 +940,9 @@ const ACTIONS = {
         try { await navigator.clipboard.writeText(text); toast("Tarjeta copiada al portapapeles."); } catch { /* sin portapapeles */ }
     },
 
-    decStart: () => { dec.phase = "draft"; paintDec(); },
-    decPreset: el => { dec.w = { ...D_PRESETS[+el.dataset.i].w }; paintDec(); },
-    decW: el => { const k = el.dataset.k; dec.w[k] = Math.max(0, Math.min(100, dec.w[k] + +el.dataset.d)); paintDec(); },
-    decGo: () => { if (decWSum() !== 100) return; dec.phase = "play"; decSpread(D_START); paintDec(); $(".dec")?.scrollTo(0, 0); },
-    decNext: () => { decPlay(); paintDec(true); },
-    decAct: el => { decDecide(el.dataset.v); paintDec(true); $(".dec")?.scrollTo({ top: 0, behavior: "smooth" }); },
-    decEnd: () => { decFinish(); paintDec(); $(".dec")?.scrollTo(0, 0); },
-    decAgain: () => { history.replaceState(null, "", "#/decada"); decNew(); dec.phase = "draft"; paintDec(); $(".dec")?.scrollTo(0, 0); },
-    decShare: async () => {
-        const url = `${location.origin}${location.pathname}#/decada?r=${dec.code}`;
-        const text = `He jugado una década oculta de los mercados en Horizonte: ×${dX(Math.round(decValue() / decContributed() * 100) / 100)} sobre lo aportado. ¿Lo superas? Liga ${dec.code}`;
-        try { if (navigator.share) return await navigator.share({ text, url }); } catch { return; }
-        try { await navigator.clipboard.writeText(`${text}
-${url}`); toast("Reto copiado. Pégalo en el chat de tu grupo."); } catch { toast(url, 8000); }
-    },
-
     coach: () => coachSheet(),
-    coachChip: el => sendCoach(el.dataset.q)
+    coachChip: el => sendCoach(el.dataset.q),
+    ...GAME_ACTIONS
 };
 
 function showDetail(id) {
@@ -1457,16 +1129,8 @@ const FORMS = {
             closeSheet(); await loadCircles(true); toast("Aportación al círculo registrada.");
         } catch (e) { formErr(form, e.message); }
     },
-    decScore: async form => {
-        const name = user?.username || String(new FormData(form).get("name") || "").trim();
-        if (!name) return;
-        try {
-            const r = await api(`/decada/${dec.code}`, { method: "POST", body: { name, value: decValue(), contributed: decContributed() } });
-            dec.board = { rows: r.rows };
-        } catch (e) { dec.board = { error: e.status === 400 ? e.message : "La clasificación compartida necesita el servidor de Horizonte (npm start). Mientras tanto, usa «Retar a mi grupo»." }; }
-        $("#decBoard").innerHTML = decBoardHTML();
-    },
-    coach: form => { const i = form.elements.message; const t = i.value; i.value = ""; sendCoach(t); }
+    coach: form => { const i = form.elements.message; const t = i.value; i.value = ""; sendCoach(t); },
+    ...GAME_FORMS
 };
 
 /* =========================================================
@@ -1527,7 +1191,7 @@ document.addEventListener("pointerleave", e => { if (e.target.id === "simChart")
    Arranque
 ========================================================= */
 (async function init() {
-    const legacy = { "#/inicio": "resumen", "#/metas": "objetivos", "#/formacion": "aprende", "#/pulso": "practica" }[location.hash];
+    const legacy = { "#/inicio": "resumen", "#/metas": "objetivos", "#/formacion": "aprende", "#/pulso": "practica", "#/decada": "juegos" }[location.hash.split("?")[0]];
     if (legacy) history.replaceState(null, "", "#/" + legacy);
     render();
     try {

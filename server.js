@@ -3,6 +3,7 @@
    - Auth con scrypt + cookie HttpOnly
    - Estado por usuario sincronizado (/api/state)
    - Círculos compartidos con código de invitación (/api/circles)
+   - Salas de Draft Night para jugar con amigos (/api/draft)
    - Coach financiero con IA gratuita: OpenRouter, Gemini o Pollinations (sin clave); reglas locales si fallan */
 
 const http = require("http");
@@ -16,7 +17,6 @@ const DATA = path.join(__dirname, "data");
 const F_USERS = path.join(DATA, "users.json");
 const F_CIRCLES = path.join(DATA, "circles.json");
 const F_SESSIONS = path.join(DATA, "sessions.json");
-const F_LEAGUES = path.join(DATA, "leagues.json");
 const COOKIE = "horizonte_session";
 const WEEK = 7 * 24 * 3600;
 
@@ -32,11 +32,9 @@ function write(f, obj) {
 let users = read(F_USERS, []);
 let circles = read(F_CIRCLES, []);
 let sessions = read(F_SESSIONS, {});
-let leagues = read(F_LEAGUES, {});
 const saveUsers = () => write(F_USERS, users);
 const saveCircles = () => write(F_CIRCLES, circles);
 const saveSessions = () => write(F_SESSIONS, sessions);
-const saveLeagues = () => write(F_LEAGUES, leagues);
 
 /* ---------- seguridad ---------- */
 function hashPassword(pw, salt = crypto.randomBytes(16).toString("hex")) {
@@ -96,6 +94,21 @@ function body(req, limit = 300_000) {
     });
 }
 const HttpError = (status, msg) => Object.assign(new Error(msg), { status });
+
+/* ---------- Draft Night (salas en memoria) ---------- */
+const rooms = new Map();
+const ROOM_TTL = 6 * 3600e3, DRAFT_LAST = 15;
+const DRAFT_CARDS = ["world", "usa", "tech", "esp", "eur", "jpn", "emg", "bon", "oro", "liq"];
+function roomCode() {
+    const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let c;
+    do c = Array.from({ length: 5 }, () => abc[crypto.randomInt(abc.length)]).join(""); while (rooms.has(c));
+    return c;
+}
+const roomView = (r, pid) => {
+    const me = r.players.findIndex(p => p.pid === pid);
+    return { code: r.code, phase: r.phase, players: r.players.map(p => p.name), picks: r.picks, t: r.t, per: r.per, start: r.start, me, host: me === 0 };
+};
 
 function validateCreds(username, password) {
     if (typeof username !== "string" || !/^[a-zA-Z0-9_.-]{3,40}$/.test(username))
@@ -336,23 +349,52 @@ async function api(req, res, url) {
         return send(res, 200, { circle: circleView(c, u) });
     }
 
-    // La Década: clasificación por liga (misma década oculta). Se guarda el mejor resultado de cada alias.
-    const lg = url.pathname.match(/^\/api\/decada\/([A-Z0-9]{2,8})$/);
-    if (lg) {
-        const u = userOf(req), board = leagues[lg[1]] ||= [];
-        const rows = me => board.slice().sort((a, b) => b.mult - a.mult).slice(0, 10).map(r => ({ name: r.name, mult: r.mult, me: r.name === me }));
-        if (req.method === "GET") return send(res, 200, { rows: rows() });
+    // Draft Night: salas en memoria con código. Cada jugador se identifica con un pid secreto.
+    if (route === "POST /api/draft") {
+        const b = await body(req, 2_000), name = cleanText(b.name, 14);
+        if (!name) throw HttpError(400, "Escribe tu nombre.");
+        for (const [c, r] of rooms) if (Date.now() - r.t0 > ROOM_TTL) rooms.delete(c);
+        if (rooms.size > 2000) throw HttpError(503, "Demasiadas salas abiertas. Inténtalo en un rato.");
+        const pid = crypto.randomBytes(12).toString("hex");
+        const room = { code: roomCode(), players: [{ pid, name }], phase: "lobby", picks: [], t: 0, per: 0, start: crypto.randomInt(DRAFT_LAST + 1), t0: Date.now() };
+        rooms.set(room.code, room);
+        return send(res, 200, { pid, room: roomView(room, pid) });
+    }
+    const dm = url.pathname.match(/^\/api\/draft\/([A-Z0-9]{5})(?:\/(join|start|pick))?$/);
+    if (dm) {
+        const room = rooms.get(dm[1]);
+        if (!room) throw HttpError(404, "No existe ninguna sala con ese código.");
+        if (!dm[2] && req.method === "GET") return send(res, 200, { room: roomView(room, url.searchParams.get("pid")) });
         if (req.method !== "POST") throw HttpError(405, "Método no permitido.");
-        const b = await body(req, 2_000);
-        const name = u ? u.username : cleanText(b.name, 20);
-        const value = clampNum(b.value, 0, 10_000_000), contributed = clampNum(b.contributed, 10_000, 100_000);
-        if (!name || value === null || contributed === null) throw HttpError(400, "Resultado no válido.");
-        const mult = Math.round((value / contributed) * 100) / 100;
-        const prev = board.find(r => r.name.toLowerCase() === name.toLowerCase());
-        if (prev) prev.mult = Math.max(prev.mult, mult); else board.push({ name, mult, t: Date.now() });
-        leagues[lg[1]] = board.sort((a, b) => b.mult - a.mult).slice(0, 100);
-        saveLeagues();
-        return send(res, 200, { rows: rows(name) });
+        const b = await body(req, 2_000), me = room.players.findIndex(p => p.pid === b.pid);
+        if (dm[2] === "join") {
+            const name = cleanText(b.name, 14);
+            if (!name) throw HttpError(400, "Escribe tu nombre.");
+            if (room.phase !== "lobby") throw HttpError(400, "La partida ya ha empezado.");
+            if (room.players.length >= 5) throw HttpError(400, "La sala está llena (máximo 5).");
+            if (room.players.some(p => p.name.toLowerCase() === name.toLowerCase())) throw HttpError(400, "Ya hay alguien con ese nombre en la sala.");
+            const pid = crypto.randomBytes(12).toString("hex");
+            room.players.push({ pid, name });
+            return send(res, 200, { pid, room: roomView(room, pid) });
+        }
+        if (me < 0) throw HttpError(403, "No formas parte de esta sala.");
+        if (dm[2] === "start") {
+            if (me !== 0) throw HttpError(403, "Solo el anfitrión puede empezar.");
+            if (room.phase !== "lobby") throw HttpError(400, "La partida ya ha empezado.");
+            if (room.players.length < 2) throw HttpError(400, "Hacen falta al menos 2 jugadores.");
+            const n = room.players.length;
+            Object.assign(room, { phase: "draft", per: n <= 3 ? 3 : 2, picks: room.players.map(() => []), t: 0 });
+            return send(res, 200, { room: roomView(room, b.pid) });
+        }
+        if (dm[2] === "pick") {
+            if (room.phase !== "draft") throw HttpError(400, "No es momento de elegir.");
+            const n = room.players.length, round = Math.floor(room.t / n), pos = room.t % n;
+            if ((round % 2 === 0 ? pos : n - 1 - pos) !== me) throw HttpError(400, "No es tu turno.");
+            if (!DRAFT_CARDS.includes(b.card) || room.picks.flat().includes(b.card)) throw HttpError(400, "Esa carta ya no está disponible.");
+            room.picks[me].push(b.card); room.t++;
+            if (room.t >= n * room.per) room.phase = "done";
+            return send(res, 200, { room: roomView(room, b.pid) });
+        }
     }
 
     if (route === "POST /api/coach") {

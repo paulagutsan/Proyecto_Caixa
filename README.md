@@ -22,7 +22,11 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
 ## Qué hace
 
 - **Aprende**: una sola sección para aprender. *Práctica de hoy*: 7 tarjetas en formato vertical en las que decides antes de ver la respuesta (momentos históricos de 2000, 2008 y 2020, «¿estafa o legítimo?», estimaciones, mitos y tendencias como loud budgeting o doom spending); los fallos vuelven con repetición espaciada (Leitner). *Temas*: 8 ideas clave de dos minutos, cada una con sus tarjetas para practicar solo ese tema; un tema queda dominado al acertar todas sus tarjetas dos veces. Incluye el test de perfil y la regla 50/30/20.
-- **La Década**: juego tipo fantasy de 10 temporadas con dinero ficticio. Fichas un equipo de cinco jugadores en un campo de fútbol (acciones = delantero, emergentes = extremo, oro = centrocampista, bonos = defensa, liquidez = portero), con valoraciones sencillas de goles (rentabilidad) y sustos (volatilidad). Cada temporada es un año real oculto (2000-2024): noticia del año, victoria o derrota y rendimiento de cada jugador; eliges tu jugada (seguir igual, recolocar, fichar 1.000 € más o mandar al banquillo). Al final se revela la década, ganas una medalla según tu puesto frente a tres rivales (tu equipo fantasma sin tocar, todo liquidez, todo acciones) y descubres tu estilo de entrenador. Con el código de liga, tu grupo juega la misma década y comparte clasificación.
+- **Juegos**: cuatro minijuegos con datos reales aproximados (2000-2024) y dinero ficticio, pensados para jugar en 2 minutos y compartir el resultado en el grupo, al estilo Wordle o los juegos de LinkedIn.
+  - **Aguanta** (diario): diez años de bolsa pasan en 60 segundos sin decir cuáles. Mantienes pulsado para seguir invertido; si sueltas, vendes. Compites con Leo, que vende por miedo cuando cae un 15 %. Al final se revela la década y se comparte una fila de emojis.
+  - **Silueta** (diario): cinco gráficas sin nombre; adivina qué inversión es cada una. Enseña a reconocer el riesgo de cada tipo de activo.
+  - **Más o menos** (sin fin): ¿qué acaba con más dinero? Encadena aciertos entre inversiones reales, inflación, comisiones e interés compuesto.
+  - **Draft Night** (con amigos, 2-5 jugadores): elegís por turnos cartas de inversión (tecnológicas, España, Japón, oro, bonos…) y jugáis una década secreta año a año hasta el podio. En un solo móvil o online con código de sala.
 - **Objetivos**: crea objetivos por categoría, registra aportaciones reales, historial, estado «en plazo» y cuánto necesitas al mes.
 - **Simulador**: 4 escenarios hipotéticos (0/2/5/8%), inflación, valor real vs nominal, efecto +20 €/mes, gráfica interactiva y datos de mercado de referencia.
 - **Círculo**: objetivo compartido con código de invitación; cada persona solo comparte lo que aporta al objetivo común (multiusuario real, actualización en vivo).
@@ -33,6 +37,6 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
 ## Estructura
 
 - `server.js` API + estáticos (los datos viven en `data/`, ignorado por git)
-- `public/` front-end (`index.html`, `styles.css`, `app.js`)
+- `public/` front-end (`index.html`, `styles.css`, `app.js`, `games.js` con los minijuegos)
 
 > Prototipo académico. Las simulaciones usan hipótesis ilustrativas; no son asesoramiento ni garantía de resultados.
