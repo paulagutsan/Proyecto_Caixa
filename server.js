@@ -4,6 +4,7 @@
    - Estado por usuario sincronizado (/api/state)
    - Círculos compartidos con código de invitación (/api/circles)
    - Salas de Draft Night para jugar con amigos (/api/draft)
+   - Votos consultivos de «Tu voz» (/api/voz)
    - Coach financiero con IA gratuita: OpenRouter, Gemini o Pollinations (sin clave); reglas locales si fallan */
 
 const http = require("http");
@@ -17,6 +18,7 @@ const DATA = path.join(__dirname, "data");
 const F_USERS = path.join(DATA, "users.json");
 const F_CIRCLES = path.join(DATA, "circles.json");
 const F_SESSIONS = path.join(DATA, "sessions.json");
+const F_VOTES = path.join(DATA, "votes.json");
 const COOKIE = "horizonte_session";
 const WEEK = 7 * 24 * 3600;
 
@@ -32,9 +34,11 @@ function write(f, obj) {
 let users = read(F_USERS, []);
 let circles = read(F_CIRCLES, []);
 let sessions = read(F_SESSIONS, {});
+let votes = read(F_VOTES, {}); // { propuesta: { voterHash: "a" | "c" | "s" } }
 const saveUsers = () => write(F_USERS, users);
 const saveCircles = () => write(F_CIRCLES, circles);
 const saveSessions = () => write(F_SESSIONS, sessions);
+const saveVotes = () => write(F_VOTES, votes);
 
 /* ---------- seguridad ---------- */
 function hashPassword(pw, salt = crypto.randomBytes(16).toString("hex")) {
@@ -395,6 +399,22 @@ async function api(req, res, url) {
             if (room.t >= n * room.per) room.phase = "done";
             return send(res, 200, { room: roomView(room, b.pid) });
         }
+    }
+
+    // Tu voz: votos consultivos sobre propuestas de junta. Un voto por persona y propuesta (se puede cambiar).
+    const voteTotals = () => Object.fromEntries(Object.entries(votes).map(([id, m]) => {
+        const t = { a: 0, c: 0, s: 0 }; Object.values(m).forEach(v => { if (t[v] !== undefined) t[v]++; }); return [id, t];
+    }));
+    if (route === "GET /api/voz") return send(res, 200, { totals: voteTotals() });
+    const vz = url.pathname.match(/^\/api\/voz\/([a-z0-9-]{2,30})$/);
+    if (vz && req.method === "POST") {
+        const b = await body(req, 1_000), v = String(b.v || ""), voter = String(b.voter || "").slice(0, 64);
+        if (!["a", "c", "s"].includes(v) || voter.length < 8) throw HttpError(400, "Voto no válido.");
+        const key = crypto.createHash("sha256").update((userOf(req)?.id || "") + "|" + voter).digest("hex").slice(0, 24);
+        if (!votes[vz[1]] && Object.keys(votes).length >= 200) throw HttpError(400, "Propuesta desconocida.");
+        (votes[vz[1]] ||= {})[key] = v;
+        saveVotes();
+        return send(res, 200, { totals: voteTotals() });
     }
 
     if (route === "POST /api/coach") {

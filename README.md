@@ -27,6 +27,10 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
   - **Silueta** (diario): cinco gráficas sin nombre; adivina qué inversión es cada una. Enseña a reconocer el riesgo de cada tipo de activo.
   - **Más o menos** (sin fin): ¿qué acaba con más dinero? Encadena aciertos entre inversiones reales, inflación, comisiones e interés compuesto.
   - **Draft Night** (con amigos, 2-5 jugadores): elegís por turnos cartas de inversión (tecnológicas, España, Japón, oro, bonos…) y jugáis una década secreta año a año hasta el podio. En un solo móvil o online con código de sala.
+- **Conecta**: tu dinero en el mundo real, en tres partes.
+  - **Tu voz**: tarjetas para deslizar con propuestas típicas de junta de accionistas (sueldo del CEO, emisiones, recompra de acciones…). Dices a la gestora qué preferirías y ves al momento qué opina la comunidad. Es una consulta: en un fondo, quien vota es la gestora.
+  - **Tu calle**: cazas con la cámara las empresas que usas a diario (moda, súper, telefonía…) y completas un álbum de sectores. Cada carta explica cómo gana dinero ese tipo de empresa y cómo podrías tener un trocito a través de un fondo. Sin ubicación y sin premios en dinero.
+  - **Tu proyecto**: cuentas tu proyecto en privado y ves qué empresas asociadas (de ejemplo) encajan para financiación, mentoría, primeros clientes o un socio tecnológico. Nada se comparte hasta que lo apruebas, y nunca se comparten tus datos personales.
 - **Objetivos**: crea objetivos por categoría, registra aportaciones reales, historial, estado «en plazo» y cuánto necesitas al mes.
 - **Simulador**: 4 escenarios hipotéticos (0/2/5/8%), inflación, valor real vs nominal, efecto +20 €/mes, gráfica interactiva y datos de mercado de referencia.
 - **Círculo**: objetivo compartido con código de invitación; cada persona solo comparte lo que aporta al objetivo común (multiusuario real, actualización en vivo).
@@ -44,6 +48,6 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
 ## Estructura
 
 - `server.js` API + estáticos (los datos viven en `data/`, ignorado por git)
-- `public/` front-end (`index.html`, `styles.css`, `app.js`, `games.js` con los minijuegos)
+- `public/` front-end (`index.html`, `styles.css`, `app.js`, `games.js` con los minijuegos y `conecta.js` con Conecta)
 
 > Prototipo académico. Las simulaciones usan hipótesis ilustrativas; no son asesoramiento ni garantía de resultados.

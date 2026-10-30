@@ -771,9 +771,9 @@ function answerPulse(el) {
 /* =========================================================
    Render + router
 ========================================================= */
-const VIEWS = { practica: viewPulso, resumen: viewResumen, aprende: viewAprende, juegos: viewJuegos, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, ...GAME_VIEWS };
+const VIEWS = { practica: viewPulso, resumen: viewResumen, aprende: viewAprende, juegos: viewJuegos, conecta: viewConecta, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, ...GAME_VIEWS };
 const IMMERSIVE = ["practica", ...GAME_ROUTES];
-const TITLES = { practica: "Práctica", resumen: "Resumen", aprende: "Aprende", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", ...GAME_TITLES };
+const TITLES = { practica: "Práctica", conecta: "Conecta", resumen: "Resumen", aprende: "Aprende", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", ...GAME_TITLES };
 let lastRoute = null;
 function render(animate = true) {
     const r = VIEWS[route()] ? route() : "resumen";
@@ -789,6 +789,7 @@ function render(animate = true) {
     if (r === "simulador") { sim.hover = null; requestAnimationFrame(drawSim); }
     if (r === "practica") mountPulse();
     GAME_MOUNT[r]?.();
+    if (r === "conecta") mountConecta();
     paintChrome();
 }
 addEventListener("hashchange", () => render());
@@ -950,7 +951,8 @@ const ACTIONS = {
     },
     coach: () => coachSheet(),
     coachChip: el => sendCoach(el.dataset.q),
-    ...GAME_ACTIONS
+    ...GAME_ACTIONS,
+    ...CX_ACTIONS
 };
 
 function showDetail(id) {
@@ -1138,7 +1140,8 @@ const FORMS = {
         } catch (e) { formErr(form, e.message); }
     },
     coach: form => { const i = form.elements.message; const t = i.value; i.value = ""; sendCoach(t); },
-    ...GAME_FORMS
+    ...GAME_FORMS,
+    ...CX_FORMS
 };
 
 /* =========================================================
