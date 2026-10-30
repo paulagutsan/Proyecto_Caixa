@@ -219,7 +219,7 @@ function viewResumen() {
             <p class="kicker">Planificación de objetivos</p>
             <h1>Invierte en la vida que <em>quieres tener.</em></h1>
             <p class="lead">Define para qué ahorras, proyecta distintos escenarios y avanza con constancia, solo o con tu círculo. Información clara, sin tecnicismos.</p>
-            <div class="row"><button class="btn" data-act="newGoal">Definir un objetivo ${ARROW}</button><a class="btn line" href="#/simulador">Abrir el simulador</a></div>
+            <div class="row"><button class="btn" data-act="newGoal">Definir un objetivo ${ARROW}</button><a class="btn line" href="#/pulso">Entrar en Pulso</a></div>
         </div>
         <aside class="letter">
             <p class="kicker">Carta de tu yo futuro</p>
@@ -504,22 +504,266 @@ function viewFormacion() {
     </section>`;
 }
 
+/* ---- Pulso: feed vertical de decisiones ----
+   No se ve: se decide. Cada tarjeta pide una predicción antes de mostrar la respuesta
+   (aprendizaje por error de predicción), los fallos vuelven con repetición espaciada
+   (cajas de Leitner) y la sesión termina de forma deliberada. */
+const today = () => Math.floor((Date.now() - NOW.getTimezoneOffset() * 6e4) / 864e5);
+const LEITNER = [0, 1, 3, 7, 16]; // días hasta volver a ver la tarjeta según su caja
+const SESSION_SIZE = 7;
+const shuffle = a => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+const x1 = n => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
+
+const PULSE = [
+    { id: "h2020", type: "decide", kicker: "Momento histórico · Marzo 2020", topic: "las caídas de mercado y el horizonte de inversión",
+      title: "La pandemia hunde las bolsas más de un 30 % en cuatro semanas. Tu inversión es a quince años. ¿Qué haces?",
+      o: ["Vendo antes de que caiga más", "Mantengo sin tocar nada", "Mantengo y sigo aportando"], good: [1, 2],
+      reveal: () => "El S&P 500 cayó un 34 % entre el 19 de febrero y el 23 de marzo de 2020 y en agosto ya había recuperado sus máximos. Quien vendió convirtió una caída temporal en una pérdida real." },
+    { id: "h2008", type: "decide", kicker: "Momento histórico · 2007", topic: "la relación entre plazo y riesgo",
+      title: "Ahorras para la entrada de un piso que comprarás en 2009. ¿Dónde mantienes ese dinero?",
+      o: ["En bolsa, que no para de subir", "En algo estable y disponible"], good: [1],
+      reveal: () => "Entre octubre de 2007 y marzo de 2009 el S&P 500 perdió en torno a un 57 % y no recuperó máximos hasta 2013. Con dos años de plazo, ese riesgo no compensaba: el horizonte decide cuánto riesgo puedes asumir." },
+    { id: "h2000", type: "decide", kicker: "Momento histórico · Año 2000", topic: "la diversificación y las burbujas",
+      title: "Todo el mundo habla de las empresas de internet. Suben cada semana. ¿Pones todos tus ahorros en ellas?",
+      o: ["Sí, es el futuro", "No, reparto entre sectores y regiones"], good: [1],
+      reveal: () => "El Nasdaq cayó cerca de un 78 % entre 2000 y 2002 y tardó unos quince años en recuperar aquel máximo. Que una idea tenga futuro no significa que su precio sea razonable." },
+    { id: "scam1", type: "decide", kicker: "¿Estafa o legítimo?", topic: "cómo detectar estafas de inversión",
+      title: "Un perfil con coches de lujo promete un 20 % mensual «garantizado» si le envías dinero por un grupo privado.",
+      o: ["Legítimo", "Estafa"], good: [1],
+      reveal: () => "Estafa. Rentabilidad alta y garantizada no existen a la vez. Según la OCU, un 14 % de los jóvenes españoles dice haber sufrido una estafa de inversión, con pérdidas medias de más de 3.000 €. Comprueba siempre el registro de la entidad en la CNMV." },
+    { id: "scam2", type: "decide", kicker: "¿Estafa o legítimo?", topic: "las señales de alerta de los chiringuitos financieros",
+      title: "Te llaman de una «plataforma de trading» que no aparece en la CNMV. Te piden decidir hoy, antes de que se acabe la oferta.",
+      o: ["Aprovecho, la oferta acaba", "Cuelgo y lo verifico"], good: [1],
+      reveal: () => "Urgencia y entidad no registrada son las dos señales clásicas de un chiringuito financiero. La CNMV publica listas de entidades no autorizadas: si no está registrada, no inviertas." },
+    { id: "bet", type: "decide", kicker: "¿Inversión o apuesta?", topic: "la diferencia entre invertir y apostar",
+      title: "Apostar 20 € cada semana a resultados deportivos, ¿es una forma de inversión?",
+      o: ["Sí, es otra forma de invertir", "No, es una apuesta"], good: [1],
+      reveal: () => "Es una apuesta: el resultado esperado es negativo por diseño. Invertir es aportar capital a activos que generan valor a largo plazo. Según la OCU, el 18 % de los jóvenes confunde ambas cosas." },
+    { id: "crypto", type: "decide", kicker: "Antes de invertir", topic: "invertir solo en lo que entiendes",
+      title: "Un amigo te recomienda una criptomoneda nueva. No sabes explicar qué hace ni de dónde saldría su valor. ¿Inviertes?",
+      o: ["Sí, si a él le funciona", "No hasta entenderlo"], good: [1],
+      reveal: () => "Regla básica: no inviertas en lo que no sabrías explicar. La OCU indica que el 17 % de los jóvenes tiene criptomonedas, pero casi la mitad reconoce no entender cómo funcionan." },
+    { id: "loud", type: "decide", kicker: "Tendencia · Loud budgeting", topic: "el loud budgeting y poner límites al gasto social",
+      title: "Te proponen un viaje de 600 € que no entra en tu presupuesto. ¿Qué haces?",
+      o: ["Voy y ya veré", "Digo que no y propongo un plan más barato"], good: [1],
+      reveal: () => "Eso es «loud budgeting», la tendencia viral de decir en voz alta «no entra en mi presupuesto». Hablar de dinero sin vergüenza es una de las herramientas de ahorro más eficaces." },
+    { id: "doom", type: "decide", kicker: "Tendencia · Doom spending", topic: "el doom spending y el gasto emocional",
+      title: "Tras una semana horrible abres la app de compras «porque te lo mereces». ¿Qué te ayuda más?",
+      o: ["Comprar ahora", "Esperar 48 horas antes de comprar"], good: [1],
+      reveal: () => "El «doom spending» es gastar para aliviar el estrés. La regla de las 48 horas separa el impulso de la decisión: si pasado ese tiempo aún lo quieres, al menos será una compra pensada." },
+    { id: "e30", type: "estimate", kicker: "Estima", topic: "el interés compuesto",
+      title: "100 € al mes durante 30 años, con un 5 % anual hipotético. ¿Con cuánto acabarías?",
+      min: 20000, max: 200000, step: 1000, start: 50000, fmt: v => fmtR(v), truth: () => Math.round(fv(0, 100, 30, 5)), tol: v => v * .15,
+      reveal: t => `Unos ${fmtR(t)}. Habrías aportado 36.000 €; los otros ${fmtR(t - 36000)} serían rendimiento acumulado. Eso es el interés compuesto.` },
+    { id: "einf", type: "estimate", kicker: "Estima", topic: "la inflación",
+      title: "Guardas 1.000 € en un cajón diez años con una inflación del 3 % anual. ¿Cuánto poder de compra conservan, en euros de hoy?",
+      min: 400, max: 1000, step: 10, start: 950, fmt: v => fmtR(v), truth: () => Math.round(1000 / Math.pow(1.03, 10)), tol: () => 40,
+      reveal: t => `Unos ${fmtR(t)}. Los billetes siguen siendo 1.000 €, pero compran un ${Math.round(100 - t / 10)} % menos.` },
+    { id: "efee", type: "estimate", kicker: "Estima", topic: "el efecto de las comisiones",
+      title: "Dos fondos idénticos; uno cobra un 1 % más al año. 100 € al mes durante 30 años. ¿Cuánto capital menos tiene el caro?",
+      min: 0, max: 50, step: 1, start: 3, fmt: v => `${v} % menos`, truth: () => Math.round((1 - fv(0, 100, 30, 4) / fv(0, 100, 30, 5)) * 100), tol: () => 4,
+      reveal: t => `En torno a un ${t} % menos, unos ${fmtR(fv(0, 100, 30, 5) - fv(0, 100, 30, 4))}. Las comisiones parecen pequeñas porque se miran año a año, pero se componen igual que la rentabilidad.` },
+    { id: "eearly", type: "estimate", kicker: "Estima", topic: "la ventaja de empezar pronto",
+      title: "Ana invierte 100 € al mes desde los 25; Leo, desde los 35. Ambos hasta los 65, al 5 % hipotético. ¿Cuántas veces más capital tiene Ana?",
+      min: 1, max: 4, step: .1, start: 1.2, fmt: v => `${x1(v)} veces`, truth: () => Math.round((fv(0, 100, 40, 5) / fv(0, 100, 30, 5)) * 10) / 10, tol: () => .25,
+      reveal: t => `Unas ${x1(t)} veces más, aportando solo un 33 % más. Diez años de ventaja valen más que casi cualquier aportación extra.` },
+    { id: "m-rich", type: "myth", kicker: "¿Mito o realidad?", topic: "invertir con poco dinero", answer: false,
+      title: "Invertir solo merece la pena si tienes mucho dinero.",
+      reveal: () => "Mito. Con aportaciones pequeñas y periódicas, el tiempo hace la mayor parte del trabajo. Muchos fondos admiten importes mínimos muy reducidos." },
+    { id: "m-past", type: "myth", kicker: "¿Mito o realidad?", topic: "por qué la rentabilidad pasada no garantiza la futura", answer: false,
+      title: "Un fondo que subió un 25 % el año pasado probablemente repetirá.",
+      reveal: () => "Mito. Las rentabilidades pasadas no son un indicador fiable de las futuras: un año excepcional puede deberse a condiciones que no se repiten." },
+    { id: "m-div", type: "myth", kicker: "¿Mito o realidad?", topic: "qué consigue y qué no la diversificación", answer: false,
+      title: "Diversificar elimina el riesgo.",
+      reveal: () => "Mito. Diversificar reduce la dependencia de un solo activo, pero el riesgo de mercado sigue existiendo." },
+    { id: "m-cash", type: "myth", kicker: "¿Mito o realidad?", topic: "la inflación y el dinero parado", answer: true,
+      title: "Con inflación positiva, el dinero parado pierde valor real.",
+      reveal: () => "Realidad. El importe nominal no cambia, pero cada año compra menos bienes y servicios." },
+    { id: "m-soft", type: "myth", kicker: "Tendencia · Soft saving", topic: "el soft saving y el equilibrio entre disfrutar y ahorrar", answer: false,
+      title: "Disfrutar hoy y ahorrar para mañana son incompatibles.",
+      reveal: () => "Mito. El «soft saving» propone ahorrar con calma sin renunciar a vivir. La clave es automatizar una cantidad sostenible y disfrutar del resto sin culpa." },
+    { id: "q72", type: "quiz", kicker: "Regla rápida", topic: "la regla del 72",
+      title: "Regla del 72: divide 72 entre la rentabilidad anual y obtienes los años que tarda tu dinero en duplicarse. Al 6 %, ¿cuántos años?",
+      o: ["6 años", "12 años", "24 años"], good: [1],
+      reveal: () => "72 ÷ 6 = 12 años. Al 3 % serían 24. Una aproximación útil para comparar escenarios de un vistazo." },
+    { id: "qemerg", type: "quiz", kicker: "Antes de invertir", topic: "el colchón de emergencia",
+      title: "¿Qué debería estar listo antes de empezar a invertir?",
+      o: ["Un colchón de 3 a 6 meses de gastos", "Un móvil nuevo", "Nada, cuanto antes mejor"], good: [0],
+      reveal: () => "El colchón de emergencia evita tener que vender inversiones en el peor momento si surge un imprevisto." }
+];
+
+let pulse = null; // sesión en curso
+
+function pulseState() {
+    if (!S.pulse || typeof S.pulse !== "object") S.pulse = {};
+    const p = S.pulse;
+    p.box ||= {}; p.due ||= {}; p.saved ||= []; p.days ||= [];
+    p.answered ||= 0; p.correct ||= 0;
+    return p;
+}
+function pulseStreak() {
+    const days = new Set(pulseState().days);
+    let d = today(), n = 0;
+    if (!days.has(d)) d--;
+    while (days.has(d)) { n++; d--; }
+    return n;
+}
+function personalCard() {
+    const g = S.goals.filter(x => !isDone(x)).sort((a, b) => a.year - b.year)[0];
+    if (!g) return { id: "p-start", type: "personal", kicker: "Para ti", title: "Tu dinero todavía no tiene un nombre.",
+        body: "Un objetivo con importe y fecha es la palanca que más ayuda a mantener el ahorro. Te lleva treinta segundos.", act: "newGoal", cta: "Definir un objetivo" };
+    const now = monthsToReach(g, 5), plus = monthsToReach({ ...g, monthly: (+g.monthly || 0) + 20 }, 5);
+    const diff = isFinite(now) && isFinite(plus) ? now - plus : 0;
+    return { id: "p-goal", type: "personal", kicker: "Para ti", title: `«${g.name}»`, goal: g.id,
+        body: diff > 0
+            ? `Llevas ${fmt(saved(g))} de ${fmt(g.target)}. Con 20 € más al mes lo alcanzarías unos ${diff} meses antes (5 % hipotético).`
+            : `Llevas ${fmt(saved(g))} de ${fmt(g.target)}. Cada aportación cuenta: registra la de esta semana.`,
+        act: "contribute", cta: "Aportar ahora" };
+}
+function newPulseSession() {
+    const p = pulseState(), t = today();
+    const due = PULSE.filter(c => p.due[c.id] !== undefined && p.due[c.id] <= t).sort((a, b) => (p.box[a.id] || 0) - (p.box[b.id] || 0));
+    const fresh = shuffle(PULSE.filter(c => p.due[c.id] === undefined));
+    const later = shuffle(PULSE.filter(c => p.due[c.id] > t));
+    const cards = [...due, ...fresh, ...later].slice(0, SESSION_SIZE);
+    cards.splice(Math.min(3, cards.length), 0, personalCard());
+    pulse = { cards, results: {}, idx: 0 };
+}
+
+function pulseCardHTML(c, i) {
+    const n = pulse.cards.length;
+    let body = "";
+    if (c.type === "decide" || c.type === "quiz")
+        body = `<div class="p-opts">${c.o.map((o, k) => `<button class="p-opt" data-act="pulseAnswer" data-i="${i}" data-v="${k}">${o}</button>`).join("")}</div>`;
+    else if (c.type === "myth")
+        body = `<div class="p-opts p-two"><button class="p-opt" data-act="pulseAnswer" data-i="${i}" data-v="0">Mito</button><button class="p-opt" data-act="pulseAnswer" data-i="${i}" data-v="1">Realidad</button></div>`;
+    else if (c.type === "estimate")
+        body = `<div class="p-est"><output id="pv${i}">${c.fmt(c.start)}</output>
+            <input type="range" data-input="pulseRange" data-i="${i}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.start}" aria-label="Tu estimación">
+            <div class="row between small"><span>${c.fmt(c.min)}</span><span>${c.fmt(c.max)}</span></div>
+            <button class="p-opt p-go" data-act="pulseAnswer" data-i="${i}">Comprobar</button></div>`;
+    else if (c.type === "personal")
+        body = `<p class="p-body">${esc(c.body)}</p><button class="p-opt p-go" data-act="${c.act}" ${c.goal ? `data-id="${c.goal}"` : ""}>${c.cta} →</button>`;
+    const saved = pulseState().saved.includes(c.id);
+    return `<article class="p-card p-${c.type}" data-i="${i}">
+        <div class="p-inner">
+            <p class="p-kicker">${c.kicker}</p>
+            <h2 class="p-title">${c.type === "personal" ? esc(c.title) : c.title}</h2>
+            ${body}
+            <div class="p-reveal" id="pr${i}" aria-live="polite"></div>
+        </div>
+        ${c.type === "personal" ? "" : `<aside class="p-rail">
+            <button data-act="pulseSave" data-i="${i}" class="${saved ? "on" : ""}" aria-pressed="${saved}"><b>${saved ? "■" : "□"}</b>Guardar</button>
+            <button data-act="pulseExplain" data-i="${i}"><b>?</b>Explicar</button>
+            <button data-act="pulseShare" data-i="${i}"><b>↗</b>Enviar</button></aside>`}
+        <p class="p-count">${i + 1} / ${n}</p>
+    </article>`;
+}
+function pulseEndHTML() {
+    return `<article class="p-card p-end" data-i="${pulse.cards.length}"><div class="p-inner" id="pulseEnd"></div></article>`;
+}
+function paintPulseEnd() {
+    const el = $("#pulseEnd");
+    if (!el) return;
+    const res = Object.values(pulse.results), ok = res.filter(Boolean).length;
+    const back = res.length - ok;
+    el.innerHTML = `<p class="p-kicker">Sesión completada</p>
+        <h2 class="p-title">${res.length ? `${ok} de ${res.length} decisiones acertadas.` : "Has llegado al final."}</h2>
+        <p class="p-body">${back ? `${back} tarjeta${back === 1 ? "" : "s"} volverá${back === 1 ? "" : "n"} en tu próxima sesión: repasar lo que se falla es lo que fija el aprendizaje.` : "Las tarjetas acertadas volverán más adelante, espaciadas, para que no se olviden."}</p>
+        <dl class="p-stats"><div><dt>Racha</dt><dd>${pulseStreak()} día${pulseStreak() === 1 ? "" : "s"}</dd></div><div><dt>Precisión total</dt><dd>${pulseState().answered ? Math.round((pulseState().correct / pulseState().answered) * 100) : 0} %</dd></div><div><dt>Guardadas</dt><dd>${pulseState().saved.length}</dd></div></dl>
+        <p class="p-body small">Siete tarjetas al día son suficientes. Vuelve mañana: la constancia vale más que el atracón.</p>
+        <div class="row"><button class="p-opt p-go" data-act="pulseAgain">Otra sesión</button><a class="p-opt" href="#/resumen">Salir</a></div>`;
+}
+
+function viewPulso() {
+    if (!pulse || pulse.done) newPulseSession();
+    const n = pulse.cards.length;
+    return `<div class="pulse">
+        <header class="p-top">
+            <a href="#/resumen" class="p-close" aria-label="Salir de Pulso">×</a>
+            <div class="p-bars">${Array.from({ length: n + 1 }, (_, i) => `<i data-b="${i}" class="${i === 0 ? "now" : ""}"></i>`).join("")}</div>
+            <span class="p-streak" title="Días seguidos con sesión">${pulseStreak()} d</span>
+        </header>
+        <div class="p-feed" id="pulseFeed">${pulse.cards.map(pulseCardHTML).join("")}${pulseEndHTML()}</div>
+        <p class="p-hint" id="pulseHint">Desliza ↑</p>
+    </div>`;
+}
+function mountPulse() {
+    const feed = $("#pulseFeed");
+    if (!feed) return;
+    paintPulseEnd();
+    const io = new IntersectionObserver(es => es.forEach(e => {
+        if (!e.isIntersecting) return;
+        pulse.idx = +e.target.dataset.i;
+        $$(".p-bars i").forEach((b, k) => b.className = k < pulse.idx ? "past" : k === pulse.idx ? "now" : "");
+        if (pulse.idx > 0) $("#pulseHint")?.remove();
+        if (pulse.idx === pulse.cards.length) { pulse.done = true; paintPulseEnd(); }
+    }), { root: feed, threshold: .6 });
+    $$(".p-card", feed).forEach(c => io.observe(c));
+    pulse.io = io;
+}
+function pulseGo(dir) {
+    const feed = $("#pulseFeed");
+    if (feed) feed.scrollTo({ top: (pulse.idx + dir) * feed.clientHeight, behavior: "smooth" });
+}
+
+function gradePulse(c, v) {
+    if (c.type === "myth") return (v === 1) === c.answer;
+    if (c.type === "estimate") return Math.abs(v - c.truth()) <= c.tol(c.truth());
+    return c.good.includes(v);
+}
+function answerPulse(el) {
+    const i = +el.dataset.i, c = pulse.cards[i];
+    if (i in pulse.results) return;
+    const card = el.closest(".p-card");
+    const v = c.type === "estimate" ? +$("input[type=range]", card).value : +el.dataset.v;
+    const ok = gradePulse(c, v);
+    pulse.results[i] = ok;
+
+    const p = pulseState(), t = today();
+    p.answered++; if (ok) p.correct++;
+    p.box[c.id] = ok ? Math.min(LEITNER.length - 1, (p.box[c.id] || 0) + 1) : 0;
+    p.due[c.id] = t + (ok ? LEITNER[p.box[c.id]] : 1);
+    if (!p.days.includes(t)) p.days = [...p.days, t].slice(-60);
+    save();
+
+    card.classList.add("answered", ok ? "ok" : "ko");
+    $$(".p-opt", card).forEach(b => { b.disabled = true; });
+    if (c.type === "estimate") {
+        $("input[type=range]", card).disabled = true;
+        const t2 = c.truth();
+        $(".p-est", card).insertAdjacentHTML("beforeend", `<p class="p-cmp">Tu estimación: <b>${c.fmt(v)}</b> · Real: <b>${c.fmt(t2)}</b></p>`);
+    } else {
+        $$(".p-opt", card).forEach(b => {
+            const k = +b.dataset.v;
+            if (c.type === "myth" ? (k === 1) === c.answer : c.good.includes(k)) b.classList.add("right");
+            else if (k === v) b.classList.add("wrong");
+        });
+    }
+    $(`#pr${i}`).innerHTML = `<p class="p-verdict">${ok ? "Bien visto." : "No exactamente."}</p><p>${c.reveal(c.type === "estimate" ? c.truth() : v)}</p>`;
+    $(".p-streak").textContent = `${pulseStreak()} d`;
+    paintPulseEnd();
+}
+
 /* =========================================================
    Render + router
 ========================================================= */
-const VIEWS = { resumen: viewResumen, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, formacion: viewFormacion };
-const TITLES = { resumen: "Resumen", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", formacion: "Formación" };
+const VIEWS = { pulso: viewPulso, resumen: viewResumen, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, formacion: viewFormacion };
+const TITLES = { pulso: "Pulso", resumen: "Resumen", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", formacion: "Formación" };
 let lastRoute = null;
 function render(animate = true) {
     const r = VIEWS[route()] ? route() : "resumen";
     const el = $("#view");
     const changed = r !== lastRoute;
+    if (r === "pulso" && !changed && $("#pulseFeed")) return paintChrome(); // no reiniciar el feed
+    if (changed) { pulse?.io?.disconnect(); document.body.classList.toggle("immersive", r === "pulso"); el.classList.remove("fade"); }
     el.innerHTML = VIEWS[r]();
-    if (animate && changed) { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
+    if (animate && changed && r !== "pulso") { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
     $$("#nav a").forEach(a => { const on = a.dataset.tab === r; a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
     if (changed) { stopCirclePolling(); if (r === "circulo") startCirclePolling(); document.title = `Horizonte · ${TITLES[r]}`; }
     lastRoute = r;
     if (r === "simulador") { sim.hover = null; requestAnimationFrame(drawSim); }
+    if (r === "pulso") mountPulse();
     paintChrome();
 }
 addEventListener("hashchange", () => render());
@@ -649,6 +893,21 @@ const ACTIONS = {
     quiz: () => profileQuiz(0, []),
     quizPick: el => profileQuiz(+el.dataset.step + 1, [...el.dataset.acc.split(",").filter(Boolean).map(Number), +el.dataset.v]),
     newGoalFromBudget: el => openSheet(goalForm({ monthly: +el.dataset.v })),
+
+    pulseAnswer: el => answerPulse(el),
+    pulseAgain: () => { newPulseSession(); lastRoute = null; render(false); },
+    pulseSave: el => {
+        const p = pulseState(), id = pulse.cards[+el.dataset.i].id, on = !p.saved.includes(id);
+        p.saved = on ? [...p.saved, id] : p.saved.filter(x => x !== id);
+        save();
+        el.classList.toggle("on", on); el.setAttribute("aria-pressed", on); $("b", el).textContent = on ? "■" : "□";
+    },
+    pulseExplain: el => { const c = pulse.cards[+el.dataset.i]; coachSheet(); sendCoach(`Explícame con más detalle ${c.topic}.`); },
+    pulseShare: async el => {
+        const c = pulse.cards[+el.dataset.i], text = `${c.kicker}: ${c.title.replace(/<[^>]+>/g, "")} ¿Tú qué harías? Pruébalo en Horizonte.`;
+        try { if (navigator.share) return await navigator.share({ text }); } catch { return; }
+        try { await navigator.clipboard.writeText(text); toast("Tarjeta copiada al portapapeles."); } catch { /* sin portapapeles */ }
+    },
 
     coach: () => coachSheet(),
     coachChip: el => sendCoach(el.dataset.q)
@@ -849,6 +1108,7 @@ document.addEventListener("submit", e => {
 });
 document.addEventListener("input", e => {
     const t = e.target, k = t.dataset.input;
+    if (k === "pulseRange") { const c = pulse.cards[+t.dataset.i]; $(`#pv${t.dataset.i}`).textContent = c.fmt(+t.value); return; }
     if (k === "simRange") {
         sim[t.dataset.key] = +t.value;
         $(`#out_${t.dataset.key}`).textContent = rangeFmt[t.dataset.key](+t.value);
@@ -867,7 +1127,12 @@ document.addEventListener("input", e => {
         <button class="btn sm line" style="margin-top:16px" data-act="newGoalFromBudget" data-v="${Math.round(v * .2)}">Crear un objetivo con el 20 %</button>`;
     }
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape") return closeSheet();
+    if (route() !== "pulso" || $(".sheet") || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (["ArrowDown", "PageDown", "j"].includes(e.key)) { e.preventDefault(); pulseGo(1); }
+    if (["ArrowUp", "PageUp", "k"].includes(e.key)) { e.preventDefault(); pulseGo(-1); }
+});
 
 function simPointer(e) {
     const cv = e.target.closest?.("#simChart");
