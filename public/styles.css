@@ -947,3 +947,99 @@ input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 
 .pj-preview { padding: 16px; border-radius: 12px; border: 1.5px dashed var(--ink3); margin-top: 14px; }
 .opts:has(.pj-radio) { border-radius: 14px; }
 @media (max-width: 480px) { .opts:has(.pj-radio) { flex-direction: column; } }
+
+/* =========================================================
+   Identidad CaixaBank AM
+   Sustituye la paleta crema y carbón por azules de marca: fondos fríos, modo oscuro
+   azul marino, titulares en la serif del logo y un filo azul en cada panel.
+========================================================= */
+:root {
+    --bg: #f2f6fa;
+    --white: #ffffff;
+    --paper: #eaf0f6;
+    --paper2: #dde7f0;
+    --ink: #0a2433;
+    --ink2: #4d6473;
+    --ink3: #8497a3;
+    --rule: #d7e0e8;
+    --rule2: #e6ecf2;
+    --r: 8px;
+    --r-sm: 6px;
+}
+:root[data-theme="dark"] {
+    --bg: #061622;
+    --white: #0b2434;
+    --paper: #102f44;
+    --paper2: #163b54;
+    --ink: #eaf3f8;
+    --ink2: #a9c2d1;
+    --ink3: #6f93a5;
+    --rule: #1d4058;
+    --rule2: #14324a;
+    --hero: #00344f;
+}
+:root:not([data-theme="dark"]) .top { background: #fff; }
+:root[data-theme="dark"] .top { background: #061622; }
+
+/* etiquetas: pequeñas, en mayúsculas y en azul de marca (sin el trazo naranja) */
+.kicker, .letter .kicker { display: inline-flex; align-items: center; gap: 8px; color: var(--blue); font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 10px; }
+.kicker::before { display: block; content: ""; width: 7px; height: 7px; background: var(--blue); }
+
+/* titulares en la serif del logo */
+.sec-head h2, .empty h3, .sheet h2, .panel h3, .goal h3, .vz-card h3, .pj-card h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -.01em; }
+.sec-head h2 { font-size: clamp(28px, 3.8vw, 42px); line-height: 1.12; }
+.empty h3 { font-size: 30px; }
+
+/* paneles: esquinas contenidas y filo azul superior */
+.panel, .goal, .empty, .today, .sim, .tile, .lesson, .vz-card, .pj-match, .pj-card { border-radius: var(--r); }
+.panel, .empty, .sim, .today, .pj-card { border-top: 3px solid var(--blue); }
+.panel.tint { border-top: 0; background: var(--paper); }
+.goal { border-left: 3px solid var(--blue); }
+.tile { border-top: 0; }
+.goal:hover { border-color: var(--blue); }
+.note, .vz-why, .pj-preview { border-radius: var(--r-sm); }
+.sheet { border-radius: 10px; border-top: 3px solid var(--blue); }
+@media (max-width: 640px) { .sheet { border-radius: 14px 14px 0 0; } }
+.overlay.side .sheet { border-radius: 10px 0 0 10px; border-top: 0; border-left: 3px solid var(--blue); }
+@media (max-width: 640px) { .overlay.side .sheet { border-radius: 14px 14px 0 0; border-left: 0; border-top: 3px solid var(--blue); } }
+
+/* controles */
+.btn { border-radius: 6px; background: var(--blue); color: #fff; }
+.btn:hover { background: var(--navy); }
+:root[data-theme="dark"] .btn { background: var(--blue); color: #04121b; }
+:root[data-theme="dark"] .btn:hover { background: var(--blue2); }
+.btn.line, .btn.ghost { background: transparent; color: var(--blue); }
+.btn.line:hover, .btn.ghost:hover { background: color-mix(in srgb, var(--blue) 10%, transparent); }
+.icon-btn, .p-close, .toast { border-radius: 6px; }
+.tag, .lesson .st, .lesson .n, .chips li { border-radius: 4px; }
+.field input, .field select, .field textarea { border-radius: 6px; background: var(--paper); border: 1px solid var(--rule); }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); background: var(--white); outline: none; }
+.assist-fab { background: var(--blue); border-radius: 8px; }
+.nav a.on .nl { box-shadow: inset 0 -2px 0 var(--blue); }
+.nav a.on, :root[data-theme="dark"] .nav a.on { color: var(--blue); }
+
+/* chat: sin globos de «app de mensajería» */
+.msg.bot { border-radius: 6px; background: var(--paper); border-left: 3px solid var(--blue); padding: 10px 14px; }
+.msg.me { border-radius: 6px; background: var(--navy); color: #fff; }
+:root[data-theme="dark"] .msg.me { background: var(--blue); color: #04121b; }
+.sugg button { border-radius: 4px; background: transparent; border: 1px solid var(--rule); color: var(--blue); }
+.sugg button:hover { background: color-mix(in srgb, var(--blue) 10%, transparent); border-color: var(--blue); }
+
+/* inicio: hero con marca y carta sin tono crema */
+.b-hero { background: var(--navy); border-radius: 10px; }
+.letter { background: var(--white); border: 1px solid var(--rule); border-top: 3px solid var(--blue); border-radius: 8px; transform: none; }
+:root[data-theme="dark"] .letter { background: var(--white); border-color: var(--rule); }
+.letter blockquote, :root[data-theme="dark"] .letter blockquote { color: var(--ink); }
+.letter small { border-top: 1px solid var(--rule); }
+.ring { background: conic-gradient(var(--blue) calc(var(--p) * 1%), var(--rule2) 0); }
+.bar > i { background: var(--blue); }
+
+/* inmersivas: azul marino, como el resto de la marca */
+.pulse, .game, .g-scroll, .g-masomenos .g-scroll, .g-silueta .g-scroll, .g-draft .g-scroll { background: #061a29; }
+.g-tile { border-radius: 8px; }
+.g-tile.t-aguanta { background: #00344f; }
+.g-tile.t-silueta { background: #0a5a73; }
+.g-tile.t-masomenos { background: #26507a; }
+.g-tile.t-draft { background: #14405e; }
+.g-badge, .g-play, .g-streak { border-radius: 4px; }
+.p-opt, .si-opt, .dr-card, .mm-card, .ag-stage, .ag-pad, .si-chart, .p-go, .mm-btns .p-opt { border-radius: 6px; }

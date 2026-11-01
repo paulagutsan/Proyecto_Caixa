@@ -1040,13 +1040,20 @@ const plainText = t => String(t).replace(/\*\*(.+?)\*\*/g, "$1").replace(/^#{1,6
 const chatMsg = m => `<div class="msg ${m.who}">${esc(plainText(m.text))}${m.src ? `<small>${chatSrc(m)}</small>` : ""}</div>`;
 // Sin servidor (por ejemplo, en GitHub Pages) el navegador llama directamente a Pollinations, gratis y sin clave.
 const COACH_SYSTEM = `Eres el asistente de Horizonte, una app de ahorro e inversión para la Generación Z (prototipo CaixaBank Asset Management x Google). Responde en español de España, con tono profesional y cercano, sin emojis, en un máximo de 120 palabras y sin formato markdown. Eres educativo: no des asesoramiento de inversión personalizado, no recomiendes productos concretos ni prometas rentabilidades. Recuerda que invertir implica riesgo de pérdida y que la rentabilidad pasada no garantiza la futura. Si preguntan qué comprar, explica criterios (horizonte, riesgo, diversificación, costes) y sugiere consultar a un asesor.`;
-async function browserCoach(text, ctx, history) {
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function browserCoach(text, ctx, history, retry = true) {
     const r = await fetch("https://text.pollinations.ai/openai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "openai", temperature: 0.6, max_tokens: 900, messages: [
-            { role: "system", content: `${COACH_SYSTEM}\nDatos del usuario (JSON): ${JSON.stringify(ctx).slice(0, 2000)}` }, ...history, { role: "user", content: text }] })
+            { role: "system", content: `${COACH_SYSTEM}
+Datos del usuario (JSON): ${JSON.stringify(ctx).slice(0, 2000)}` }, ...history, { role: "user", content: text }] })
     });
+    // Sin clave solo admite una pregunta cada ~15 s: se espera lo que haga falta y se reintenta una vez.
+    if ((r.status === 429 || r.status >= 500) && retry) {
+        await sleep(Math.min(16, +r.headers.get("retry-after") || 14) * 1000);
+        return browserCoach(text, ctx, history, false);
+    }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const j = await r.json(), reply = j.choices?.[0]?.message?.content?.trim();
     if (!reply) throw new Error("respuesta vacía");
@@ -1066,7 +1073,7 @@ async function sendCoach(text) {
         reply = await api("/coach", { method: "POST", body: { message: text, context: ctx, history } });
     } catch (e) {
         try { if (e.status && e.status < 404) throw e; reply = await browserCoach(text, ctx, history); }
-        catch { reply = { reply: "No ha sido posible conectar con el asistente. Inténtalo de nuevo en unos segundos.", source: "" }; }
+        catch { reply = { reply: localCoach(text, ctx), source: "local" }; }
     }
     chat.push({ who: "bot", text: reply.reply, src: reply.source, model: reply.model });
     $("#typing")?.remove();
