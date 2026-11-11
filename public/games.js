@@ -139,7 +139,7 @@ function gSpark(vals, { cls = "", base = vals[0], h = 100 } = {}) {
 }
 function gShell(id, title, meta = "") {
     return `<div class="game g-${id}"><div class="g-scroll">
-        <header class="g-top"><a href="#/juegos" class="p-close" aria-label="Volver a Juegos">×</a><b>${title}</b><span id="gMeta">${meta}</span><img class="imm-logo" src="brand/horizonte-logo-oscuro-transparente.svg" alt="Horizonte" width="96" height="30"></header>
+        <header class="g-top"><a href="#/juegos" class="p-close" aria-label="Volver a Juegos">×</a><b>${title}</b><span id="gMeta">${meta}</span><span class="brand imm-brand" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-icono.svg" alt="" width="23" height="19"><span class="brand-word" aria-hidden="true">Horizonte</span></span></header>
         <div class="g-in" id="gRoot"></div></div></div>`;
 }
 const gRoot = () => $("#gRoot");

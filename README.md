@@ -43,6 +43,9 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
 - Basado en el lenguaje de las webs oficiales de Apple y Meta: fondo blanco y gris claro, titulares grandes y centrados, baldosas sin borde con esquinas muy redondeadas, botones en forma de píldora, cabecera translúcida y cifras clave «en números».
 - Colores: azul CaixaBank (#007EAE) para las acciones y los enlaces; verde y rojo de trading para subidas y bajadas (proyecciones, estados de objetivos, votos a favor y en contra, resultados de los juegos).
 - Tipografía: la del sistema en dispositivos Apple (SF Pro) e Inter en el resto.
+- Logotipo con el mismo formato que el de caixabank.es: la estrella y la palabra «Horizonte» en serifa (Source Serif 4) subrayada, al mismo tamaño.
+- Índice de secciones como en apple.com: al pasar por una sección de la cabecera se despliega su mini índice (enlaces grandes a cada apartado y enlaces rápidos). En el móvil, una barra bajo la cabecera con el nombre de la sección abre ese mismo índice.
+- Contenido abierto: la información fluye sobre el fondo separada por líneas finas. Solo van en tarjeta las cosas que se eligen (juegos, accesos del día, votaciones, álbum).
 - El Inicio se centra en una sola idea, «Tu horizonte»: cuánto podrías tener invirtiendo frente a solo guardar, con la hipótesis siempre visible. Debajo van tus objetivos y tres accesos del día. Ningún dato aparece dos veces.
 - Juegos como baldosas de producto (negra, gris y azul CaixaBank) y pantallas inmersivas en negro. Etiquetas de código (USA, ORO, ESP…) en lugar de emojis en la interfaz.
 - Navegación de seis secciones (el simulador vive dentro de Objetivos), modo oscuro completo, barra inferior en móvil y modo privado (icono del ojo) que difumina los importes.

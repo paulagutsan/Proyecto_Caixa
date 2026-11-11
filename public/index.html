@@ -13,17 +13,17 @@
     <link rel="apple-touch-icon" href="brand/estrella.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=f2">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Source+Serif+4:opsz,wght@8..60,400..600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=g3">
 </head>
 <body>
     <a class="skip" href="#view">Saltar al contenido</a>
 
     <header class="top">
         <div class="top-in">
-            <a class="brand" href="#/resumen" aria-label="Horizonte, fondos de inversión · Inicio">
-                <img class="logo-l" src="brand/horizonte-logo-claro-transparente.svg" alt="" width="140" height="44">
-                <img class="logo-d" src="brand/horizonte-logo-oscuro-transparente.svg" alt="" width="140" height="44">
+            <a class="brand" href="#/resumen" aria-label="Horizonte · Inicio">
+                <img class="brand-star" src="brand/horizonte-icono.svg" alt="" width="46" height="38">
+                <span class="brand-word" aria-hidden="true">Horizonte</span>
             </a>
             <nav class="nav" id="nav" aria-label="Secciones">
                 <a href="#/resumen" data-tab="resumen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span class="nl">Resumen</span><span class="ns">Inicio</span></a>
@@ -39,15 +39,20 @@
                 <button class="btn sm" id="authBtn" data-act="auth">Acceder</button>
             </div>
         </div>
+        <div class="flyout" id="flyout" aria-label="Índice de la sección"><div class="fl-in" id="flyIn"></div></div>
+        <div class="localnav" id="localnav">
+            <button class="ln-btn" id="lnBtn" aria-expanded="false" aria-controls="lnPanel"><span id="lnName">Inicio</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+            <div class="ln-panel" id="lnPanel"></div>
+        </div>
     </header>
+    <div class="fl-scrim" id="flyScrim"></div>
 
     <main id="view" tabindex="-1"></main>
 
     <footer class="foot">
         <div class="foot-in">
             <div>
-                <img class="foot-logo logo-l" src="brand/horizonte-logo-claro-transparente.svg" alt="Horizonte, fondos de inversión" width="180" height="57">
-                <img class="foot-logo logo-d" src="brand/horizonte-logo-oscuro-transparente.svg" alt="Horizonte, fondos de inversión" width="180" height="57">
+                <span class="brand foot-brand" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-icono.svg" alt="" width="46" height="38"><span class="brand-word" aria-hidden="true">Horizonte</span></span>
                 <p class="muted">Planificación de objetivos financieros para la nueva generación de inversores.</p>
             </div>
             <p class="legal">Prototipo académico desarrollado en el marco del Reto CaixaBank Asset Management × Google (ICAI). Contenido exclusivamente educativo. Las simulaciones se basan en hipótesis ilustrativas y no constituyen asesoramiento financiero, recomendación de inversión ni garantía de resultados. Invertir conlleva riesgo de pérdida del capital. Rentabilidades pasadas no garantizan rentabilidades futuras.</p>
@@ -60,9 +65,9 @@
     <div id="toasts" aria-live="polite"></div>
 
     <noscript><p style="padding:2rem">Horizonte necesita JavaScript para funcionar.</p></noscript>
-    <script src="coach-local.js?v=f2"></script>
-    <script src="games.js?v=f2"></script>
-    <script src="conecta.js?v=f2"></script>
-    <script src="app.js?v=f2"></script>
+    <script src="coach-local.js?v=g3"></script>
+    <script src="games.js?v=g3"></script>
+    <script src="conecta.js?v=g3"></script>
+    <script src="app.js?v=g3"></script>
 </body>
 </html>

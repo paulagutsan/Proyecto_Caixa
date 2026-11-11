@@ -219,7 +219,8 @@ const hBars = (p, cls = "") => `<span class="hbars ${cls}" role="img" aria-label
 // La categoría solo se muestra si aporta algo: «Colchón de emergencia» no se repite dos veces.
 function catLbl(g, cls, tag) {
     const c = CATS[g.category];
-    return c && c.toLowerCase() !== String(g.name).trim().toLowerCase() ? `<${tag} class="${cls}">${c}</${tag}>` : "";
+    if (c && c.toLowerCase() !== String(g.name).trim().toLowerCase()) return `<${tag} class="${cls}">${c}</${tag}>`;
+    return cls === "goal-cat" ? `<p class="goal-cat" aria-hidden="true">&nbsp;</p>` : ""; // mantiene alineadas las columnas
 }
 
 // Proyección del Inicio: lo que tendrías invirtiendo (5 % hipotético) frente a solo guardarlo
@@ -256,7 +257,7 @@ function viewResumen() {
     const g = gState(), cx = cxState(), vozLeft = VOZ.filter(v => !cx.votes[v.id]).length;
     const next = S.goals.filter(x => !isDone(x)).sort((a, b) => a.year - b.year)[0];
     return `
-    <section class="hz" aria-label="Tu horizonte">
+    <section class="hz" id="hz" aria-label="Tu horizonte">
         <div class="hz-text">
             <p class="hz-hello">${user ? `Hola, ${esc(user.username)}` : "Tu horizonte"}</p>
             <h1>${d.has ? `En ${d.endYear} podrías tener` : `Con ${fmtR(d.pm)} al mes, en ${d.endYear} podrías tener`}</h1>
@@ -279,10 +280,10 @@ function viewResumen() {
         <p class="hz-note">Hipótesis de rentabilidad del 5 % anual. No es una previsión ni una garantía.</p>
     </section>
 
-    ${S.goals.length ? `<section class="section"><div class="sec-head"><div><h2>Tus objetivos</h2></div><a class="link" href="#/objetivos">Gestionar</a></div>
+    ${S.goals.length ? `<section class="section" id="s-objetivos"><div class="sec-head"><div><h2>Tus objetivos</h2></div><a class="link" href="#/objetivos">Gestionar</a></div>
         <ul class="goal-rows">${S.goals.map(goalRow).join("")}</ul></section>` : ""}
 
-    <section class="section"><div class="sec-head"><div><h2>Hoy en Horizonte</h2></div></div>
+    <section class="section" id="s-hoy"><div class="sec-head"><div><h2>Hoy en Horizonte</h2></div></div>
         <div class="today-grid">
             <a class="t-card" href="#/practica"><span class="t-lbl">Aprende · 3 min</span><b>${due ? `${due} tarjeta${due === 1 ? "" : "s"} por repasar` : "Tu práctica de hoy"}</b><span>Decide antes de ver la respuesta.</span><i>${ARROW}</i></a>
             <a class="t-card" href="#/aguanta"><span class="t-lbl">Juegos · reto #${gDayNo()}</span><b>${g.aguanta.day === t ? "Aguanta: ya jugado" : "¿Aguantarías la caída?"}</b><span>Diez años de bolsa en un minuto.</span><i>${ARROW}</i></a>
@@ -309,7 +310,7 @@ function goalCard(g) {
 }
 
 function viewObjetivos() {
-    return `<section class="section"><div class="sec-head"><div><p class="kicker">Objetivos</p><h2>Para qué estás ahorrando</h2>
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Objetivos</p><h2 class="page-title">Para qué estás ahorrando</h2>
         <p>Registra tus aportaciones reales. El seguimiento de lo aportado y las proyecciones se muestran siempre por separado.</p></div>
         <button class="btn" data-act="newGoal">Nuevo objetivo ${ARROW}</button></div>
     ${S.goals.length ? `<div class="cols c3">${S.goals.map(goalCard).join("")}</div>`
@@ -332,7 +333,7 @@ function viewSimulador() {
     if (sim.initial === null) sim.initial = Math.round(totalSaved());
     const rng = (id, label, min, max, step) => `<div class="ctl"><div class="rv"><label for="sim_${id}">${label}</label><b id="out_${id}">${rangeFmt[id](sim[id])}</b></div>
         <input type="range" id="sim_${id}" data-input="simRange" data-key="${id}" min="${min}" max="${max}" step="${step}" value="${sim[id]}"></div>`;
-    return `<section class="section"><div class="sec-head"><div><p class="kicker">Simulador</p><h2>¿Y si sigues así?</h2>
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Simulador</p><h2 class="page-title">¿Y si sigues así?</h2>
         <p>Compara cómo podría evolucionar tu ahorro bajo distintas hipótesis de rentabilidad. Son supuestos ilustrativos, no previsiones.</p></div></div>
     <div class="sim">
         <div class="sim-ctl">
@@ -356,7 +357,7 @@ function viewSimulador() {
     <p class="disclaim">Rentabilidades anuales hipotéticas, constantes y sin costes ni fiscalidad. La rentabilidad real puede ser inferior, incluso negativa.</p>
     </section>
 
-    <section class="section"><div class="sec-head"><div><p class="kicker">Contexto de mercado</p><h2>Datos de referencia</h2>
+    <section class="section" id="s-mercado"><div class="sec-head"><div><p class="kicker">Contexto de mercado</p><h2>Datos de referencia</h2>
         <p>Diferenciamos los datos observados de las hipótesis del simulador. Cifras recogidas para el prototipo: contrástalas siempre con la fuente oficial.</p></div></div>
         <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Indicador</th><th>Referencia</th><th class="r">Valor</th></tr></thead><tbody>
             <tr><td>Inflación zona euro</td><td class="muted">Agosto 2026 · Eurostat</td><td class="r"><b>3,3 %</b></td></tr>
@@ -452,7 +453,7 @@ let circ = { list: null, err: null, timer: null, last: "" };
 const resetCirc = () => { clearInterval(circ.timer); circ = { list: null, err: null, timer: null, last: "" }; };
 
 function viewCirculo() {
-    const head = `<section class="section"><div class="sec-head"><div><p class="kicker">Círculo</p><h2>Ahorrad juntos para lo mismo</h2>
+    const head = `<section class="section"><div class="sec-head"><div><p class="kicker">Círculo</p><h2 class="page-title">Ahorrad juntos para lo mismo</h2>
         <p>Fija una meta común con amigos o familia e invítalos con un código. Cada participante solo comparte lo que decide aportar a ese objetivo.</p></div>
         ${user ? `<div class="row"><button class="btn line" data-act="joinCircle">Unirme con código</button><button class="btn" data-act="newCircle">Crear círculo</button></div>` : ""}</div>`;
     const privacy = `<div class="panel tint" style="margin-top:24px"><p class="kicker">Privacidad</p><p class="muted">Nadie puede ver ni gestionar tus inversiones. El círculo comparte únicamente el objetivo común y las aportaciones que cada persona decide registrar en él.</p></div>`;
@@ -542,7 +543,7 @@ function viewAprende() {
     const due = CARDS.filter(c => p.due[c.id] !== undefined && p.due[c.id] <= t).length;
     const fresh = CARDS.filter(c => p.due[c.id] === undefined).length;
     const streak = pulseStreak();
-    return `<section class="section"><div class="sec-head"><div><p class="kicker">Aprende</p><h2>Tres minutos al día, con casos reales.</h2>
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Aprende</p><h2 class="page-title">Tres minutos al día, con casos reales.</h2>
         <p>Cada tarjeta te pide decidir antes de ver la respuesta. Lo que falles vuelve más adelante; lo que aciertes, cada vez más espaciado.</p></div></div>
         <div class="panel today">
             <div><p class="kicker">Práctica de hoy · 3 minutos</p>
@@ -553,7 +554,7 @@ function viewAprende() {
         </div>
     </section>
 
-    <section class="section"><div class="sec-head"><div><p class="kicker">Temas</p><h2>Las ideas que más te van a servir</h2>
+    <section class="section" id="a-temas"><div class="sec-head"><div><p class="kicker">Temas</p><h2>Las ideas que más te van a servir</h2>
         <p>Lee la idea clave y practica solo ese tema. Un tema está dominado cuando aciertas todas sus tarjetas dos veces.</p></div></div>
     <div class="lessons">${TOPICS.map((tp, i) => {
         const m = tp.cards.filter(isMastered).length;
@@ -562,7 +563,7 @@ function viewAprende() {
     }).join("")}</div>
     </section>
 
-    <section class="section cols c2">
+    <section class="section cols c2" id="a-herramientas">
         <div class="panel"><p class="kicker">Perfil de inversor</p><h3>${S.quiz ? `Perfil ${S.quiz.profile.toLowerCase()}` : "Conoce tu perfil"}</h3>
             <p class="muted" style="margin:8px 0 22px">${S.quiz ? PROFILES[S.quiz.profile] : "Cinco preguntas para orientar el escenario de referencia del simulador. Ejercicio educativo, no evaluación de idoneidad."}</p>
             <button class="btn ${S.quiz ? "line" : ""}" data-act="quiz">${S.quiz ? "Repetir cuestionario" : `Iniciar cuestionario ${ARROW}`}</button></div>
@@ -750,7 +751,7 @@ function viewPulso() {
     return `<div class="pulse">
         <header class="p-top">
             <a href="#/aprende" class="p-close" aria-label="Salir de la práctica">×</a>
-            <img class="imm-logo" src="brand/horizonte-logo-oscuro-transparente.svg" alt="Horizonte" width="96" height="30">
+            <span class="brand imm-brand" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-icono.svg" alt="" width="23" height="19"><span class="brand-word" aria-hidden="true">Horizonte</span></span>
             <div class="p-bars">${Array.from({ length: n + 1 }, (_, i) => `<i data-b="${i}" class="${i === 0 ? "now" : ""}"></i>`).join("")}</div>
             <span class="p-streak" title="Días seguidos con sesión">${pulseStreak()} d</span>
         </header>
@@ -822,6 +823,84 @@ const VIEWS = { practica: viewPulso, resumen: viewResumen, aprende: viewAprende,
 const IMMERSIVE = ["practica", ...GAME_ROUTES];
 const TITLES = { practica: "Práctica", conecta: "Conecta", resumen: "Resumen", aprende: "Aprende", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", ...GAME_TITLES };
 let lastRoute = null;
+
+/* =========================================================
+   Índice de secciones (como el menú desplegable de apple.com)
+   Escritorio: al pasar por una sección de arriba se abre su mini índice.
+   Móvil: barra bajo la cabecera con el nombre de la sección y su índice.
+========================================================= */
+const MENU = {
+    resumen: { name: "Inicio", main: [{ t: "Tu horizonte", go: "resumen", sec: "hz" }, { t: "Tus objetivos", go: "resumen", sec: "s-objetivos" }, { t: "Hoy en Horizonte", go: "resumen", sec: "s-hoy" }],
+        cols: () => [["Enlaces rápidos", [{ t: "Nuevo objetivo", act: "newGoal" }, { t: "Ver escenarios", go: "simulador" }, { t: "Hablar con el asistente", act: "coach" }]]] },
+    aprende: { name: "Aprende", main: [{ t: "Práctica de hoy", go: "practica" }, { t: "Temas", go: "aprende", sec: "a-temas" }, { t: "Perfil de inversor", act: "quiz" }, { t: "Regla 50/30/20", go: "aprende", sec: "a-herramientas" }],
+        cols: () => [["Temas más útiles", TOPICS.slice(0, 5).map(tp => ({ t: tp.title, act: "topic", id: tp.id }))]] },
+    juegos: { name: "Juegos", main: [{ t: "Aguanta", go: "aguanta" }, { t: "Silueta", go: "silueta" }, { t: "Más o menos", go: "masomenos" }, { t: "Draft Night", go: "draft" }],
+        cols: () => [["Enlaces rápidos", [{ t: "Todos los juegos", go: "juegos" }, { t: "Retos diarios", go: "juegos" }]]] },
+    conecta: { name: "Conecta", main: [{ t: "Tu voz", go: "conecta", tab: "voz" }, { t: "Tu calle", go: "conecta", tab: "calle" }, { t: "Tu proyecto", go: "conecta", tab: "proyecto" }],
+        cols: () => [["Qué es cada una", [{ t: "Vota propuestas de empresas", go: "conecta", tab: "voz" }, { t: "Descubre empresas cerca de ti", go: "conecta", tab: "calle" }, { t: "Encuentra apoyo para tu idea", go: "conecta", tab: "proyecto" }]]] },
+    objetivos: { name: "Objetivos", main: [{ t: "Tus objetivos", go: "objetivos" }, { t: "Simulador", go: "simulador" }, { t: "Datos de mercado", go: "simulador", sec: "s-mercado" }],
+        cols: () => [["Enlaces rápidos", [{ t: "Nuevo objetivo", act: "newGoal" }, { t: "Conoce tu perfil", act: "quiz" }]]] },
+    circulo: { name: "Círculo", main: [{ t: "Tus círculos", go: "circulo" }],
+        cols: () => [["Enlaces rápidos", [{ t: "Crear círculo", act: user ? "newCircle" : "auth" }, { t: "Unirme con código", act: user ? "joinCircle" : "auth" }]]] }
+};
+const navKey = r => r === "practica" ? "aprende" : r === "simulador" ? "objetivos" : GAME_MOUNT[r] ? "juegos" : r;
+function menuLink(it, cls) {
+    if (it.act) return `<li><button class="fl-link ${cls}" data-act="${it.act}"${it.id ? ` data-id="${it.id}"` : ""}>${it.t}</button></li>`;
+    return `<li><a class="fl-link ${cls}" href="#/${it.go}"${it.sec ? ` data-sec="${it.sec}"` : ""}${it.tab ? ` data-cxtab="${it.tab}"` : ""}>${it.t}</a></li>`;
+}
+function menuHTML(k) {
+    const m = MENU[k];
+    return `<div class="fl-col fl-main"><p class="fl-h">Explorar ${m.name}</p><ul>${m.main.map(it => menuLink(it, "big")).join("")}</ul></div>`
+        + m.cols().map(([h, items]) => `<div class="fl-col"><p class="fl-h">${h}</p><ul>${items.map(it => menuLink(it, "")).join("")}</ul></div>`).join("");
+}
+let flyTimer = null, flyKey = null;
+function openFly(k) {
+    clearTimeout(flyTimer);
+    if (window.innerWidth <= 860 || document.body.classList.contains("immersive")) return;
+    if (flyKey !== k) { $("#flyIn").innerHTML = menuHTML(k); flyKey = k; }
+    $("#flyIn").style.setProperty("--fl-left", `${Math.max(20, $("#nav").getBoundingClientRect().left + 12)}px`);
+    document.body.classList.add("fly-open");
+}
+function closeFly(delay = 0) {
+    clearTimeout(flyTimer);
+    flyTimer = setTimeout(() => { document.body.classList.remove("fly-open"); flyKey = null; }, delay);
+}
+let pendingSec = null;
+function goSec(id) { const t = id && document.getElementById(id); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }
+function paintLocalNav(r) {
+    const k = navKey(r), ln = $("#localnav");
+    if (!ln || !MENU[k]) return;
+    $("#lnName").textContent = MENU[k].name;
+    $("#lnPanel").innerHTML = menuHTML(k);
+    ln.classList.remove("open");
+    $("#lnBtn").setAttribute("aria-expanded", "false");
+}
+function initMenus() {
+    $$("#nav a").forEach(a => {
+        a.addEventListener("mouseenter", () => { clearTimeout(flyTimer); flyTimer = setTimeout(() => openFly(a.dataset.tab), document.body.classList.contains("fly-open") ? 0 : 140); });
+        a.addEventListener("focus", () => openFly(a.dataset.tab));
+        a.addEventListener("click", () => closeFly());
+    });
+    $(".top").addEventListener("mouseleave", () => closeFly(160));
+    $("#flyout").addEventListener("mouseenter", () => clearTimeout(flyTimer));
+    $(".top-actions").addEventListener("mouseenter", () => closeFly(120));
+    $(".brand").addEventListener("mouseenter", () => closeFly(120));
+    $("#flyScrim").addEventListener("click", () => closeFly());
+    addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("fly-open")) closeFly(); });
+    $("#lnBtn").addEventListener("click", () => { const o = $("#localnav").classList.toggle("open"); $("#lnBtn").setAttribute("aria-expanded", o); });
+    document.addEventListener("click", e => {
+        const l = e.target.closest(".fl-link");
+        if (!l) return;
+        closeFly();
+        $("#localnav")?.classList.remove("open");
+        if (l.tagName !== "A") return;
+        const target = l.getAttribute("href").slice(2);
+        if (l.dataset.cxtab) cx.tab = l.dataset.cxtab;
+        pendingSec = l.dataset.sec || null;
+        if (target === route()) { e.preventDefault(); if (l.dataset.cxtab) { lastRoute = null; render(false); } if (pendingSec) { goSec(pendingSec); pendingSec = null; } else window.scrollTo({ top: 0, behavior: "smooth" }); }
+    });
+}
+
 function render(animate = true) {
     const r = VIEWS[route()] ? route() : "resumen";
     const el = $("#view");
@@ -830,13 +909,15 @@ function render(animate = true) {
     if (changed) { if ($(".sheet")) closeSheet(); pulse?.io?.disconnect(); gameLeave(); document.body.classList.toggle("immersive", IMMERSIVE.includes(r)); el.classList.remove("fade"); }
     el.innerHTML = VIEWS[r]();
     if (animate && changed && !IMMERSIVE.includes(r)) { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
-    $$("#nav a").forEach(a => { const on = a.dataset.tab === (r === "practica" ? "aprende" : r === "simulador" ? "objetivos" : GAME_MOUNT[r] ? "juegos" : r); a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
+    $$("#nav a").forEach(a => { const on = a.dataset.tab === navKey(r); a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
     if (changed) { stopCirclePolling(); if (r === "circulo") startCirclePolling(); document.title = `Horizonte · ${TITLES[r]}`; }
     lastRoute = r;
     if (r === "simulador") { sim.hover = null; requestAnimationFrame(drawSim); }
     if (r === "practica") mountPulse();
     GAME_MOUNT[r]?.();
     if (r === "conecta") mountConecta();
+    paintLocalNav(r);
+    if (pendingSec) { const id = pendingSec; pendingSec = null; requestAnimationFrame(() => goSec(id)); }
     paintChrome();
 }
 addEventListener("hashchange", () => render());
@@ -1258,6 +1339,7 @@ document.addEventListener("pointerleave", e => { if (e.target.id === "simChart")
 (async function init() {
     const legacy = { "#/inicio": "resumen", "#/metas": "objetivos", "#/formacion": "aprende", "#/pulso": "practica", "#/decada": "juegos" }[location.hash.split("?")[0]];
     if (legacy) history.replaceState(null, "", "#/" + legacy);
+    initMenus();
     render();
     try {
         const me = await api("/auth/me");
