@@ -139,13 +139,11 @@ function vozHTML() {
                 <button class="btn quiet" data-act="vozVote" data-v="s">No lo tengo claro</button>
                 <button class="btn quiet vz-a" data-act="vozVote" data-v="a">A favor →</button>
             </div>
-            <p class="small muted cx-hint">Arrastra la tarjeta a la derecha o a la izquierda, o usa las flechas del teclado.</p>`
+            <p class="small muted cx-hint">Arrastra la tarjeta o usa las flechas del teclado. Propuestas de ejemplo; el voto es consultivo.</p>`
             : `<div class="panel cx-done"><h3>Has opinado sobre todas las propuestas</h3><p class="muted">Vuelve más adelante: en temporada de juntas llegarán nuevas.</p>
                 <button class="btn quiet" data-act="vozReset">Volver a opinar</button></div>`}
         </div>
-        <aside class="panel vz-side">${last ? `<p class="kicker">Resultado</p><h3>${last.t}</h3>${vozResult(last.id, st.votes[last.id])}`
-            : `<p class="kicker">Cómo funciona</p><ul class="cx-list"><li>Cada tarjeta es un tipo de propuesta real de junta de accionistas.</li><li>Desliza a la derecha si estás a favor y a la izquierda si estás en contra.</li><li>Ves al momento qué opina el resto de la comunidad.</li></ul>`}
-            <p class="disclaim">Propuestas de ejemplo con empresas genéricas. En este prototipo el voto es consultivo y no se transmite a ninguna junta real.</p></aside>
+        ${last ? `<aside class="panel vz-side"><p class="kicker">Resultado</p><h3>${last.t}</h3>${vozResult(last.id, st.votes[last.id])}</aside>` : ""}
     </div>`;
 }
 async function vozVote(v) {
@@ -168,17 +166,14 @@ function calleHTML() {
         <div>
             <p class="cx-intro">Las empresas en las que invierte un fondo están en tu calle: la tienda donde compras ropa, el súper, tu compañía de móvil. Cuando pases por una, <b>cázala</b> y descubre cómo gana dinero y cómo podrías ser dueño de un trocito.</p>
             <button class="btn cx-cta" data-act="calleCapture">Cazar una empresa</button>
-            <div class="row between" style="margin:26px 0 12px"><b>Tu álbum</b><span class="small muted">${got} de ${CALLE.length} sectores</span></div>
+            <p class="small muted" style="margin-top:10px">Las fotos se quedan en tu móvil y no guardamos tu ubicación.</p>
+            <div class="row between" style="margin:30px 0 12px"><b>Tu álbum</b><span class="small muted">${got} de ${CALLE.length} sectores</span></div>
             <div class="bar" style="margin-bottom:16px"><i style="width:${got / CALLE.length * 100}%"></i></div>
             <div class="cl-album">${CALLE.map(c => { const a = st.album[c.id];
                 return a ? `<button class="cl-card got" data-act="calleOpen" data-id="${c.id}">${a.photo ? `<img src="${a.photo}" alt="">` : `<span class="cl-e">${cxCode(c.n)}</span>`}<b>${c.n}</b><small>${esc(a.brand || "Cazada")}</small></button>`
                     : `<div class="cl-card"><span class="cl-e">?</span><b>${c.n}</b><small>Por descubrir</small></div>`; }).join("")}</div>
         </div>
-        <aside class="panel"><p class="kicker">Así funciona</p><ul class="cx-list">
-            <li>Haz una foto a la tienda o al local (o elige el sector sin foto).</li>
-            <li>Desbloqueas su carta: cómo gana dinero ese tipo de empresa y qué tal reparte dividendos.</li>
-            <li>Completa el álbum: un fondo diversificado tiene un poco de casi todos estos sectores.</li></ul>
-            <p class="disclaim">No guardamos tu ubicación y las fotos se quedan en tu dispositivo. Cazar no te da dinero: es para entender qué hay detrás de lo que usas.</p></aside>
+
     </div>`;
 }
 function calleSheet(pre) {

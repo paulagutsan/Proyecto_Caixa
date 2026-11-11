@@ -40,11 +40,11 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
 
 ## Diseño
 
-- Identidad propia sacada del logo: azul marino como base, el azul de la estrella como color principal y el amarillo y el teja de sus puntos como acentos. Sin degradados, sin cristal esmerilado y sin sombras.
-- Tipografía: Bricolage Grotesque para titulares y textos, DM Mono para etiquetas y cifras pequeñas.
-- Motivo gráfico: las cinco barras del histograma del logo (marcadores y progreso). Subrayado de rotulador amarillo para lo importante y la carta del yo futuro como un ticket impreso.
-- Líneas finas en vez de tarjetas, esquinas rectas y etiquetas de código (USA, ORO, ESP…) en lugar de emojis en la interfaz. Los emojis quedan solo en los resultados que se comparten.
-- Modo oscuro completo, navegación inferior en móvil y modo privado (icono del ojo) que difumina los importes.
+- Elegante y fiable: fondo blanco, azul marino de confianza y el azul de la estrella del logo para los datos. El naranja aparece solo como aviso puntual. Sin degradados, sin cristal esmerilado y sin sombras.
+- El Inicio se centra en una sola idea, «Tu horizonte»: cuánto podrías tener si inviertes frente a si solo guardas, con la hipótesis siempre visible. Debajo van tus objetivos, en una lista, y tres accesos del día. Ningún dato aparece dos veces.
+- Tipografía: Bricolage Grotesque a su anchura normal para titulares y cifras, DM Mono solo en etiquetas pequeñas.
+- Esquinas suaves, líneas finas y tonos pastel en los juegos con dibujos de línea. En la interfaz se usan etiquetas de código (USA, ORO, ESP…) en lugar de emojis; los emojis quedan solo en los resultados que se comparten.
+- Navegación de seis secciones (el simulador vive dentro de Objetivos), modo oscuro completo, barra inferior en móvil y modo privado (icono del ojo) que difumina los importes.
 
 ## Estructura
 

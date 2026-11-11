@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,300..800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=d2">
+    <link rel="stylesheet" href="styles.css?v=e3">
 </head>
 <body>
     <a class="skip" href="#view">Saltar al contenido</a>
@@ -27,17 +27,15 @@
             </a>
             <nav class="nav" id="nav" aria-label="Secciones">
                 <a href="#/resumen" data-tab="resumen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span class="nl">Resumen</span><span class="ns">Inicio</span></a>
-                <a href="#/aprende" data-tab="aprende" class="nav-new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5zM12 6.5V19"/></svg><span class="nl">Aprende</span><span class="ns">Aprende</span></a>
-                <a href="#/juegos" data-tab="juegos" class="nav-new"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7 10.5v4M5 12.5h4"/><circle cx="15.5" cy="11.5" r=".6" fill="currentColor"/><circle cx="17.5" cy="13.5" r=".6" fill="currentColor"/></svg><span class="nl">Juegos</span><span class="ns">Juegos</span></a>
+                <a href="#/aprende" data-tab="aprende"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5zM12 6.5V19"/></svg><span class="nl">Aprende</span><span class="ns">Aprende</span></a>
+                <a href="#/juegos" data-tab="juegos"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7 10.5v4M5 12.5h4"/><circle cx="15.5" cy="11.5" r=".6" fill="currentColor"/><circle cx="17.5" cy="13.5" r=".6" fill="currentColor"/></svg><span class="nl">Juegos</span><span class="ns">Juegos</span></a>
                 <a href="#/conecta" data-tab="conecta" class="nav-new"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="6" r="2.6"/><circle cx="18" cy="18" r="2.6"/><path d="M8.3 10.8 15.7 7.2M8.3 13.2l7.4 3.6"/></svg><span class="nl">Conecta</span><span class="ns">Conecta</span></a>
                 <a href="#/objetivos" data-tab="objetivos"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg><span class="nl">Objetivos</span><span class="ns">Metas</span></a>
-                <a href="#/simulador" data-tab="simulador"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M5 16l4-5 4 3 6-8"/><path d="M15 6h4v4"/></svg><span class="nl">Simulador</span><span class="ns">Simular</span></a>
                 <a href="#/circulo" data-tab="circulo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="3.2"/><circle cx="17" cy="10.5" r="2.5"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6M14.5 15.2c2.6-.5 5 .8 5.8 3.8"/></svg><span class="nl">Círculo</span><span class="ns">Círculo</span></a>
             </nav>
             <div class="top-actions">
                 <button class="icon-btn" data-act="privacy" id="privBtn" aria-pressed="false" title="Ocultar importes" aria-label="Ocultar importes"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="eye" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle class="eye" cx="12" cy="12" r="3"/><path class="slash" d="M4 4l16 16"/></svg></button>
                 <button class="icon-btn" data-act="theme" id="themeBtn" title="Cambiar a modo oscuro" aria-label="Cambiar a modo oscuro"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/><g class="sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg></button>
-                <button class="txt-btn" data-act="coach">Asistente</button>
                 <button class="btn sm" id="authBtn" data-act="auth">Acceder</button>
             </div>
         </div>
@@ -62,9 +60,9 @@
     <div id="toasts" aria-live="polite"></div>
 
     <noscript><p style="padding:2rem">Horizonte necesita JavaScript para funcionar.</p></noscript>
-    <script src="coach-local.js?v=d2"></script>
-    <script src="games.js?v=d2"></script>
-    <script src="conecta.js?v=d2"></script>
-    <script src="app.js?v=d2"></script>
+    <script src="coach-local.js?v=e3"></script>
+    <script src="games.js?v=e3"></script>
+    <script src="conecta.js?v=e3"></script>
+    <script src="app.js?v=e3"></script>
 </body>
 </html>

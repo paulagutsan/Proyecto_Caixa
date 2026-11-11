@@ -213,62 +213,87 @@ function nextStep() {
         <button class="btn" data-act="contribute" data-id="${g.id}">Registrar aportación ${ARROW}</button>`;
 }
 
-// Barras del logo de Horizonte como indicador de progreso (5 barras que suben; se llenan según el avance)
+// Barras del logo de Horizonte como indicador de progreso (5 barras que suben)
 const hBars = (p, cls = "") => `<span class="hbars ${cls}" role="img" aria-label="${Math.round(p)} %">${[1, 2, 3, 4, 5].map(i => `<i class="${p >= i * 20 - 10 ? "on" : ""}"></i>`).join("")}</span>`;
+
+// Proyección del Inicio: lo que tendrías invirtiendo (5 % hipotético) frente a solo guardarlo
+// La categoría solo se muestra si aporta algo: «Colchón de emergencia» no se repite dos veces.
+function catLbl(g, cls, tag) {
+    const c = CATS[g.category];
+    return c && c.toLowerCase() !== String(g.name).trim().toLowerCase() ? `<${tag} class="${cls}">${c}</${tag}>` : "";
+}
+
+function horizonData() {
+    const has = S.goals.length > 0;
+    const pv = has ? totalSaved() : 0, pm = has ? totalMonthly() : 100;
+    const endYear = has ? Math.max(...S.goals.map(g => g.year), NOW.getFullYear() + 5) : NOW.getFullYear() + 10;
+    const years = Math.max(1, endYear - NOW.getFullYear());
+    const inv = [], cash = [];
+    for (let y = 0; y <= years; y++) { inv.push(fv(pv, pm, y, 5)); cash.push(pv + pm * 12 * y); }
+    return { has, pv, pm, endYear, years, inv, cash };
+}
+function horizonChart(d) {
+    const W = 640, H = 230, max = Math.max(...d.inv) * 1.08 || 1;
+    const X = i => (i / d.years) * W, Y = v => H - (v / max) * H;
+    const line = arr => arr.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+    const area = `M0,${H} L${line(d.inv).split(" ").join(" L")} L${W},${H} Z`;
+    return `<svg class="hz-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Proyección hasta ${d.endYear}: ${fmtR(d.inv.at(-1))} invirtiendo frente a ${fmtR(d.cash.at(-1))} sin invertir">
+        <path d="${area}" class="hz-area"/><polyline points="${line(d.cash)}" class="hz-cash"/><polyline points="${line(d.inv)}" class="hz-line"/>
+        <circle cx="${W}" cy="${Y(d.inv.at(-1)).toFixed(1)}" r="5" class="hz-dot"/></svg>`;
+}
+function goalRow(g) {
+    const st = goalStatus(g), p = progress(g);
+    return `<li class="goal-row">
+        <div class="gr-main">${catLbl(g, "gr-cat", "span")}<b>${esc(g.name)}</b></div>
+        <div class="gr-prog"><div class="bar"><i style="width:${p}%"></i></div><span class="money">${fmtR(saved(g))} <em>de ${fmtR(g.target)}</em></span></div>
+        <span class="tag ${st.cls}">${st.txt}</span>
+        <button class="btn sm ghost" data-act="contribute" data-id="${g.id}">Aportar</button>
+    </li>`;
+}
 function viewResumen() {
-    const fl = futureLetter();
-    const prog = totalTarget() ? (totalSaved() / totalTarget()) * 100 : 0;
-    const done = MILESTONES.filter(m => m.on()).length, streak = weekStreak();
-    const stamp = NOW.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }).replace(".", "");
+    const d = horizonData(), end = d.inv.at(-1), gain = end - d.cash.at(-1), streak = weekStreak();
+    const t = today(), due = CARDS.filter(c => pulseState().due[c.id] !== undefined && pulseState().due[c.id] <= t).length;
+    const g = gState(), cx = cxState(), vozLeft = VOZ.filter(v => !cx.votes[v.id]).length;
+    const next = S.goals.filter(x => !isDone(x)).sort((a, b) => a.year - b.year)[0];
     return `
-    <section class="home" aria-label="Inicio">
-        <div class="home-hero">
-            <p class="eyebrow">${hBars(100, "sm")}${user ? `Hola, ${esc(user.username)}` : "Horizonte · fondos de inversión"}</p>
-            <h1>Invierte en la vida que <mark>quieres tener</mark>.</h1>
-            <p class="lead">Apunta para qué ahorras, cuánto llevas y cuándo llegarás. Lo demás lo vamos viendo juntos, paso a paso.</p>
-            <div class="row"><button class="btn" data-act="newGoal">Crear un objetivo ${ARROW}</button><a class="btn ghost" href="#/practica">Practicar 3 minutos</a></div>
+    <section class="hz" aria-label="Tu horizonte">
+        <div class="hz-text">
+            <p class="hz-hello">${user ? `Hola, ${esc(user.username)}` : "Tu horizonte"}</p>
+            <h1>${d.has ? `En ${d.endYear} podrías tener` : `Con ${fmtR(d.pm)} al mes, en ${d.endYear} podrías tener`}</h1>
+            <p class="hz-big money">${fmtR(end)}</p>
+            <p class="hz-sub">Solo guardándolo serían <span class="money">${fmtR(d.cash.at(-1))}</span>. Invirtiendo, el tiempo trabaja por ti: <b class="money">+${fmtR(gain)}</b>.</p>
+            <div class="row">${d.has && next ? `<button class="btn" data-act="contribute" data-id="${next.id}">Aportar a «${esc(next.name)}» ${ARROW}</button>` : `<button class="btn" data-act="newGoal">Crear mi primer objetivo ${ARROW}</button>`}
+                <a class="btn ghost" href="#/simulador">Ver escenarios</a></div>
         </div>
-        <aside class="ticket" aria-label="Carta de tu yo futuro">
-            <p class="t-head"><span>Carta de tu yo futuro</span><span>${stamp}</span></p>
-            <p class="t-body">${esc(fl.q)}</p>
-            <p class="t-foot">${esc(fl.note)}</p>
-        </aside>
+        <div class="hz-visual">
+            ${horizonChart(d)}
+            <div class="hz-axis"><span>Hoy</span><span>${d.endYear}</span></div>
+            <div class="hz-legend"><span><i class="l-inv"></i>Invirtiendo</span><span><i class="l-cash"></i>Sin invertir</span></div>
+        </div>
+        ${d.has ? `<dl class="hz-facts">
+            <div><dt>Ahorrado hoy</dt><dd class="money">${fmtR(d.pv)}</dd></div>
+            <div><dt>Aportas al mes</dt><dd class="money">${fmtR(d.pm)}</dd></div>
+            <div><dt>Racha</dt><dd>${streak} ${streak === 1 ? "semana" : "semanas"}</dd></div>
+        </dl>` : ""}
+        <p class="hz-note">Hipótesis de rentabilidad del 5 % anual. No es una previsión ni una garantía.</p>
     </section>
 
-    <section class="ledger" aria-label="Tus cifras">
-        <div><span class="lbl">Ahorrado</span><strong class="money">${fmtR(totalSaved())}</strong><small>${S.goals.length} objetivo${S.goals.length === 1 ? "" : "s"} activo${S.goals.length === 1 ? "" : "s"}</small></div>
-        <div><span class="lbl">Aportas al mes</span><strong class="money">${fmtR(totalMonthly())}</strong><small>Planificado</small></div>
-        <div><span class="lbl">Avance total</span><strong>${Math.round(prog)}<em>%</em></strong>${hBars(prog)}<small class="money">de ${fmtR(totalTarget())}</small></div>
-        <div class="hl"><span class="lbl">Racha</span><strong>${streak}<em>sem.</em></strong><small>${streak === 1 ? "semana seguida" : "semanas seguidas"} aportando</small></div>
-    </section>
+    ${S.goals.length ? `<section class="section"><div class="sec-head"><div><h2>Tus objetivos</h2></div><a class="link" href="#/objetivos">Gestionar</a></div>
+        <ul class="goal-rows">${S.goals.map(goalRow).join("")}</ul></section>` : ""}
 
-    <section class="home-two">
-        <div class="next"><p class="eyebrow">Tu siguiente paso</p>${nextStep()}</div>
-        <div class="miles"><p class="eyebrow">Hitos <b>${done}/${MILESTONES.length}</b></p>
-            <ol class="checklist">${MILESTONES.map(m => `<li class="${m.on() ? "on" : ""}"><span>${m.on() ? "✓" : ""}</span>${m.name}</li>`).join("")}</ol></div>
-    </section>
-
-    ${S.goals.length ? `<section class="section"><div class="sec-head"><div><p class="kicker">Tus objetivos</p><h2>Cómo vas</h2></div><a class="link" href="#/objetivos">Ver todos</a></div>
-        <div class="cols c3">${S.goals.slice(0, 3).map(goalCard).join("")}</div></section>` : ""}`;
+    <section class="section"><div class="sec-head"><div><h2>Hoy en Horizonte</h2></div></div>
+        <div class="today-grid">
+            <a class="t-card" href="#/practica"><span class="t-lbl">Aprende · 3 min</span><b>${due ? `${due} tarjeta${due === 1 ? "" : "s"} por repasar` : "Tu práctica de hoy"}</b><span>Decide antes de ver la respuesta.</span><i>${ARROW}</i></a>
+            <a class="t-card" href="#/aguanta"><span class="t-lbl">Juegos · reto #${gDayNo()}</span><b>${g.aguanta.day === t ? "Aguanta: ya jugado" : "¿Aguantarías la caída?"}</b><span>Diez años de bolsa en un minuto.</span><i>${ARROW}</i></a>
+            <a class="t-card" href="#/conecta"><span class="t-lbl">Conecta · tu voz</span><b>${vozLeft ? `${vozLeft} propuesta${vozLeft === 1 ? "" : "s"} esperan tu opinión` : "Ya has opinado en todo"}</b><span>Di qué harías tú en las empresas.</span><i>${ARROW}</i></a>
+        </div>
+    </section>`;
 }
-function nextStep() {
-    const g = S.goals.filter(x => !isDone(x)).sort((a, b) => a.year - b.year)[0];
-    if (!g) return `<h3>${S.goals.length ? "Define tu siguiente objetivo" : "Define tu primer objetivo"}</h3>
-        <p class="muted" style="margin-bottom:20px">Ponerle nombre, importe y fecha al ahorro es la decisión que más influye en mantenerlo.</p>
-        <button class="btn" data-act="newGoal">Nuevo objetivo ${ARROW}</button>`;
-    const streak = weekStreak();
-    const msg = contributedThisWeek()
-        ? `Ya has aportado esta semana. Llevas ${streak} semana${streak === 1 ? "" : "s"} consecutiva${streak === 1 ? "" : "s"}.`
-        : streak ? `Una aportación esta semana extendería tu constancia a ${streak + 1} semanas consecutivas.` : "Registra una aportación esta semana para iniciar tu serie de constancia.";
-    return `<h3>${esc(g.name)}</h3><p class="muted" style="margin-bottom:20px">${msg}</p>
-        <button class="btn" data-act="contribute" data-id="${g.id}">Registrar aportación ${ARROW}</button>`;
-}
-
 function goalCard(g) {
     const st = goalStatus(g), p = progress(g), ml = monthsLeft(g);
     const need = requiredMonthly(g.target, saved(g), ml, 5);
     return `<article class="goal">
-        <div class="row between" style="align-items:flex-start"><div><p class="goal-cat">${CATS[g.category]}</p><h3>${esc(g.name)}</h3></div><span class="tag ${st.cls}">${st.txt}</span></div>
+        <div class="row between" style="align-items:flex-start"><div>${catLbl(g, "goal-cat", "p")}<h3>${esc(g.name)}</h3></div><span class="tag ${st.cls}">${st.txt}</span></div>
         <div><div class="amt money"><strong>${fmt(saved(g))}</strong><span>de ${fmt(g.target)}</span></div><div class="bar"><i style="width:${p}%"></i></div></div>
         <dl class="meta">
             <div><dt>Horizonte</dt><dd>Dic. ${g.year}</dd></div>
@@ -804,7 +829,7 @@ function render(animate = true) {
     if (changed) { if ($(".sheet")) closeSheet(); pulse?.io?.disconnect(); gameLeave(); document.body.classList.toggle("immersive", IMMERSIVE.includes(r)); el.classList.remove("fade"); }
     el.innerHTML = VIEWS[r]();
     if (animate && changed && !IMMERSIVE.includes(r)) { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
-    $$("#nav a").forEach(a => { const on = a.dataset.tab === (r === "practica" ? "aprende" : GAME_MOUNT[r] ? "juegos" : r); a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
+    $$("#nav a").forEach(a => { const on = a.dataset.tab === (r === "practica" ? "aprende" : r === "simulador" ? "objetivos" : GAME_MOUNT[r] ? "juegos" : r); a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
     if (changed) { stopCirclePolling(); if (r === "circulo") startCirclePolling(); document.title = `Horizonte · ${TITLES[r]}`; }
     lastRoute = r;
     if (r === "simulador") { sim.hover = null; requestAnimationFrame(drawSim); }
@@ -980,7 +1005,7 @@ function showDetail(id) {
     const g = find(id);
     if (!g) return closeSheet();
     const hist = [...g.contribs].sort((a, b) => b.date.localeCompare(a.date));
-    openSheet(`<p class="kicker">${CATS[g.category]}</p><h2>${esc(g.name)}</h2>
+    openSheet(`${catLbl(g, "kicker", "p")}<h2>${esc(g.name)}</h2>
     <div class="facts" style="border-top:1px solid var(--rule);margin:20px 0;grid-template-columns:repeat(3,1fr)">
         <div class="fact" style="padding:16px 12px 16px 0"><span>Acumulado</span><strong style="font-size:24px">${fmt(saved(g))}</strong></div>
         <div class="fact" style="padding:16px 12px"><span>Objetivo</span><strong style="font-size:24px">${fmt(g.target)}</strong></div>
