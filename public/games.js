@@ -296,10 +296,10 @@ function agDraw(upto = 0) {
     x.lineWidth = 3; x.lineJoin = x.lineCap = "round";
     for (let i = 0; i < pts.length - 1; i++) {
         const inv = i < ag.inMonths.length ? ag.inMonths[i] : ag.inv;
-        x.strokeStyle = inv ? "#5fd0a6" : "rgba(255,255,255,.35)";
+        x.strokeStyle = inv ? "#30d158" : "rgba(255,255,255,.35)";
         x.beginPath(); x.moveTo(X(i), Y(pts[i])); x.lineTo(X(i + 1 > last ? last : i + 1), Y(pts[i + 1])); x.stroke();
     }
-    if (pts.length > 1) { x.fillStyle = "#f2c230"; x.beginPath(); x.arc(X(last), Y(pts.at(-1)), 5, 0, 7); x.fill(); }
+    if (pts.length > 1) { x.fillStyle = "#ffffff"; x.beginPath(); x.arc(X(last), Y(pts.at(-1)), 5, 0, 7); x.fill(); }
 }
 function agFinish() {
     cancelAnimationFrame(ag.raf);

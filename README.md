@@ -40,10 +40,11 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
 
 ## Diseño
 
-- Elegante y fiable: fondo blanco, azul marino de confianza y el azul de la estrella del logo para los datos. El naranja aparece solo como aviso puntual. Sin degradados, sin cristal esmerilado y sin sombras.
-- El Inicio se centra en una sola idea, «Tu horizonte»: cuánto podrías tener si inviertes frente a si solo guardas, con la hipótesis siempre visible. Debajo van tus objetivos, en una lista, y tres accesos del día. Ningún dato aparece dos veces.
-- Tipografía: Bricolage Grotesque a su anchura normal para titulares y cifras, DM Mono solo en etiquetas pequeñas.
-- Esquinas suaves, líneas finas y tonos pastel en los juegos con dibujos de línea. En la interfaz se usan etiquetas de código (USA, ORO, ESP…) en lugar de emojis; los emojis quedan solo en los resultados que se comparten.
+- Basado en el lenguaje de las webs oficiales de Apple y Meta: fondo blanco y gris claro, titulares grandes y centrados, baldosas sin borde con esquinas muy redondeadas, botones en forma de píldora, cabecera translúcida y cifras clave «en números».
+- Colores: azul CaixaBank (#007EAE) para las acciones y los enlaces; verde y rojo de trading para subidas y bajadas (proyecciones, estados de objetivos, votos a favor y en contra, resultados de los juegos).
+- Tipografía: la del sistema en dispositivos Apple (SF Pro) e Inter en el resto.
+- El Inicio se centra en una sola idea, «Tu horizonte»: cuánto podrías tener invirtiendo frente a solo guardar, con la hipótesis siempre visible. Debajo van tus objetivos y tres accesos del día. Ningún dato aparece dos veces.
+- Juegos como baldosas de producto (negra, gris y azul CaixaBank) y pantallas inmersivas en negro. Etiquetas de código (USA, ORO, ESP…) en lugar de emojis en la interfaz.
 - Navegación de seis secciones (el simulador vive dentro de Objetivos), modo oscuro completo, barra inferior en móvil y modo privado (icono del ojo) que difumina los importes.
 
 ## Estructura

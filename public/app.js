@@ -216,13 +216,13 @@ function nextStep() {
 // Barras del logo de Horizonte como indicador de progreso (5 barras que suben)
 const hBars = (p, cls = "") => `<span class="hbars ${cls}" role="img" aria-label="${Math.round(p)} %">${[1, 2, 3, 4, 5].map(i => `<i class="${p >= i * 20 - 10 ? "on" : ""}"></i>`).join("")}</span>`;
 
-// Proyección del Inicio: lo que tendrías invirtiendo (5 % hipotético) frente a solo guardarlo
 // La categoría solo se muestra si aporta algo: «Colchón de emergencia» no se repite dos veces.
 function catLbl(g, cls, tag) {
     const c = CATS[g.category];
     return c && c.toLowerCase() !== String(g.name).trim().toLowerCase() ? `<${tag} class="${cls}">${c}</${tag}>` : "";
 }
 
+// Proyección del Inicio: lo que tendrías invirtiendo (5 % hipotético) frente a solo guardarlo
 function horizonData() {
     const has = S.goals.length > 0;
     const pv = has ? totalSaved() : 0, pm = has ? totalMonthly() : 100;
@@ -261,7 +261,8 @@ function viewResumen() {
             <p class="hz-hello">${user ? `Hola, ${esc(user.username)}` : "Tu horizonte"}</p>
             <h1>${d.has ? `En ${d.endYear} podrías tener` : `Con ${fmtR(d.pm)} al mes, en ${d.endYear} podrías tener`}</h1>
             <p class="hz-big money">${fmtR(end)}</p>
-            <p class="hz-sub">Solo guardándolo serían <span class="money">${fmtR(d.cash.at(-1))}</span>. Invirtiendo, el tiempo trabaja por ti: <b class="money">+${fmtR(gain)}</b>.</p>
+            <p class="hz-chg"><span class="up money">▲ +${fmtR(gain)}</span><span class="up">+${(gain / Math.max(1, d.cash.at(-1)) * 100).toLocaleString("es-ES", { maximumFractionDigits: 1 })} %</span> frente a solo guardar</p>
+            <p class="hz-sub">Solo guardándolo serían <span class="money">${fmtR(d.cash.at(-1))}</span>. Invirtiendo, el tiempo trabaja por ti.</p>
             <div class="row">${d.has && next ? `<button class="btn" data-act="contribute" data-id="${next.id}">Aportar a «${esc(next.name)}» ${ARROW}</button>` : `<button class="btn" data-act="newGoal">Crear mi primer objetivo ${ARROW}</button>`}
                 <a class="btn ghost" href="#/simulador">Ver escenarios</a></div>
         </div>
