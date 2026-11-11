@@ -40,10 +40,11 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
 
 ## Diseño
 
-- Logo de Horizonte en `public/brand/` (cabecera, pie, favicon, icono de la app y pantallas inmersivas). El logo no se modifica.
-- Sistema visual pensado para la Generación Z: tarjetas redondeadas, inicio en formato bento, tipografía Inter con acentos en Source Serif 4, navegación inferior en móvil y **modo oscuro** (sigue al sistema o se cambia con la luna).
-- **Modo privado** (icono del ojo): difumina los importes para mirar la app en público o sin agobiarse.
-- Sin patrones oscuros: nada de confeti por invertir, ni notificaciones push, ni urgencias falsas; los juegos usan dinero ficticio.
+- Identidad propia sacada del logo: azul marino como base, el azul de la estrella como color principal y el amarillo y el teja de sus puntos como acentos. Sin degradados, sin cristal esmerilado y sin sombras.
+- Tipografía: Bricolage Grotesque para titulares y textos, DM Mono para etiquetas y cifras pequeñas.
+- Motivo gráfico: las cinco barras del histograma del logo (marcadores y progreso). Subrayado de rotulador amarillo para lo importante y la carta del yo futuro como un ticket impreso.
+- Líneas finas en vez de tarjetas, esquinas rectas y etiquetas de código (USA, ORO, ESP…) en lugar de emojis en la interfaz. Los emojis quedan solo en los resultados que se comparten.
+- Modo oscuro completo, navegación inferior en móvil y modo privado (icono del ojo) que difumina los importes.
 
 ## Estructura
 

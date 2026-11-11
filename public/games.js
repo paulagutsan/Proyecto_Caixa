@@ -12,34 +12,34 @@
 ========================================================= */
 const G_FROM = 2000, G_SPAN = 10;
 const G_CARDS = [
-    { k: "world", e: "🌍", name: "El mundo entero", sub: "MSCI World", color: "#007eae",
+    { k: "world", e: "🌍", code: "MUN", name: "El mundo entero", sub: "MSCI World", color: "#007eae",
       bio: "Unas 1.500 grandes empresas de 23 países en una sola carta. Lo más parecido a apostar por la economía mundial.",
       r: [-13.2, -16.8, -19.9, 33.1, 14.7, 9.5, 20.1, 9.0, -40.7, 30.0, 11.8, -5.5, 15.8, 26.7, 4.9, -0.9, 7.5, 22.4, -8.7, 27.7, 15.9, 21.8, -18.1, 23.8, 18.7] },
-    { k: "usa", e: "🗽", name: "Gigantes de EE. UU.", sub: "S&P 500", color: "#2f6fd6",
+    { k: "usa", e: "🗽", code: "USA", name: "Gigantes de EE. UU.", sub: "S&P 500", color: "#2f6fd6",
       bio: "Las 500 mayores empresas de Estados Unidos: Apple, Microsoft, Amazon, Coca-Cola…",
       r: [-9.1, -11.9, -22.1, 28.7, 10.9, 4.9, 15.8, 5.5, -37.0, 26.5, 15.1, 2.1, 16.0, 32.4, 13.7, 1.4, 12.0, 21.8, -4.4, 31.5, 18.4, 28.7, -18.1, 26.3, 25.0] },
-    { k: "tech", e: "💻", name: "Tecnológicas", sub: "Nasdaq-100", color: "#8b5cf6",
+    { k: "tech", e: "💻", code: "TEC", name: "Tecnológicas", sub: "Nasdaq-100", color: "#8b5cf6",
       bio: "Las 100 grandes tecnológicas del Nasdaq. Subidas brutales… y caídas brutales.",
       r: [-36.8, -32.6, -37.6, 49.1, 10.4, 1.5, 6.8, 18.7, -41.9, 53.5, 19.2, 2.7, 16.8, 35.0, 17.9, 8.4, 5.9, 31.5, -1.0, 38.0, 47.6, 26.6, -33.0, 53.8, 24.9] },
-    { k: "esp", e: "🥘", name: "España", sub: "IBEX 35", color: "#e0453a",
+    { k: "esp", e: "🥘", code: "ESP", name: "España", sub: "IBEX 35", color: "#e0453a",
       bio: "Las 35 mayores empresas españolas: bancos, Inditex, Iberdrola, Telefónica…",
       r: [-21.7, -7.8, -28.1, 28.2, 17.4, 18.2, 31.8, 7.3, -39.4, 29.8, -17.4, -13.1, -4.7, 21.4, 3.7, -7.2, -2.0, 7.4, -15.0, 11.8, -15.5, 7.9, -5.6, 22.8, 14.8] },
-    { k: "eur", e: "🥐", name: "Europa", sub: "Euro Stoxx 50", color: "#3b82c4",
+    { k: "eur", e: "🥐", code: "EUR", name: "Europa", sub: "Euro Stoxx 50", color: "#3b82c4",
       bio: "Las 50 mayores empresas de la zona euro: LVMH, SAP, Siemens…",
       r: [-2.7, -20.3, -37.3, 15.7, 6.9, 21.3, 15.1, 6.8, -44.4, 21.1, -5.8, -17.1, 13.8, 17.9, 1.2, 3.8, 0.7, 6.5, -14.3, 24.8, -5.1, 21.0, -11.7, 19.2, 8.3] },
-    { k: "jpn", e: "🗾", name: "Japón", sub: "Nikkei 225", color: "#d94f8c",
+    { k: "jpn", e: "🗾", code: "JPN", name: "Japón", sub: "Nikkei 225", color: "#d94f8c",
       bio: "Las 225 grandes de Japón: Toyota, Sony, Nintendo… Pasó años sin levantar cabeza.",
       r: [-27.2, -23.5, -18.6, 24.5, 7.6, 40.2, 6.9, -11.1, -42.1, 19.0, -3.0, -17.3, 22.9, 56.7, 7.1, 9.1, 0.4, 19.1, -12.1, 18.2, 16.0, 4.9, -9.4, 28.2, 19.2] },
-    { k: "emg", e: "🐉", name: "Emergentes", sub: "MSCI Emerging Markets", color: "#ff8300",
+    { k: "emg", e: "🐉", code: "EMG", name: "Emergentes", sub: "MSCI Emerging Markets", color: "#ff8300",
       bio: "Empresas de China, India, Brasil, Taiwán… Mucho crecimiento y muchos sustos.",
       r: [-30.6, -2.4, -6.0, 56.3, 25.9, 34.5, 32.6, 39.8, -53.2, 79.0, 19.2, -18.2, 18.6, -2.3, -1.8, -14.6, 11.6, 37.8, -14.2, 18.9, 18.7, -2.5, -20.0, 10.3, 7.5] },
-    { k: "bon", e: "🛡️", name: "Bonos", sub: "Bloomberg US Aggregate", color: "#7fb8d4",
+    { k: "bon", e: "🛡️", code: "BON", name: "Bonos", sub: "Bloomberg US Aggregate", color: "#7fb8d4",
       bio: "Préstamos a gobiernos y empresas que pagan intereses. Aburridos, pero amortiguan los golpes.",
       r: [11.6, 8.4, 10.3, 4.1, 4.3, 2.4, 4.3, 7.0, 5.2, 5.9, 6.5, 7.8, 4.2, -2.0, 6.0, 0.5, 2.6, 3.5, 0.0, 8.7, 7.5, -1.5, -13.0, 5.5, 1.3] },
-    { k: "oro", e: "🪙", name: "Oro", sub: "Precio del oro", color: "#c9a227",
+    { k: "oro", e: "🪙", code: "ORO", name: "Oro", sub: "Precio del oro", color: "#c9a227",
       bio: "El refugio clásico: suele brillar cuando todo lo demás se hunde.",
       r: [-5.4, 0.8, 24.8, 19.1, 5.2, 18.2, 22.8, 31.4, 5.5, 24.0, 29.5, 10.1, 7.0, -28.0, -1.5, -10.4, 8.6, 13.1, -1.6, 18.3, 25.1, -3.6, -0.3, 13.1, 27.2] },
-    { k: "liq", e: "💤", name: "Colchón", sub: "Letras del Tesoro (liquidez)", color: "#8497a3",
+    { k: "liq", e: "💤", code: "LIQ", name: "Colchón", sub: "Letras del Tesoro (liquidez)", color: "#8497a3",
       bio: "Dinero aparcado casi sin riesgo. No pierde, pero tampoco gana mucho.",
       r: [5.8, 3.8, 1.6, 1.0, 1.4, 3.2, 4.8, 4.7, 1.5, 0.1, 0.1, 0.0, 0.1, 0.0, 0.0, 0.0, 0.3, 0.9, 1.9, 2.3, 0.6, 0.0, 1.5, 5.0, 5.2] }
 ];
@@ -89,6 +89,7 @@ const G_LAST = G_CARDS[0].r.length - G_SPAN; // último inicio de década posibl
    Utilidades comunes
 ========================================================= */
 const gCard = k => G_CARDS.find(c => c.k === k);
+const gIco = (c, cls = "") => `<i class="ico ${cls}" style="--c:${c.color}" aria-hidden="true">${c.code}</i>`;
 const gRand = seed => () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 const gShuffle = (a, rnd = Math.random) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const gNum = (n, d = 1) => n.toLocaleString("es-ES", { maximumFractionDigits: d });
@@ -105,6 +106,8 @@ const G_STATS = Object.fromEntries(G_CARDS.map(c => [c.k, gStats(c)]));
 const gClamp = n => Math.max(1, Math.min(5, Math.round(n)));
 const gRate = k => ({ atk: gClamp(G_STATS[k].mean / 2), risk: gClamp(G_STATS[k].vol / 6) });
 const gDots = (n, cls = "") => `<span class="g-dots ${cls}" aria-label="${n} de 5">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span>`;
+const G_SQ = { "🟢": "in", "🟡": "half", "⚪": "out", "🟩": "ok", "🟥": "ko" };
+const gGrid = str => `<span class="g-grid-sq" aria-hidden="true">${[...str].filter(ch => G_SQ[ch]).map(ch => `<i class="${G_SQ[ch]}"></i>`).join("")}</span>`;
 const gDayNo = () => today() - 20700; // número del reto diario
 
 function gState() {
@@ -147,16 +150,17 @@ const gRoot = () => $("#gRoot");
 function viewJuegos() {
     const g = gState(), t = today();
     const ag = g.aguanta.day === t ? g.aguanta : null, si = g.silueta.day === t ? g.silueta : null;
+    const G_ART = {"aguanta": "<polyline points=\"4,46 18,34 28,40 42,18 52,26 66,8\" /><circle cx=\"66\" cy=\"8\" r=\"4\" />", "silueta": "<path d=\"M4 48 L4 34 L16 28 L26 36 L38 16 L50 24 L66 10 L66 48 Z\" />", "masomenos": "<path d=\"M14 30 L26 10 L38 30 Z\" /><path d=\"M34 22 L46 42 L58 22 Z\" />", "draft": "<rect x=\"8\" y=\"12\" width=\"26\" height=\"36\" rx=\"2\" transform=\"rotate(-10 21 30)\" /><rect x=\"24\" y=\"8\" width=\"26\" height=\"36\" rx=\"2\" /><rect x=\"40\" y=\"12\" width=\"26\" height=\"36\" rx=\"2\" transform=\"rotate(10 53 30)\" />"};
     const tiles = [
         { id: "aguanta", e: "✋", badge: `Diario · #${gDayNo()}`, name: "Aguanta",
           tag: "Una gráfica real avanza en directo sin decirte qué años son. Mantén pulsado para seguir invertido. ¿Aguantarás las caídas?",
-          status: ag ? `Hoy: <b class="${gTone(ag.ret)}">${gSigned(ag.ret)}</b> ✓` : "Reto de hoy sin jugar" },
+          status: ag ? `Hoy: <b class="${gTone(ag.ret)}">${gSigned(ag.ret)}</b>` : "Reto de hoy sin jugar" },
         { id: "silueta", e: "🔍", badge: `Diario · #${gDayNo()}`, name: "Silueta",
           tag: "¿Quién es esta inversión? Adivínala por la forma de su gráfica. Cinco rondas.",
-          status: si ? `Hoy: <b>${si.score}/5</b> ✓` : "Reto de hoy sin jugar" },
+          status: si ? `Hoy: <b>${si.score}/5</b>` : "Reto de hoy sin jugar" },
         { id: "masomenos", e: "⚖️", badge: "Sin fin", name: "Más o menos",
           tag: "Dos inversiones, una pregunta: ¿cuál rindió más? Encadena aciertos hasta que falles.",
-          status: g.mm.best ? `Tu récord: <b>${g.mm.best}</b> 🔥` : "Aún sin récord" },
+          status: g.mm.best ? `Tu récord: <b>${g.mm.best}</b>` : "Aún sin récord" },
         { id: "draft", e: "🃏", badge: "Con amigos", name: "Draft Night",
           tag: "Elegid por turnos vuestras cartas de inversión y descubrid quién gana en una década secreta.",
           status: g.draft.played ? `${g.draft.played} partida${g.draft.played === 1 ? "" : "s"} jugada${g.draft.played === 1 ? "" : "s"}` : "De 2 a 5 jugadores" }
@@ -164,8 +168,8 @@ function viewJuegos() {
     return `<section class="section"><div class="sec-head"><div><p class="kicker">Juegos</p><h2>Dos minutos al día. Pica a tus amigos.</h2>
         <p>Datos reales de mercado y dinero de mentira. Los retos diarios son los mismos para todo el mundo, así que podéis compararos en el grupo.</p></div>
         <div class="g-streak" title="Días seguidos con algún reto diario jugado"><b>${gStreak()}</b><span>día${gStreak() === 1 ? "" : "s"} de racha</span></div></div>
-        <div class="g-grid">${tiles.map(o => `<a class="g-tile t-${o.id}" href="#/${o.id}">
-            <span class="g-badge">${o.badge}</span><span class="g-emoji" aria-hidden="true">${o.e}</span>
+        <div class="g-grid">${tiles.map((o, i) => `<a class="g-tile t-${o.id}" href="#/${o.id}">
+            <span class="g-badge">${o.badge}</span><span class="g-num" aria-hidden="true">0${i + 1}</span><svg class="g-art" viewBox="0 0 70 52" aria-hidden="true">${G_ART[o.id]}</svg>
             <h3>${o.name}</h3><p>${o.tag}</p><span class="g-status">${o.status}</span><span class="g-play">Jugar →</span></a>`).join("")}</div>
         ${ag || si ? `<div class="g-sharebar"><div><b>Tus resultados de hoy están listos.</b><p class="muted">Compártelos en el grupo y mira quién lo ha hecho mejor.</p></div><button class="btn" data-act="gShareDay">Compartir resultados de hoy</button></div>` : ""}
         <p class="disclaim">Rentabilidades anuales aproximadas de índices entre 2000 y 2024, en moneda local, sin comisiones ni impuestos. Juegos educativos: rentabilidades pasadas no garantizan rentabilidades futuras.</p>
@@ -216,7 +220,7 @@ function agPaint() {
     root.innerHTML = `
         <div class="ag-hud">
             <div><span class="g-lbl">Tu dinero</span><output id="agVal" class="ag-val">${fmtR(ag.val)}</output></div>
-            <div class="ag-side"><span class="g-lbl">Año</span><b id="agYear">1/10</b><span class="g-lbl">Leo 😰</span><b id="agLeo">${fmtR(ag.leo.val)}</b></div>
+            <div class="ag-side"><span class="g-lbl">Año</span><b id="agYear">1/10</b><span class="g-lbl">Leo</span><b id="agLeo">${fmtR(ag.leo.val)}</b></div>
         </div>
         <div class="ag-stage" id="agStage">
             <canvas id="agChart" aria-label="Gráfica de la década en curso"></canvas>
@@ -224,9 +228,9 @@ function agPaint() {
             <div class="ag-state" id="agState">${ag.phase === "ready" ? "" : "FUERA DEL MERCADO"}</div>
             ${ag.phase === "ready" ? `<div class="ag-rules">
                 ${done ? `<p class="g-note">Ya has jugado el reto de hoy (${gSigned(done.ret)}). Puedes repetirlo, pero no cuenta.</p>` : ""}
-                <ul><li><b>👆 Pulsado</b> = tu dinero está invertido.</li><li><b>✋ Suelto</b> = vendes y te quedas fuera.</li>
-                <li><b>⏱ 10 años en 60 segundos.</b> No sabes qué década es: lo descubres al final.</li>
-                <li><b>😰 Leo</b>, tu rival, vende en cuanto la bolsa cae un 15 %.</li></ul></div>` : ""}
+                <ul><li><b>Pulsado:</b> tu dinero está invertido.</li><li><b>Suelto:</b> vendes y te quedas fuera.</li>
+                <li><b>10 años en 60 segundos.</b> No sabes qué década es: lo descubres al final.</li>
+                <li><b>Leo</b>, tu rival, vende en cuanto la bolsa cae un 15 %.</li></ul></div>` : ""}
         </div>
         <button class="ag-pad" id="agPad" aria-label="Mantén pulsado para estar invertido"><span id="agPadTxt">${ag.phase === "ready" ? "Mantén pulsado para empezar" : "Mantén pulsado"}</span></button>`;
     agDraw();
@@ -292,10 +296,10 @@ function agDraw(upto = 0) {
     x.lineWidth = 3; x.lineJoin = x.lineCap = "round";
     for (let i = 0; i < pts.length - 1; i++) {
         const inv = i < ag.inMonths.length ? ag.inMonths[i] : ag.inv;
-        x.strokeStyle = inv ? "#7fe0c2" : "rgba(255,255,255,.35)";
+        x.strokeStyle = inv ? "#5fd0a6" : "rgba(255,255,255,.35)";
         x.beginPath(); x.moveTo(X(i), Y(pts[i])); x.lineTo(X(i + 1 > last ? last : i + 1), Y(pts[i + 1])); x.stroke();
     }
-    if (pts.length > 1) { x.fillStyle = "#ff8300"; x.beginPath(); x.arc(X(last), Y(pts.at(-1)), 5, 0, 7); x.fill(); }
+    if (pts.length > 1) { x.fillStyle = "#f2c230"; x.beginPath(); x.arc(X(last), Y(pts.at(-1)), 5, 0, 7); x.fill(); }
 }
 function agFinish() {
     cancelAnimationFrame(ag.raf);
@@ -310,7 +314,7 @@ function agFinish() {
 }
 function agEndHTML() {
     const ret = (ag.val / AG_START - 1) * 100, hold = AG_START * ag.p.at(-1) / ag.p[0], leo = ag.leo.val;
-    const rows = [{ n: "Tú", v: ag.val, me: true }, { n: "Aguantar siempre", v: hold }, { n: "Leo 😰", v: leo }].sort((a, b) => b.v - a.v);
+    const rows = [{ n: "Tú", v: ag.val, me: true }, { n: "Aguantar siempre", v: hold }, { n: "Leo", v: leo }].sort((a, b) => b.v - a.v);
     const maxV = Math.max(...rows.map(r => r.v));
     const monthly = ag.p.slice(1).map((v, i) => ({ i, r: v / ag.p[i] - 1 }));
     const best = [...monthly].sort((a, b) => b.r - a.r).slice(0, 10), missed = best.filter(b => !ag.inMonths[b.i]).length;
@@ -322,7 +326,7 @@ function agEndHTML() {
     return `<div class="g-end">
         <p class="g-lbl">${ag.practice ? "Partida de práctica · " : `Reto #${gDayNo()} · `}La década era</p>
         <h1 class="g-big">${gYears(ag.start)}</h1>
-        <p class="g-emo">${ag.emo}</p>
+        <p class="g-emo">${gGrid(ag.emo)}</p>
         <p class="g-score ${gTone(ret)}">${gSigned(ret)}</p>
         <div class="g-bars">${rows.map(r => `<div class="${r.me ? "me" : ""}"><span>${r.n}</span><i style="width:${Math.max(4, r.v / maxV * 100)}%"></i><b>${fmtR(r.v)}</b></div>`).join("")}</div>
         <div class="g-lesson"><p class="g-lbl">Lo que enseña</p><p>${lesson}</p>${ag.leo.sells ? `<p>Leo vendió por miedo ${ag.leo.sells === 1 ? "una vez" : `${ag.leo.sells} veces`}.</p>` : ""}</div>
@@ -371,8 +375,8 @@ function siPaint() {
             <div class="si-axis"><span>100 €</span><span>${si.answered ? `${fmtR(vals.at(-1))}` : "?"}</span></div></div>
         <div class="si-opts">${R.opts.map(k => { const o = gCard(k);
             const cls = si.answered ? (k === R.k ? "right" : k === si.pick ? "wrong" : "") : "";
-            return `<button class="si-opt ${cls}" data-act="siPick" data-k="${k}" ${si.answered ? "disabled" : ""}><span>${o.e}</span><b>${o.name}</b></button>`; }).join("")}</div>
-        ${si.answered ? `<div class="g-lesson"><p class="g-lbl">${si.last ? "¡Bien visto!" : `Era ${c.e} ${c.name}`}</p>
+            return `<button class="si-opt ${cls}" data-act="siPick" data-k="${k}" ${si.answered ? "disabled" : ""}>${gIco(o)}<b>${o.name}</b></button>`; }).join("")}</div>
+        ${si.answered ? `<div class="g-lesson"><p class="g-lbl">${si.last ? "¡Bien visto!" : `Era ${c.name}`}</p>
             <p>100 € se convirtieron en <b>${fmtR(vals.at(-1))}</b> en esos diez años. ${G_TIPS[R.k]}</p></div>
             <button class="p-opt p-go" data-act="siNext">${si.res.length === 5 ? "Ver resultado" : "Siguiente ronda →"}</button>` : ""}`;
 }
@@ -392,7 +396,7 @@ function siEndHTML() {
         "Muy bien. Tienes buen ojo para el riesgo.", "Casi perfecto. Estás listo para un Draft Night.", "Pleno. Conoces las cartas mejor que nadie: reta a tus amigos."][score];
     return `<div class="g-end">
         <p class="g-lbl">${si.practice ? "Práctica" : `Silueta #${gDayNo()}`}</p>
-        <h1 class="g-big">${score}/5</h1><p class="g-emo">${grid}</p>
+        <h1 class="g-big">${score}/5</h1><p class="g-emo">${gGrid(grid)}</p>
         <div class="g-lesson"><p>${msg}</p></div>
         <div class="g-row"><button class="p-opt p-go" data-act="siShare">Compartir resultado</button><button class="p-opt" data-act="siAgain">Practicar con otras</button></div>
     </div>`;
@@ -403,13 +407,13 @@ function siEndHTML() {
    Cada carta acaba en un importe. ¿La nueva acaba con más o con menos que la anterior?
 ========================================================= */
 const MM_CONCEPTS = [
-    { e: "🧦", t: "1.000 € en un cajón", s: "10 años con un 3 % de inflación (en poder de compra de hoy)", v: 1000 / Math.pow(1.03, 10) },
-    { e: "🧦", t: "1.000 € en un cajón", s: "20 años con un 2 % de inflación (en poder de compra de hoy)", v: 1000 / Math.pow(1.02, 20) },
-    { e: "🌱", t: "1.000 € al 5 % anual", s: "durante 30 años, sin tocarlos", v: 1000 * Math.pow(1.05, 30) },
-    { e: "🌱", t: "1.000 € al 7 % anual", s: "durante 10 años, sin tocarlos", v: 1000 * Math.pow(1.07, 10) },
-    { e: "🌱", t: "1.000 € al 3 % anual", s: "durante 20 años, sin tocarlos", v: 1000 * Math.pow(1.03, 20) },
-    { e: "💸", t: "1.000 € al 5 % con un 2 % de comisiones", s: "durante 20 años", v: 1000 * Math.pow(1.03, 20) },
-    { e: "🎰", t: "1.000 € en apuestas deportivas", s: "apostándolo todo 20 veces seguidas (la casa se queda de media un 5 %)", v: 1000 * Math.pow(.95, 20) }
+    { code: "INF", t: "1.000 € en un cajón", s: "10 años con un 3 % de inflación (en poder de compra de hoy)", v: 1000 / Math.pow(1.03, 10) },
+    { code: "INF", t: "1.000 € en un cajón", s: "20 años con un 2 % de inflación (en poder de compra de hoy)", v: 1000 / Math.pow(1.02, 20) },
+    { code: "INT", t: "1.000 € al 5 % anual", s: "durante 30 años, sin tocarlos", v: 1000 * Math.pow(1.05, 30) },
+    { code: "INT", t: "1.000 € al 7 % anual", s: "durante 10 años, sin tocarlos", v: 1000 * Math.pow(1.07, 10) },
+    { code: "INT", t: "1.000 € al 3 % anual", s: "durante 20 años, sin tocarlos", v: 1000 * Math.pow(1.03, 20) },
+    { code: "COM", t: "1.000 € al 5 % con un 2 % de comisiones", s: "durante 20 años", v: 1000 * Math.pow(1.03, 20) },
+    { code: "APU", t: "1.000 € en apuestas deportivas", s: "apostándolo todo 20 veces seguidas (la casa se queda de media un 5 %)", v: 1000 * Math.pow(.95, 20) }
 ];
 let mm = null;
 function mmItem(prev) {
@@ -419,7 +423,7 @@ function mmItem(prev) {
         else {
             const c = G_CARDS[Math.floor(Math.random() * G_CARDS.length)], len = [1, 3, 5, 10][Math.floor(Math.random() * 4)];
             const from = Math.floor(Math.random() * (c.r.length - len + 1));
-            it = { e: c.e, t: `1.000 € en ${c.name}`, s: len === 1 ? `durante ${G_FROM + from}` : `de ${G_FROM + from} a ${G_FROM + from + len - 1}`, v: 1000 * gGrowth(c.k, from, len) };
+            it = { ico: gIco(c, "lg"), t: `1.000 € en ${c.name}`, s: len === 1 ? `durante ${G_FROM + from}` : `de ${G_FROM + from} a ${G_FROM + from + len - 1}`, v: 1000 * gGrowth(c.k, from, len) };
         }
         if (!prev || (Math.abs(it.v / prev.v - 1) > .04 && it.t + it.s !== prev.t + prev.s)) return it;
     }
@@ -427,7 +431,7 @@ function mmItem(prev) {
 function mmNew() { const a = mmItem(); mm = { a, b: mmItem(a), streak: 0, phase: "play", busy: false }; }
 function mmMount() { if (!mm || mm.phase === "over") mmNew(); mmPaint(); }
 function mmCard(it, hidden, id) {
-    return `<div class="mm-card" id="${id}"><span class="mm-e">${it.e}</span><div><b>${it.t}</b><small>${it.s}</small></div>
+    return `<div class="mm-card" id="${id}"><span class="mm-e">${it.ico || `<i class="ico lg" style="--c:#8a96a3" aria-hidden="true">${it.code}</i>`}</span><div><b>${it.t}</b><small>${it.s}</small></div>
         <output class="mm-v">${hidden ? "¿?" : fmtR(it.v)}</output></div>`;
 }
 function mmPaint() {
@@ -437,7 +441,7 @@ function mmPaint() {
     $("#gMeta").innerHTML = `Racha <b>${mm.streak}</b> · Récord ${g.mm.best}`;
     if (mm.phase === "over") return (root.innerHTML = mmOverHTML());
     root.innerHTML = `
-        <p class="g-lbl">Racha actual</p><p class="mm-streak">${mm.streak} 🔥</p>
+        <p class="g-lbl">Racha actual</p><p class="mm-streak">${mm.streak}</p>
         ${mmCard(mm.a, false, "mmA")}
         <p class="mm-q">¿Esta acaba con <b>más</b> o con <b>menos</b>?</p>
         ${mmCard(mm.b, true, "mmB")}
@@ -467,10 +471,10 @@ function mmGuess(dir) {
 function mmOverHTML() {
     const g = gState(), rec = mm.streak > 0 && mm.streak >= g.mm.best;
     return `<div class="g-end">
-        <p class="g-lbl">Fin de la racha</p><h1 class="g-big">${mm.streak} 🔥</h1>
+        <p class="g-lbl">Fin de la racha</p><h1 class="g-big">${mm.streak}</h1>
         <p class="g-muted">${rec ? "¡Nuevo récord personal!" : `Tu récord: ${g.mm.best}`}</p>
         <div class="g-lesson"><p class="g-lbl">La que falló</p>
-            <p>${mm.a.e} ${mm.a.t} (${mm.a.s}): <b>${fmtR(mm.a.v)}</b><br>${mm.b.e} ${mm.b.t} (${mm.b.s}): <b>${fmtR(mm.b.v)}</b></p></div>
+            <p>${mm.a.t} (${mm.a.s}): <b>${fmtR(mm.a.v)}</b><br>${mm.b.t} (${mm.b.s}): <b>${fmtR(mm.b.v)}</b></p></div>
         <div class="g-row"><button class="p-opt p-go" data-act="mmAgain">Otra vez</button><button class="p-opt" data-act="mmShare">Retar a mi grupo</button></div>
     </div>`;
 }
@@ -495,14 +499,14 @@ function drPaint() {
     root.innerHTML = { menu: drMenu, setup: drSetup, lobby: drLobby, draft: drDraft, season: drSeason, end: drEnd }[dr.phase]();
 }
 function drMenu() {
-    return `<div class="dr-hero"><span class="g-emoji" aria-hidden="true">🃏</span><h1 class="g-big">Draft Night</h1>
+    return `<div class="dr-hero"><h1 class="g-big">Draft Night</h1>
         <p class="g-muted">El fantasy de las inversiones para jugar con amigos.</p></div>
         <ol class="g-steps">
             <li><b>1</b><div><h3>Draft</h3><p>Por turnos, cada uno elige sus cartas: tecnológicas, oro, España, Japón… Si alguien coge una antes que tú, te quedas sin ella.</p></div></li>
             <li><b>2</b><div><h3>Década secreta</h3><p>Se juegan diez años reales entre 2000 y 2024, uno a uno, con la noticia de cada año.</p></div></li>
             <li><b>3</b><div><h3>Gana el que más tenga</h3><p>Cada equipo empieza con 10.000 € ficticios repartidos a partes iguales entre sus cartas.</p></div></li>
         </ol>
-        <button class="p-opt p-go g-bigbtn" data-act="drLocal">📱 Jugar en este móvil</button>
+        <button class="p-opt p-go g-bigbtn" data-act="drLocal">Jugar en este móvil</button>
         <div class="g-online"><p class="g-lbl">Online, cada uno en su móvil</p>
             <form data-form="drJoin" class="g-join">
                 <input id="drName" name="name" maxlength="14" placeholder="Tu nombre" aria-label="Tu nombre" value="${esc(user?.username || dr.myName || "")}" required>
@@ -532,11 +536,11 @@ function drDraft() {
     const mine = dr.mode === "local" || turn === dr.me;
     return `<div class="dr-turn"><p class="g-lbl">Elección ${dr.t + 1} de ${total}</p>
             <h2 class="g-h2">${mine ? (dr.mode === "local" ? `Turno de <b>${esc(dr.players[turn])}</b>` : "¡Te toca elegir!") : `Elige <b>${esc(dr.players[turn])}</b>…`}</h2></div>
-        <div class="dr-teams">${dr.players.map((p, i) => `<div class="${i === turn ? "now" : ""}"><b>${esc(p)}</b><span>${dr.picks[i].map(k => gCard(k).e).join(" ") || "—"}</span></div>`).join("")}</div>
+        <div class="dr-teams">${dr.players.map((p, i) => `<div class="${i === turn ? "now" : ""}"><b>${esc(p)}</b><span>${dr.picks[i].map(k => gIco(gCard(k), "sm")).join("") || "—"}</span></div>`).join("")}</div>
         <div class="dr-cards">${G_CARDS.map(c => {
             const own = taken[c.k], r = gRate(c.k);
             return `<button class="dr-card ${own !== undefined ? "taken" : ""}" style="--c:${c.color}" data-act="drPick" data-k="${c.k}" ${own !== undefined || !mine ? "disabled" : ""}>
-                <span class="dr-e">${c.e}</span><b>${c.name}</b><small>${c.sub}</small>
+                ${gIco(c, "lg")}<b>${c.name}</b><small>${c.sub}</small>
                 <span class="dr-stat">Ganancia ${gDots(r.atk)}</span><span class="dr-stat">Sustos ${gDots(r.risk, "risk")}</span>
                 <p>${c.bio}</p>${own !== undefined ? `<em>De ${esc(dr.players[own])}</em>` : ""}</button>`;
         }).join("")}</div>
@@ -549,24 +553,24 @@ function drSeason() {
     return `<p class="g-lbl">${y ? `Año ${y} de 10` : "La década secreta empieza"}</p>
         <h2 class="g-h2 dr-news">${y ? `«${G_NEWS[dr.start + L]}»` : "Todos empezáis con 10.000 €."}</h2>
         <div class="dr-race">${rows.map((r, k) => `<div class="dr-lane">
-            <span class="dr-pos">${k + 1}</span><div class="dr-bar"><i style="width:${Math.max(6, r.v / max * 100)}%"></i><b>${esc(r.p)} <small>${dr.picks[r.i].map(c => gCard(c).e).join("")}</small></b></div>
+            <span class="dr-pos">${k + 1}</span><div class="dr-bar"><i style="width:${Math.max(6, r.v / max * 100)}%"></i><b>${esc(r.p)} <small>${dr.picks[r.i].map(c => gIco(gCard(c), "sm")).join("")}</small></b></div>
             <span class="dr-v">${fmtR(r.v)}${y ? `<small class="${gTone(r.r)}">${gSigned(r.r)}</small>` : ""}</span></div>`).join("")}</div>
-        ${y ? `<ul class="dr-yr">${[...new Set(dr.picks.flat())].map(k => { const c = gCard(k), x = c.r[dr.start + L]; return `<li>${c.e} ${c.name}<b class="${gTone(x)}">${gSigned(x)}</b></li>`; }).join("")}</ul>` : ""}
-        <div class="g-row"><button class="p-opt p-go" data-act="drYear">${y < 10 ? `Jugar el año ${y + 1} ▶` : "Ver el podio 🏆"}</button>${y < 10 ? `<button class="p-opt" data-act="drSkip">Ir al final ⏭</button>` : ""}</div>`;
+        ${y ? `<ul class="dr-yr">${[...new Set(dr.picks.flat())].map(k => { const c = gCard(k), x = c.r[dr.start + L]; return `<li>${gIco(c, "sm")} ${c.name}<b class="${gTone(x)}">${gSigned(x)}</b></li>`; }).join("")}</ul>` : ""}
+        <div class="g-row"><button class="p-opt p-go" data-act="drYear">${y < 10 ? `Jugar el año ${y + 1} ▶` : "Ver el podio"}</button>${y < 10 ? `<button class="p-opt" data-act="drSkip">Ir al final ⏭</button>` : ""}</div>`;
 }
 function drEnd() {
     const rows = dr.players.map((p, i) => ({ p, i, v: drValue(i, G_SPAN) })).sort((a, b) => b.v - a.v);
     const fams = i => new Set(dr.picks[i].map(k => G_FAMILY[k])).size;
     const win = rows[0], world = DR_START * gGrowth("world", dr.start, G_SPAN);
     const best = G_CARDS.map(c => ({ c, v: DR_START * gGrowth(c.k, dr.start, G_SPAN) })).sort((a, b) => b.v - a.v);
-    const lesson = `En esta década la mejor carta fue ${best[0].c.e} ${best[0].c.name} (${fmtR(best[0].v)}) y la peor, ${best.at(-1).c.e} ${best.at(-1).c.name} (${fmtR(best.at(-1).v)}). `
+    const lesson = `En esta década la mejor carta fue ${best[0].c.name} (${fmtR(best[0].v)}) y la peor, ${best.at(-1).c.name} (${fmtR(best.at(-1).v)}). `
         + (fams(win.i) >= 3 ? `${esc(win.p)} ganó repartiendo entre tipos de inversión muy distintos: así se reduce el riesgo de que una sola carta te hunda.`
             : `${esc(win.p)} ganó apostando fuerte, pero en otra década esas mismas cartas podían haber quedado últimas. Repartir reduce ese riesgo.`)
-        + ` Con solo 🌍 El mundo entero se habría acabado con ${fmtR(world)}.`;
+        + ` Con solo El mundo entero se habría acabado con ${fmtR(world)}.`;
     const podium = [rows[1], rows[0], rows[2]].filter(Boolean);
     return `<div class="g-end">
         <p class="g-lbl">La década secreta era</p><h1 class="g-big">${gYears(dr.start)}</h1>
-        <div class="dr-podium">${podium.map(r => { const pos = rows.indexOf(r); return `<div class="p${pos + 1}"><span>${["🥇", "🥈", "🥉"][pos]}</span><b>${esc(r.p)}</b><small>${dr.picks[r.i].map(k => gCard(k).e).join(" ")}</small><i>${fmtR(r.v)}</i></div>`; }).join("")}</div>
+        <div class="dr-podium">${podium.map(r => { const pos = rows.indexOf(r); return `<div class="p${pos + 1}"><span>${pos + 1}</span><b>${esc(r.p)}</b><small>${dr.picks[r.i].map(k => gIco(gCard(k), "sm")).join("")}</small><i>${fmtR(r.v)}</i></div>`; }).join("")}</div>
         ${rows.length > 3 ? `<ol class="dr-list" start="4">${rows.slice(3).map(r => `<li>${esc(r.p)} · ${fmtR(r.v)}</li>`).join("")}</ol>` : ""}
         <div class="g-lesson"><p class="g-lbl">Lo que enseña</p><p>${lesson}</p></div>
         <div class="g-row"><button class="p-opt p-go" data-act="drShare">Compartir el podio</button><button class="p-opt" data-act="drAgain">Revancha</button></div>
@@ -602,10 +606,10 @@ function drMsg(t) { const m = $("#drMsg"); if (m) m.textContent = t; else toast(
 ========================================================= */
 const GAME_ROUTES = ["aguanta", "silueta", "masomenos", "draft"];
 const GAME_VIEWS = {
-    aguanta: () => gShell("aguanta", "✋ Aguanta", `#${gDayNo()}`),
-    silueta: () => gShell("silueta", "🔍 Silueta", `#${gDayNo()}`),
-    masomenos: () => gShell("masomenos", "⚖️ Más o menos"),
-    draft: () => gShell("draft", "🃏 Draft Night")
+    aguanta: () => gShell("aguanta", "Aguanta", `#${gDayNo()}`),
+    silueta: () => gShell("silueta", "Silueta", `#${gDayNo()}`),
+    masomenos: () => gShell("masomenos", "Más o menos"),
+    draft: () => gShell("draft", "Draft Night")
 };
 const GAME_TITLES = { juegos: "Juegos", aguanta: "Aguanta", silueta: "Silueta", masomenos: "Más o menos", draft: "Draft Night" };
 const GAME_MOUNT = { aguanta: agMount, silueta: siMount, masomenos: mmMount, draft: drMount };
@@ -642,7 +646,7 @@ const GAME_ACTIONS = {
     drSkip: () => { dr.year = G_SPAN; dr.phase = "end"; drPaint(); $(".game")?.scrollTo(0, 0); },
     drShare: () => {
         const rows = dr.players.map((p, i) => ({ p, i, v: drValue(i, G_SPAN) })).sort((a, b) => b.v - a.v);
-        gShare(`🃏 Draft Night · Horizonte\nDécada secreta: ${gYears(dr.start)}\n${rows.map((r, k) => `${["🥇", "🥈", "🥉"][k] || `${k + 1}.`} ${r.p} ${dr.picks[r.i].map(c => gCard(c).e).join("")} ${fmtR(r.v)}`).join("\n")}`);
+        gShare(`🃏 Draft Night · Horizonte\nDécada secreta: ${gYears(dr.start)}\n${rows.map((r, k) => `${["🥇", "🥈", "🥉"][k] || `${k + 1}.`} ${r.p} ${dr.picks[r.i].map(c => gIco(gCard(c), "sm")).join("")} ${fmtR(r.v)}`).join("\n")}`);
     },
     drAgain: () => {
         if (dr.mode === "online") { drStop(); dr = { phase: "menu", names: dr.players.slice(0, 5) }; return drPaint(); }

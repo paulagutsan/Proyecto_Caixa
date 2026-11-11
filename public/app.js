@@ -213,36 +213,57 @@ function nextStep() {
         <button class="btn" data-act="contribute" data-id="${g.id}">Registrar aportación ${ARROW}</button>`;
 }
 
+// Barras del logo de Horizonte como indicador de progreso (5 barras que suben; se llenan según el avance)
+const hBars = (p, cls = "") => `<span class="hbars ${cls}" role="img" aria-label="${Math.round(p)} %">${[1, 2, 3, 4, 5].map(i => `<i class="${p >= i * 20 - 10 ? "on" : ""}"></i>`).join("")}</span>`;
 function viewResumen() {
     const fl = futureLetter();
     const prog = totalTarget() ? (totalSaved() / totalTarget()) * 100 : 0;
     const done = MILESTONES.filter(m => m.on()).length, streak = weekStreak();
-        return `
-    <section class="bento" aria-label="Resumen">
-        <div class="b-hero">
-            ${user ? `<p class="hello">Hola, ${esc(user.username)}</p>` : ""}
-            <h1>Invierte en la vida que <span class="scribble">quieres tener</span>.</h1>
+    const stamp = NOW.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }).replace(".", "");
+    return `
+    <section class="home" aria-label="Inicio">
+        <div class="home-hero">
+            <p class="eyebrow">${hBars(100, "sm")}${user ? `Hola, ${esc(user.username)}` : "Horizonte · fondos de inversión"}</p>
+            <h1>Invierte en la vida que <mark>quieres tener</mark>.</h1>
             <p class="lead">Apunta para qué ahorras, cuánto llevas y cuándo llegarás. Lo demás lo vamos viendo juntos, paso a paso.</p>
             <div class="row"><button class="btn" data-act="newGoal">Crear un objetivo ${ARROW}</button><a class="btn ghost" href="#/practica">Practicar 3 minutos</a></div>
         </div>
-        <aside class="letter b-letter">
-            <p class="kicker">Carta de tu yo futuro</p>
-            <blockquote>${esc(fl.q)}</blockquote>
-            <small>${esc(fl.note)}</small>
+        <aside class="ticket" aria-label="Carta de tu yo futuro">
+            <p class="t-head"><span>Carta de tu yo futuro</span><span>${stamp}</span></p>
+            <p class="t-body">${esc(fl.q)}</p>
+            <p class="t-foot">${esc(fl.note)}</p>
         </aside>
-        <div class="tile t-money"><span>Ahorrado en objetivos</span><strong class="money">${fmtR(totalSaved())}</strong><small>${S.goals.length} objetivo${S.goals.length === 1 ? "" : "s"} activo${S.goals.length === 1 ? "" : "s"}</small></div>
-        <div class="tile"><span>Aportas al mes</span><strong class="money">${fmtR(totalMonthly())}</strong><small>Planificado</small></div>
-        <div class="tile t-ring"><div class="ring" style="--p:${Math.min(100, prog)}"><b>${Math.round(prog)}%</b></div><div><span>Avance total</span><small class="money">de ${fmtR(totalTarget())}</small></div></div>
-        <div class="tile t-streak"><span>Racha</span><strong>${streak}</strong><small>${streak === 1 ? "semana seguida" : "semanas seguidas"} aportando</small></div>
-        <div class="panel b-next"><p class="kicker">Tu siguiente paso</p>${nextStep()}</div>
-        <div class="panel b-miles"><div class="row between"><p class="kicker">Hitos</p><b class="small">${done} de ${MILESTONES.length}</b></div>
-            <div class="bar" style="margin:4px 0 16px"><i style="width:${done / MILESTONES.length * 100}%"></i></div>
-            <ul class="chips">${MILESTONES.map(m => `<li class="${m.on() ? "on" : ""}">${m.name}</li>`).join("")}</ul></div>
+    </section>
+
+    <section class="ledger" aria-label="Tus cifras">
+        <div><span class="lbl">Ahorrado</span><strong class="money">${fmtR(totalSaved())}</strong><small>${S.goals.length} objetivo${S.goals.length === 1 ? "" : "s"} activo${S.goals.length === 1 ? "" : "s"}</small></div>
+        <div><span class="lbl">Aportas al mes</span><strong class="money">${fmtR(totalMonthly())}</strong><small>Planificado</small></div>
+        <div><span class="lbl">Avance total</span><strong>${Math.round(prog)}<em>%</em></strong>${hBars(prog)}<small class="money">de ${fmtR(totalTarget())}</small></div>
+        <div class="hl"><span class="lbl">Racha</span><strong>${streak}<em>sem.</em></strong><small>${streak === 1 ? "semana seguida" : "semanas seguidas"} aportando</small></div>
+    </section>
+
+    <section class="home-two">
+        <div class="next"><p class="eyebrow">Tu siguiente paso</p>${nextStep()}</div>
+        <div class="miles"><p class="eyebrow">Hitos <b>${done}/${MILESTONES.length}</b></p>
+            <ol class="checklist">${MILESTONES.map(m => `<li class="${m.on() ? "on" : ""}"><span>${m.on() ? "✓" : ""}</span>${m.name}</li>`).join("")}</ol></div>
     </section>
 
     ${S.goals.length ? `<section class="section"><div class="sec-head"><div><p class="kicker">Tus objetivos</p><h2>Cómo vas</h2></div><a class="link" href="#/objetivos">Ver todos</a></div>
         <div class="cols c3">${S.goals.slice(0, 3).map(goalCard).join("")}</div></section>` : ""}`;
 }
+function nextStep() {
+    const g = S.goals.filter(x => !isDone(x)).sort((a, b) => a.year - b.year)[0];
+    if (!g) return `<h3>${S.goals.length ? "Define tu siguiente objetivo" : "Define tu primer objetivo"}</h3>
+        <p class="muted" style="margin-bottom:20px">Ponerle nombre, importe y fecha al ahorro es la decisión que más influye en mantenerlo.</p>
+        <button class="btn" data-act="newGoal">Nuevo objetivo ${ARROW}</button>`;
+    const streak = weekStreak();
+    const msg = contributedThisWeek()
+        ? `Ya has aportado esta semana. Llevas ${streak} semana${streak === 1 ? "" : "s"} consecutiva${streak === 1 ? "" : "s"}.`
+        : streak ? `Una aportación esta semana extendería tu constancia a ${streak + 1} semanas consecutivas.` : "Registra una aportación esta semana para iniciar tu serie de constancia.";
+    return `<h3>${esc(g.name)}</h3><p class="muted" style="margin-bottom:20px">${msg}</p>
+        <button class="btn" data-act="contribute" data-id="${g.id}">Registrar aportación ${ARROW}</button>`;
+}
+
 function goalCard(g) {
     const st = goalStatus(g), p = progress(g), ml = monthsLeft(g);
     const need = requiredMonthly(g.target, saved(g), ml, 5);

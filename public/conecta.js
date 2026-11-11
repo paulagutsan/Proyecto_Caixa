@@ -74,6 +74,9 @@ function cxState() {
     c.votes ||= {}; c.album ||= {}; c.project ||= null; c.requests ||= {};
     return c;
 }
+const cxIco = (txt, cls = "") => `<i class="ico ${cls}" aria-hidden="true">${txt}</i>`;
+const cxCode = n => n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z ]/g, "").slice(0, 3).toUpperCase();
+const pjInit = n => n.split(" ").filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 function voterId() { let v = lsGet("hz_voter"); if (!v) { v = uid() + uid(); lsSet("hz_voter", v); } return v; }
 
 function pjMatches(p) {
@@ -124,7 +127,7 @@ function vozHTML() {
                 ${pending[1] ? `<div class="vz-card ghost" aria-hidden="true"></div>` : ""}
                 <article class="vz-card" id="vzCard" data-id="${card.id}" tabindex="0" aria-label="Propuesta: ${esc(card.t)}">
                     <span class="vz-stamp a">A favor</span><span class="vz-stamp c">En contra</span>
-                    <p class="vz-co"><span>${card.e}</span>${card.co} · Junta de accionistas</p>
+                    <p class="vz-co">${card.co} · Junta de accionistas</p>
                     <h3>${card.t}</h3>
                     <p>${card.d}</p>
                     <p class="vz-why"><b>Por qué te importa:</b> ${card.why}</p>
@@ -164,11 +167,11 @@ function calleHTML() {
     return `<div class="cx-grid">
         <div>
             <p class="cx-intro">Las empresas en las que invierte un fondo están en tu calle: la tienda donde compras ropa, el súper, tu compañía de móvil. Cuando pases por una, <b>cázala</b> y descubre cómo gana dinero y cómo podrías ser dueño de un trocito.</p>
-            <button class="btn cx-cta" data-act="calleCapture">📷 Cazar una empresa</button>
+            <button class="btn cx-cta" data-act="calleCapture">Cazar una empresa</button>
             <div class="row between" style="margin:26px 0 12px"><b>Tu álbum</b><span class="small muted">${got} de ${CALLE.length} sectores</span></div>
             <div class="bar" style="margin-bottom:16px"><i style="width:${got / CALLE.length * 100}%"></i></div>
             <div class="cl-album">${CALLE.map(c => { const a = st.album[c.id];
-                return a ? `<button class="cl-card got" data-act="calleOpen" data-id="${c.id}">${a.photo ? `<img src="${a.photo}" alt="">` : `<span class="cl-e">${c.e}</span>`}<b>${c.n}</b><small>${esc(a.brand || "Cazada")}</small></button>`
+                return a ? `<button class="cl-card got" data-act="calleOpen" data-id="${c.id}">${a.photo ? `<img src="${a.photo}" alt="">` : `<span class="cl-e">${cxCode(c.n)}</span>`}<b>${c.n}</b><small>${esc(a.brand || "Cazada")}</small></button>`
                     : `<div class="cl-card"><span class="cl-e">?</span><b>${c.n}</b><small>Por descubrir</small></div>`; }).join("")}</div>
         </div>
         <aside class="panel"><p class="kicker">Así funciona</p><ul class="cx-list">
@@ -182,15 +185,15 @@ function calleSheet(pre) {
     cx.newCard = { sector: pre || null, photo: null };
     openSheet(`<p class="kicker">Cazar una empresa</p><h2>¿Qué has encontrado?</h2>
         <form data-form="calle" style="margin-top:18px" novalidate>
-            <label class="cl-photo" id="clPhotoLbl"><input type="file" accept="image/*" capture="environment" id="clPhoto" hidden><span>📷</span><b>Hacer una foto</b><small>Opcional</small></label>
-            <div class="field"><label>Sector</label><div class="cl-pick">${CALLE.map(c => `<button type="button" class="${pre === c.id ? "on" : ""}" data-act="callePick" data-id="${c.id}"><span>${c.e}</span>${c.n}</button>`).join("")}</div></div>
+            <label class="cl-photo" id="clPhotoLbl"><input type="file" accept="image/*" capture="environment" id="clPhoto" hidden><b>Hacer una foto</b><small>Opcional</small></label>
+            <div class="field"><label>Sector</label><div class="cl-pick">${CALLE.map(c => `<button type="button" class="${pre === c.id ? "on" : ""}" data-act="callePick" data-id="${c.id}">${c.n}</button>`).join("")}</div></div>
             <div class="field"><label for="clBrand">¿Qué tienda era? (opcional)</label><input id="clBrand" name="brand" maxlength="30" placeholder="El nombre del sitio"></div>
             <p class="err" hidden></p>
             <button class="btn full">Añadir a mi álbum</button>
         </form>`);
 }
 function calleReveal(c, a) {
-    openSheet(`<div class="cl-reveal">${a.photo ? `<img src="${a.photo}" alt="">` : `<span class="cl-e big">${c.e}</span>`}
+    openSheet(`<div class="cl-reveal">${a.photo ? `<img src="${a.photo}" alt="">` : `<span class="cl-e big">${cxCode(c.n)}</span>`}
         <p class="kicker">${a.isNew ? "¡Nueva carta!" : "Tu carta"}</p><h2>${c.n}${a.brand ? ` · ${esc(a.brand)}` : ""}</h2></div>
         <p style="margin:14px 0">${c.fact}</p>
         <div class="note">¿Puedes ser dueño de un trocito? <b>Sí.</b> No hace falta comprar acciones sueltas: un fondo indexado de bolsa mundial o europea suele incluir empresas de ${c.n.toLowerCase()} junto a cientos de otras, desde pocos euros.</div>
@@ -234,10 +237,10 @@ function pjHTML() {
             <article class="panel pj-card"><div class="row between" style="align-items:flex-start"><div><p class="kicker">${PJ_SECTORS[p.sector]} · ${PJ_STAGES[p.stage]}</p><h3>${esc(p.title)}</h3></div><button class="link" data-act="pjEdit">Editar</button></div>
                 <p class="muted" style="margin:8px 0 12px">${esc(p.desc)}</p>
                 <div class="chips">${p.needs.map(n => `<li class="on">${PJ_NEEDS[n]}</li>`).join("")}</div>
-                <p class="small muted" style="margin-top:12px">🔒 Privado · solo lo ves tú</p></article>
+                <p class="small muted" style="margin-top:12px">Privado · solo lo ves tú</p></article>
             <div class="row between" style="margin:26px 0 12px"><b>Posibles encajes</b><span class="small muted">${ms.length} empresa${ms.length === 1 ? "" : "s"}</span></div>
             ${ms.length ? ms.map(m => { const r = st.requests[m.id];
-                return `<article class="panel pj-match"><span class="pj-e">${m.e}</span><div><div class="row between"><h3>${m.n}</h3><span class="pj-score">${m.score} % de encaje</span></div>
+                return `<article class="panel pj-match"><span class="pj-e">${pjInit(m.n)}</span><div><div class="row between"><h3>${m.n}</h3><span class="pj-score">${m.score} % de encaje</span></div>
                     <p class="muted small">${m.d}</p><p class="small" style="margin-top:6px">Encaja porque ${m.why.join(", ")}.</p></div>
                     <div class="pj-act">${r ? `<span class="tag ok">Solicitud enviada</span>` : `<button class="btn sm" data-act="pjAsk" data-id="${m.id}">Me interesa</button>`}</div></article>`; }).join("")
             : `<div class="panel"><p class="muted">Aún no hay empresas asociadas que encajen. Prueba a añadir otra necesidad o vuelve pronto: se suman nuevas cada mes.</p></div>`}
@@ -258,7 +261,7 @@ function pjForm() {
             <div class="field"><label for="pjD">En dos frases</label><textarea id="pjD" name="desc" maxlength="280" rows="3" placeholder="Qué haces y para quién">${esc(p.desc)}</textarea></div>
             <p class="err" hidden></p>
             <button class="btn full">Guardar y ver encajes</button>
-            <p class="small muted" style="margin-top:10px">🔒 Solo lo ves tú. Nada se comparte sin tu permiso.</p>
+            <p class="small muted" style="margin-top:10px">Solo lo ves tú. Nada se comparte sin tu permiso.</p>
         </form>`);
 }
 function pjConsent(m) {
