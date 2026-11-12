@@ -8,6 +8,22 @@
  *   4. En «Registro de ejecución» aparecen dos enlaces: el de responder (para difundir)
  *      y el de editar. Las respuestas se guardan también en una hoja de cálculo.
  */
+
+// Textos de la parte «Imagina una app así», sin nombres internos para que se entiendan solos
+var AYUDA_APP_ = 'Estamos diseñando Horizonte, una app de CaixaBank Asset Management para empezar a ahorrar e invertir. ' +
+  'Abajo tienes lo que haría. No hace falta que inviertas hoy para opinar: puntúa cada idea según lo útil o divertida que te parezca.';
+var TITULO_INTERES_ = '¿Cuánto te interesa cada idea? (1 = nada, 5 = mucho)';
+var FILAS_INTERES_ = [
+  'Una mini lección de 3 minutos al día para aprender a invertir con casos reales',
+  'Minijuegos diarios con gráficas reales de bolsa, sin poner dinero, para competir con tus amigos',
+  'Ver cuánto dinero tendrías dentro de unos años si lo inviertes, comparado con dejarlo en la cuenta',
+  'Ponerte metas (un viaje, la entrada de un piso…) y ver cuánto te falta para conseguirlas',
+  'Votar qué deberían hacer las empresas en las que inviertes (como hacen los accionistas)',
+  'Descubrir qué empresas de tu barrio (tiendas, súper, gimnasio…) podrías tener en tu cartera',
+  'Contar una idea o proyecto tuyo y que empresas interesadas en apoyarlo te contacten',
+  'Ahorrar en grupo con tus amigos para una meta común'
+];
+
 function crearEncuesta() {
   var form = FormApp.create('Jóvenes y dinero · 5 minutos');
   form.setDescription(
@@ -34,7 +50,7 @@ function crearEncuesta() {
   form.addMultipleChoiceItem().setTitle('¿Consigues ahorrar algo cada mes?')
     .setChoiceValues(['Sí, casi siempre', 'A veces', 'No', 'No tengo ingresos para ahorrar']).setRequired(true);
   form.addCheckboxItem().setTitle('¿Tienes ahora alguno de estos productos? (puedes marcar varios)')
-    .setChoiceValues(['Ninguno', 'Cuenta remunerada o depósito', 'Fondos de inversión', 'ETF', 'Acciones', 'Criptomonedas', 'Plan de pensiones'])
+    .setChoiceValues(['Ninguno: no tengo nada de esto', 'Cuenta remunerada o depósito', 'Fondos de inversión', 'ETF', 'Acciones', 'Criptomonedas', 'Plan de pensiones'])
     .setRequired(true);
   form.addMultipleChoiceItem().setTitle('¿Cuánto podrías apartar al mes para tus metas sin que te cueste mucho?')
     .setChoiceValues(['Nada ahora mismo', 'Menos de 25 €', '25-50 €', '50-100 €', 'Más de 100 €']).setRequired(true);
@@ -62,17 +78,9 @@ function crearEncuesta() {
     .setChoiceValues(['Verdadero', 'Falso', 'No lo sé']).setRequired(true);
 
   // ---------- Bloque D · Horizonte
-  form.addPageBreakItem().setTitle('Imagina una app así')
-    .setHelpText('Horizonte es una app de CaixaBank Asset Management para empezar a invertir. Puntúa cuánto te interesa cada parte.');
-  var grid = form.addGridItem().setTitle('¿Cuánto te interesa…? (1 = nada, 5 = mucho)');
-  grid.setRows([
-    'Aprende: una práctica de 3 minutos al día con casos reales',
-    'Juegos: minijuegos diarios con datos reales de bolsa para retar a tus amigos',
-    'Tu horizonte: ver cuánto tendrías invirtiendo frente a solo guardar',
-    'Objetivos: poner metas (viaje, piso…) y ver cómo avanzas',
-    'Conecta: opinar sobre propuestas de empresas y descubrir las de tu barrio',
-    'Círculo: ahorrar en grupo con amigos'
-  ]).setColumns(['1', '2', '3', '4', '5']).setRequired(true);
+  form.addPageBreakItem().setTitle('Imagina una app así').setHelpText(AYUDA_APP_);
+  var grid = form.addGridItem().setTitle(TITULO_INTERES_);
+  grid.setRows(FILAS_INTERES_).setColumns(['1', '2', '3', '4', '5']).setRequired(true);
   form.addCheckboxItem().setTitle('¿Qué te daría confianza para usar una app así? Elige hasta 2')
     .setChoiceValues(['Que sea de un banco conocido', 'Ver claro cuánto pago', 'Poder sacar el dinero cuando quiera', 'Opiniones de otros usuarios', 'Empezar con muy poco', 'Que no me pida datos innecesarios', 'Nada: no la usaría'])
     .setValidation(FormApp.createCheckboxValidation().requireSelectAtMost(2).build()).setRequired(true);
@@ -111,7 +119,9 @@ function actualizarEncuesta() {
   cambiar_(form, '¿Para qué ahorr', '¿Para qué ahorras o ahorrarías? Elige hasta 2',
     ['Independizarme o la entrada de una vivienda', 'Viajes', 'Un colchón para imprevistos', 'Estudios', 'Un proyecto propio',
      'Jubilación', 'Hacer crecer el dinero sin meta concreta', 'Ahora mismo no ahorro ni me lo planteo']);
-  cambiar_(form, '¿Qué te frena para invertir',
+  cambiar_(form, '¿Tienes ahora alguno de estos productos', null,
+    ['Ninguno: no tengo nada de esto', 'Cuenta remunerada o depósito', 'Fondos de inversión', 'ETF', 'Acciones', 'Criptomonedas', 'Plan de pensiones']);
+  cambiar_(form, ['¿Qué te frena para invertir', 'Si no inviertes'],
     'Si no inviertes, ¿qué te frena? Si ya inviertes, ¿qué te frena para invertir más? Elige hasta 3',
     ['No sé por dónde empezar', 'Miedo a perder dinero', 'Tengo poco dinero', 'No me fío de bancos ni apps', 'Las comisiones',
      'Pereza o papeleo', 'No lo necesito ahora', 'Nada: ya invierto lo que quiero', 'No me interesa invertir']);
@@ -119,11 +129,22 @@ function actualizarEncuesta() {
     ['Que sea de un banco conocido', 'Ver claro cuánto pago', 'Poder sacar el dinero cuando quiera', 'Opiniones de otros usuarios',
      'Empezar con muy poco', 'Que no me pida datos innecesarios', 'Nada: no la usaría']);
 
+  form.getItems().forEach(function (i) {
+    if (i.getType() === FormApp.ItemType.PAGE_BREAK && i.getTitle() === 'Imagina una app así') i.setHelpText(AYUDA_APP_);
+    if (i.getType() === FormApp.ItemType.GRID) {
+      i.asGridItem().setTitle(TITULO_INTERES_).setRows(FILAS_INTERES_);
+      Logger.log('Actualizada: ' + TITULO_INTERES_);
+    }
+  });
+
   Logger.log('Encuesta actualizada. El enlace para responder no cambia: ' + form.getPublishedUrl());
 }
 
 function cambiar_(form, empiezaPor, nuevoTitulo, opciones) {
-  var item = form.getItems().filter(function (i) { return i.getTitle().indexOf(empiezaPor) === 0; })[0];
+  var prefijos = [].concat(empiezaPor);
+  var item = form.getItems().filter(function (i) {
+    return prefijos.some(function (p) { return i.getTitle().indexOf(p) === 0; });
+  })[0];
   if (!item) { Logger.log('No encontrada (sin cambios): ' + empiezaPor); return; }
   var tipo = item.getType();
   var q = tipo === FormApp.ItemType.CHECKBOX ? item.asCheckboxItem() : item.asMultipleChoiceItem();
