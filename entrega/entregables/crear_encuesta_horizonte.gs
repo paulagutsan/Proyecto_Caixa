@@ -9,19 +9,19 @@
  *      y el de editar. Las respuestas se guardan también en una hoja de cálculo.
  */
 
-// Textos de la parte «Imagina una app así», sin nombres internos para que se entiendan solos
-var AYUDA_APP_ = 'Estamos diseñando Horizonte, una app de CaixaBank Asset Management para empezar a ahorrar e invertir. ' +
-  'Abajo tienes lo que haría. No hace falta que inviertas hoy para opinar: puntúa cada idea según lo útil o divertida que te parezca.';
+// Textos de la parte «Imagina una app así»: genéricos a propósito, para no desvelar cómo funciona cada idea
+var AYUDA_APP_ = 'Estamos diseñando una app para empezar a ahorrar e invertir. ' +
+  'No hace falta que inviertas hoy para opinar: puntúa cada idea según lo útil o divertida que te parezca.';
 var TITULO_INTERES_ = '¿Cuánto te interesa cada idea? (1 = nada, 5 = mucho)';
 var FILAS_INTERES_ = [
-  'Una mini lección de 3 minutos al día para aprender a invertir con casos reales',
-  'Minijuegos diarios con gráficas reales de bolsa, sin poner dinero, para competir con tus amigos',
-  'Ver cuánto dinero tendrías dentro de unos años si lo inviertes, comparado con dejarlo en la cuenta',
-  'Ponerte metas (un viaje, la entrada de un piso…) y ver cuánto te falta para conseguirlas',
-  'Votar qué deberían hacer las empresas en las que inviertes (como hacen los accionistas)',
-  'Descubrir qué empresas de tu barrio (tiendas, súper, gimnasio…) podrías tener en tu cartera',
-  'Contar una idea o proyecto tuyo y que empresas interesadas en apoyarlo te contacten',
-  'Ahorrar en grupo con tus amigos para una meta común'
+  'Aprender a invertir poco a poco, unos minutos al día',
+  'Aprender jugando y competir con amigos, sin poner dinero',
+  'Ver cuánto podría crecer tu dinero si lo inviertes',
+  'Ponerte metas de ahorro y ver cómo avanzas',
+  'Tener voz en las empresas en las que inviertes',
+  'Conectar tu inversión con lo que ves en tu día a día',
+  'Recibir apoyo para tus propios proyectos o ideas',
+  'Ahorrar en grupo con tus amigos'
 ];
 
 function crearEncuesta() {
