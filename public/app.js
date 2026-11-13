@@ -251,34 +251,78 @@ function goalRow(g) {
         <button class="btn sm ghost" data-act="contribute" data-id="${g.id}">Aportar</button>
     </li>`;
 }
+/* Portada: el poder de empezar con poco. Igual para todo el mundo y calculada con una hipótesis del 5 % anual. */
+const HERO_RATE = 5;
+let hz = { pm: 50, years: 30, shown: null };
+function heroSeries() {
+    const out = [];
+    for (let y = 1; y <= hz.years; y++) { const v = fv(0, hz.pm, y, HERO_RATE), put = hz.pm * 12 * y; out.push({ y, v, put, gain: v - put }); }
+    return out;
+}
+function heroHTML() {
+    const ser = heroSeries();
+    return `<section class="hz hzw" id="hz" aria-label="El poder de empezar">
+        <p class="hz-hello">El poder de empezar</p>
+        <h1>Con solo <b id="hzPm"></b> al mes, en <b id="hzYr"></b> podrías tener</h1>
+        <p class="hz-big" id="hzBig" aria-live="polite">0 €</p>
+        <p class="hz-chg"><span class="put" id="hzPut"></span><span class="up" id="hzGain"></span></p>
+        <div class="hz-split" aria-hidden="true"><i class="s-put" id="hzSplitPut"></i><i class="s-gain" id="hzSplitGain"></i></div>
+        <div class="hz-cols" id="hzCols" role="img" aria-label="Cada columna es un año: en azul lo que pones tú y en verde lo que añade el tiempo">${ser.map(() => `<div class="c"><i class="p"></i><i class="g"></i></div>`).join("")}</div>
+        <div class="hz-axis"><span>Hoy</span><span id="hzMid"></span><span id="hzEnd"></span></div>
+        <div class="hz-legend"><span><i class="l-put"></i>Lo que pones tú</span><span><i class="l-gain"></i>Lo que añade el tiempo</span></div>
+        <p class="hz-sub" id="hzSub"></p>
+        <div class="hz-ctl">
+            <label>Cada mes <output id="hzPmOut"></output><input type="range" min="10" max="300" step="10" value="${hz.pm}" data-input="hzRange" data-key="pm" aria-label="Aportación mensual"></label>
+            <label>Durante <output id="hzYrOut"></output><input type="range" min="5" max="40" step="1" value="${hz.years}" data-input="hzRange" data-key="years" aria-label="Años"></label>
+        </div>
+        <div class="row"><button class="btn" id="hzCta" data-act="newGoalFromBudget" data-v="${hz.pm}">Empezar ${ARROW}</button><a class="btn ghost" href="#/simulador">Ver escenarios</a></div>
+        <p class="hz-note">Hipótesis de rentabilidad del ${HERO_RATE} % anual, sin comisiones ni impuestos. No es una previsión ni una garantía: invertir conlleva riesgo de pérdida.</p>
+    </section>`;
+}
+function heroCount(el, to) {
+    const from = hz.shown ?? 0; hz.shown = to;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || from === to) { el.textContent = fmtR(to); return; }
+    const t0 = performance.now(), dur = 900;
+    el.textContent = fmtR(from);
+    setTimeout(() => { if (hz.shown === to) el.textContent = fmtR(to); }, dur + 150); // por si el navegador pausa las animaciones
+    const step = now => {
+        if (hz.shown !== to) return; // otra animación más reciente
+        const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        el.textContent = fmtR(from + (to - from) * e);
+        if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+function paintHero() {
+    const root = $("#hz"); if (!root) return;
+    const ser = heroSeries(), last = ser.at(-1), max = last.v;
+    const third = Math.max(1, Math.round(hz.years / 3)), before = ser[hz.years - third - 1], gainLast = last.gain - (before ? before.gain : 0);
+    const share = last.gain > 0 ? Math.round(gainLast / last.gain * 100) : 0, daily = hz.pm * 12 / 365;
+    $("#hzPm").textContent = fmtR(hz.pm); $("#hzPmOut").textContent = `${fmtR(hz.pm)} al mes`;
+    $("#hzYr").textContent = `${hz.years} años`; $("#hzYrOut").textContent = `${hz.years} años`;
+    $("#hzPut").textContent = `Tú pones ${fmtR(last.put)}`;
+    $("#hzGain").textContent = `▲ El tiempo añade +${fmtR(last.gain)}`;
+    $("#hzSplitPut").style.flex = last.put; $("#hzSplitGain").style.flex = Math.max(0.0001, last.gain);
+    $("#hzMid").textContent = hz.years >= 10 ? `Año ${Math.round(hz.years / 2)}` : "";
+    $("#hzEnd").textContent = `Año ${hz.years}`;
+    $("#hzSub").innerHTML = `Son ${daily.toLocaleString("es-ES", { maximumFractionDigits: 2 })} € al día. Y lo más sorprendente: <b>los últimos ${third} años generan el ${share} % de todo lo que ganas.</b> Por eso lo que cuenta es empezar pronto, aunque sea con poco.`;
+    const cta = $("#hzCta"); cta.dataset.v = hz.pm; cta.firstChild.textContent = `Empezar con ${fmtR(hz.pm)} al mes `;
+    $$("#hzCols .c").forEach((c, i) => {
+        const d = ser[i]; if (!d) return;
+        const [pe, ge] = [$(".p", c), $(".g", c)];
+        pe.style.transitionDelay = ge.style.transitionDelay = `${i * 18}ms`;
+        pe.style.height = `${d.put / max * 100}%`; ge.style.height = `${d.gain / max * 100}%`;
+        c.title = `Año ${d.y}: ${fmtR(d.v)} (tú ${fmtR(d.put)} + tiempo ${fmtR(d.gain)})`;
+    });
+    heroCount($("#hzBig"), last.v);
+}
+function mountHero() { const r = $("#hz"); if (!r) return; hz.shown = null; void r.offsetHeight; paintHero(); }
+
 function viewResumen() {
-    const d = horizonData(), end = d.inv.at(-1), gain = end - d.cash.at(-1), streak = weekStreak();
     const t = today(), due = CARDS.filter(c => pulseState().due[c.id] !== undefined && pulseState().due[c.id] <= t).length;
     const g = gState(), cx = cxState(), vozLeft = VOZ.filter(v => !cx.votes[v.id]).length;
-    const next = S.goals.filter(x => !isDone(x)).sort((a, b) => a.year - b.year)[0];
     return `
-    <section class="hz" id="hz" aria-label="Tu horizonte">
-        <div class="hz-text">
-            <p class="hz-hello">${user ? `Hola, ${esc(user.username)}` : "Tu horizonte"}</p>
-            <h1>${d.has ? `En ${d.endYear} podrías tener` : `Con ${fmtR(d.pm)} al mes, en ${d.endYear} podrías tener`}</h1>
-            <p class="hz-big money">${fmtR(end)}</p>
-            <p class="hz-chg"><span class="up money">▲ +${fmtR(gain)}</span><span class="up">+${(gain / Math.max(1, d.cash.at(-1)) * 100).toLocaleString("es-ES", { maximumFractionDigits: 1 })} %</span> frente a solo guardar</p>
-            <p class="hz-sub">Solo guardándolo serían <span class="money">${fmtR(d.cash.at(-1))}</span>. Invirtiendo, el tiempo trabaja por ti.</p>
-            <div class="row">${d.has && next ? `<button class="btn" data-act="contribute" data-id="${next.id}">Aportar a «${esc(next.name)}» ${ARROW}</button>` : `<button class="btn" data-act="newGoal">Crear mi primer objetivo ${ARROW}</button>`}
-                <a class="btn ghost" href="#/simulador">Ver escenarios</a></div>
-        </div>
-        <div class="hz-visual">
-            ${horizonChart(d)}
-            <div class="hz-axis"><span>Hoy</span><span>${d.endYear}</span></div>
-            <div class="hz-legend"><span><i class="l-inv"></i>Invirtiendo</span><span><i class="l-cash"></i>Sin invertir</span></div>
-        </div>
-        ${d.has ? `<dl class="hz-facts">
-            <div><dt>Ahorrado hoy</dt><dd class="money">${fmtR(d.pv)}</dd></div>
-            <div><dt>Aportas al mes</dt><dd class="money">${fmtR(d.pm)}</dd></div>
-            <div><dt>Racha</dt><dd>${streak} ${streak === 1 ? "semana" : "semanas"}</dd></div>
-        </dl>` : ""}
-        <p class="hz-note">Hipótesis de rentabilidad del 5 % anual. No es una previsión ni una garantía.</p>
-    </section>
+    ${heroHTML()}
 
     ${S.goals.length ? `<section class="section" id="s-objetivos"><div class="sec-head"><div><h2>Tus objetivos</h2></div><a class="link" href="#/objetivos">Gestionar</a></div>
         <ul class="goal-rows">${S.goals.map(goalRow).join("")}</ul></section>` : ""}
@@ -913,6 +957,7 @@ function render(animate = true) {
     if (changed) { stopCirclePolling(); if (r === "circulo") startCirclePolling(); document.title = `Horizonte · ${TITLES[r]}`; }
     lastRoute = r;
     if (r === "simulador") { sim.hover = null; requestAnimationFrame(drawSim); }
+    if (r === "resumen") mountHero();
     if (r === "practica") mountPulse();
     GAME_MOUNT[r]?.();
     if (r === "conecta") mountConecta();
@@ -1296,6 +1341,12 @@ document.addEventListener("submit", e => {
 });
 document.addEventListener("input", e => {
     const t = e.target, k = t.dataset.input;
+    if (k === "hzRange") {
+        hz[t.dataset.key] = +t.value;
+        const cols = $("#hzCols"), n = cols.children.length;
+        if (n !== hz.years) cols.innerHTML = Array.from({ length: hz.years }, () => `<div class="c"><i class="p"></i><i class="g"></i></div>`).join("");
+        paintHero(); return;
+    }
     if (k === "pulseRange") { const c = pulse.cards[+t.dataset.i]; $(`#pv${t.dataset.i}`).textContent = c.fmt(+t.value); return; }
     if (k === "simRange") {
         sim[t.dataset.key] = +t.value;

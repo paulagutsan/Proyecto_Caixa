@@ -1276,3 +1276,33 @@ body.fly-open .top, :root:not([data-theme="dark"]) body.fly-open .top, :root[dat
 @media (max-width: 860px) { #hz, #s-objetivos, #s-hoy, #a-temas, #a-herramientas, #s-mercado { scroll-margin-top: 120px; } }
 .today-stats dt { font-family: var(--sans); font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--ink2); }
 .today-stats dd { font-size: 32px; }
+
+
+/* =========================================================
+   Portada «El poder de empezar»: número que cuenta, columnas que crecen año a año
+========================================================= */
+.hzw { padding-top: 48px; }
+.hzw h1 { font-size: clamp(20px, 2.4vw, 28px); font-weight: 600; max-width: 30ch; line-height: 1.25; }
+.hzw h1 b { color: var(--cx); font-weight: 700; }
+.hzw .hz-big { font-size: clamp(64px, 11vw, 132px); margin: 8px 0 18px; font-variant-numeric: tabular-nums; }
+.hz-chg .put { display: inline-flex; padding: 4px 12px; border-radius: 8px; background: color-mix(in srgb, var(--cx) 15%, transparent); color: var(--cx); font-weight: 600; }
+.hz-split { display: flex; width: 100%; max-width: 920px; height: 10px; border-radius: 99px; overflow: hidden; margin: 6px 0 36px; background: var(--rule); }
+.hz-split i { display: block; transition: flex .8s cubic-bezier(.2, .8, .2, 1); }
+.hz-split .s-put { background: var(--cx); }
+.hz-split .s-gain { background: var(--up); }
+.hz-cols { width: 100%; max-width: 920px; height: clamp(200px, 30vw, 300px); display: flex; align-items: flex-end; gap: clamp(2px, .5vw, 5px); }
+.hz-cols .c { flex: 1; height: 100%; display: flex; flex-direction: column-reverse; justify-content: flex-start; }
+.hz-cols i { display: block; width: 100%; height: 0; transition: height .9s cubic-bezier(.2, .8, .2, 1); }
+.hz-cols .p { background: var(--cx); border-radius: 0 0 3px 3px; opacity: .85; }
+.hz-cols .g { background: var(--up); border-radius: 4px 4px 0 0; }
+.hz-cols .c:last-child .p { opacity: 1; }
+.hzw .hz-axis { width: 100%; max-width: 920px; }
+.hz-legend .l-put { border-top-color: var(--cx); }
+.hz-legend .l-gain { border-top-color: var(--up); }
+.hzw .hz-sub { font-size: clamp(16px, 1.6vw, 19px); max-width: 52ch; margin: 28px 0 8px; }
+.hzw .hz-sub b { color: var(--ink); font-weight: 600; }
+.hz-ctl { width: 100%; max-width: 620px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 26px 0 34px; text-align: left; }
+.hz-ctl label { display: grid; gap: 10px; font-size: 14px; color: var(--ink2); }
+.hz-ctl output { font-size: 24px; font-weight: 600; color: var(--ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.hz-ctl input[type=range] { width: 100%; }
+@media (max-width: 640px) { .hz-ctl { grid-template-columns: 1fr; gap: 20px; } .hzw { padding-top: 32px; } }
