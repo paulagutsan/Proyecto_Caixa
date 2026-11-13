@@ -19,9 +19,21 @@ GEMINI_API_KEY=... npm start             # capa gratuita de Google AI Studio
 
 Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas.
 
+## Cuentas gratuitas con Supabase
+
+El acceso necesita un servicio con base de datos; GitHub Pages solo sirve archivos. Supabase tiene un plan gratuito sin tarjeta. Se configura una vez:
+
+1. Crea una cuenta en [supabase.com](https://supabase.com) y un proyecto nuevo (región UE; guarda la contraseña de la base de datos).
+2. **Authentication → Sign In / Providers → Email**: desactiva **Confirm email** para que las personas entren al registrarse.
+3. **SQL Editor → New query**: pega el contenido de [`supabase/schema.sql`](supabase/schema.sql) y pulsa **Run**. Crea la tabla `perfiles` con seguridad por fila: cada persona solo lee y escribe lo suyo.
+4. **Project Settings → API** (o el botón **Connect**): copia la **Project URL** y la clave **anon public** (o *publishable*) y pégalas en [`public/config.js`](public/config.js).
+5. Sube el cambio a GitHub. Esa clave es pública por diseño; **nunca** pegues la `service_role` ni una clave `secret`.
+
+Notas: en el plan gratuito, un proyecto sin actividad durante una semana se pausa y se reactiva desde el panel. Con Supabase activo, los *Círculos* compartidos no están disponibles (siguen necesitando el servidor propio, `npm start`, sin Supabase).
+
 ## Qué hace
 
-- **Aprende**: una sola sección para aprender. *Práctica de hoy*: 7 tarjetas en formato vertical en las que decides antes de ver la respuesta (momentos históricos de 2000, 2008 y 2020, «¿estafa o legítimo?», estimaciones, mitos y tendencias como loud budgeting o doom spending); los fallos vuelven con repetición espaciada (Leitner). *Temas*: 8 ideas clave de dos minutos, cada una con sus tarjetas para practicar solo ese tema; un tema queda dominado al acertar todas sus tarjetas dos veces. Incluye el test de perfil y la regla 50/30/20.
+- **Aprende**: cursos cortos tipo Duolingo organizados en tres niveles (Primeros pasos, Cómo crece el dinero, Para ir más lejos) y 11 cursos: ahorrar o invertir, inflación, colchón y presupuesto, estafas y apuestas, interés compuesto, riesgo y plazo, diversificación, costes, renta fija, valoración (PER) y psicología del inversor. Cada curso mezcla teoría, mates con ejemplos calculados, gráficas claras, calculadoras con deslizadores (algunas con datos reales 2000-2024) y un test final; quien ya sabe puede saltar al test. El progreso se guarda y cuenta para la racha de estudio. A la derecha, en pequeño, la *Práctica de hoy*: 7 tarjetas en las que decides antes de ver la respuesta, con repetición espaciada (Leitner).
 - **Juegos**: cuatro minijuegos con datos reales aproximados (2000-2024) y dinero ficticio, pensados para jugar en 2 minutos y compartir el resultado en el grupo, al estilo Wordle o los juegos de LinkedIn.
   - **Aguanta** (diario): diez años de bolsa pasan en 60 segundos sin decir cuáles. Mantienes pulsado para seguir invertido; si sueltas, vendes. Compites con Leo, que vende por miedo cuando cae un 15 %. Al final se revela la década y se comparte una fila de emojis.
   - **Silueta** (diario): cinco gráficas sin nombre; adivina qué inversión es cada una. Enseña a reconocer el riesgo de cada tipo de activo.
@@ -36,7 +48,8 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
 - **Círculo**: objetivo compartido con código de invitación; cada persona solo comparte lo que aporta al objetivo común (multiusuario real, actualización en vivo).
 - **Hitos y constancia**: racha semanal de aportaciones y 8 hitos, sin elementos de juego.
 - **Asistente**: conversacional con IA gratuita (OpenRouter, Gemini o Pollinations; reglas locales si no hay conexión), recuerda la conversación y tiene guardarraíles: educativo, sin asesoramiento personalizado.
-- **Cuentas**: registro/login (scrypt, cookie HttpOnly); los datos se sincronizan por usuario. Modo invitado en localStorage.
+- **Resumen / Tu perfil**: sin cuenta, el Resumen muestra la portada «El poder de empezar» y el test *Conoce tu perfil*. Al acceder, la pestaña pasa a llamarse **Tu perfil** y suma lo que solo existe con cuenta: el **historial de tests** de perfil de inversor, la calculadora **Distribuye tus ingresos** (regla 50/30/20, se guarda) y tus objetivos y estadísticas.
+- **Cuentas**: registro y acceso con correo y contraseña mediante Supabase (plan gratuito), que funciona también en GitHub Pages; el progreso se sincroniza entre dispositivos. Sin configurar Supabase se usa el servidor local (scrypt, cookie HttpOnly). Modo invitado en localStorage.
 
 ## Diseño
 
@@ -53,6 +66,7 @@ Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas
 ## Estructura
 
 - `server.js` API + estáticos (los datos viven en `data/`, ignorado por git)
-- `public/` front-end (`index.html`, `styles.css`, `app.js`, `games.js` con los minijuegos y `conecta.js` con Conecta)
+- `public/` front-end (`index.html`, `styles.css`, `app.js`, `games.js` con los minijuegos, `conecta.js` con Conecta, `cursos-data.js` con el contenido de los cursos, `cursos.js` con el reproductor y las gráficas, `coach-local.js` con las respuestas del asistente y `config.js` con la configuración pública de las cuentas)
+- `supabase/schema.sql` tabla y reglas de seguridad de las cuentas en la nube
 
 > Prototipo académico. Las simulaciones usan hipótesis ilustrativas; no son asesoramiento ni garantía de resultados.

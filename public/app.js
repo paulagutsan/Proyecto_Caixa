@@ -34,13 +34,97 @@ async function api(path, opts = {}) {
 }
 
 /* =========================================================
-   Estado + persistencia (invitado: localStorage · cuenta: servidor)
+   Cuentas
+   Con Supabase (plan gratuito, ver config.js) funciona también en GitHub Pages.
+   Sin configurar, se usa el servidor local de Horizonte (npm start).
+========================================================= */
+const CFG = { supabaseUrl: "", supabaseAnonKey: "", ...(window.HZ_CONFIG || {}), ...lsGet("hz_config", {}) };
+const SB = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+const sbBase = String(CFG.supabaseUrl || "").replace(/\/+$/, "");
+const SB_ERR = {
+    invalid_credentials: "Correo o contraseña incorrectos.",
+    user_already_exists: "Ya existe una cuenta con ese correo. Prueba a acceder.",
+    email_exists: "Ya existe una cuenta con ese correo. Prueba a acceder.",
+    weak_password: "La contraseña es demasiado débil. Usa al menos 8 caracteres.",
+    email_not_confirmed: "Confirma tu correo antes de entrar: revisa tu bandeja de entrada.",
+    over_request_rate_limit: "Demasiados intentos. Espera unos minutos.",
+    over_email_send_rate_limit: "Demasiados intentos. Espera unos minutos.",
+    signup_disabled: "El registro está desactivado.",
+    email_address_invalid: "Introduce un correo válido.",
+    validation_failed: "Revisa el correo y la contraseña."
+};
+async function sbFetch(path, { method = "GET", body, token, headers = {} } = {}) {
+    let r;
+    try {
+        r = await fetch(`${sbBase}${path}`, {
+            method, body: body ? JSON.stringify(body) : undefined,
+            headers: { apikey: CFG.supabaseAnonKey, "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers }
+        });
+    } catch { throw Object.assign(new Error("No hay conexión con el servicio de cuentas. Inténtalo de nuevo."), { status: 0 }); }
+    const text = await r.text();
+    let d = {}; try { d = text ? JSON.parse(text) : {}; } catch { /* respuesta sin JSON */ }
+    if (!r.ok) {
+        const code = d.error_code || d.code;
+        throw Object.assign(new Error(SB_ERR[code] || d.msg || d.message || d.error_description || "No se ha podido completar la operación."), { status: r.status, code });
+    }
+    return d;
+}
+let sbSess = lsGet("hz_sb");
+const sbSave = v => { sbSess = v; try { v ? localStorage.setItem("hz_sb", JSON.stringify(v)) : localStorage.removeItem("hz_sb"); } catch { /* sin almacenamiento */ } };
+const sbUser = u => ({ id: u.id, email: u.email, username: u.user_metadata?.username || String(u.email || "").split("@")[0] || "Usuario" });
+function sbSetSession(d) {
+    sbSave({ access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at || Math.floor(Date.now() / 1000) + (d.expires_in || 3600), user: sbUser(d.user) });
+    return sbSess;
+}
+async function sbToken() {
+    if (!sbSess) throw Object.assign(new Error("Sin sesión"), { status: 401 });
+    if (sbSess.expires_at - 60 > Date.now() / 1000) return sbSess.access_token;
+    try { sbSetSession(await sbFetch("/auth/v1/token?grant_type=refresh_token", { method: "POST", body: { refresh_token: sbSess.refresh_token } })); return sbSess.access_token; }
+    catch (e) { if (e.status === 400 || e.status === 401 || e.status === 403) { sbSave(null); throw Object.assign(e, { status: 401 }); } throw e; }
+}
+async function sbLoadState() {
+    const t = await sbToken();
+    const rows = await sbFetch(`/rest/v1/perfiles?select=state&user_id=eq.${encodeURIComponent(sbSess.user.id)}`, { token: t });
+    return rows[0]?.state ?? null;
+}
+async function sbSaveState(state) {
+    const t = await sbToken();
+    await sbFetch("/rest/v1/perfiles?on_conflict=user_id", { method: "POST", token: t, headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: { user_id: sbSess.user.id, state, updated_at: new Date().toISOString() } });
+}
+async function authLogin(id, pw) {
+    if (!SB) return api("/auth/login", { method: "POST", body: { username: id, password: pw } });
+    sbSetSession(await sbFetch("/auth/v1/token?grant_type=password", { method: "POST", body: { email: id, password: pw } }));
+    return { user: sbSess.user, state: await sbLoadState().catch(() => null) };
+}
+async function authRegister(id, pw, name) {
+    if (!SB) return api("/auth/register", { method: "POST", body: { username: id, password: pw } });
+    const d = await sbFetch("/auth/v1/signup", { method: "POST", body: { email: id, password: pw, data: { username: name || id.split("@")[0] } } });
+    if (!d.access_token) return { needsConfirm: true };
+    sbSetSession(d);
+    return { user: sbSess.user, state: await sbLoadState().catch(() => null) };
+}
+async function authLogout() {
+    if (!SB) { try { await api("/auth/logout", { method: "POST", body: {} }); } catch { /* ignorar */ } return; }
+    try { if (sbSess) await sbFetch("/auth/v1/logout", { method: "POST", token: sbSess.access_token }); } catch { /* ignorar */ }
+    sbSave(null);
+}
+async function authRestore() {
+    if (!SB) { const me = await api("/auth/me"); return me.user ? me : null; }
+    if (!sbSess) return null;
+    await sbToken();
+    return { user: sbSess.user, state: await sbLoadState().catch(() => null) };
+}
+const cloudSave = state => SB ? sbSaveState(state) : api("/state", { method: "PUT", body: { state } });
+const authErr = e => (!SB && (e.status === 404 || e.status === undefined)) ? "El acceso aún no está activado en esta web: falta conectar el servicio gratuito de cuentas." : e.message;
+
+/* =========================================================
+   Estado + persistencia (invitado: localStorage · cuenta: nube)
 ========================================================= */
 const CATS = {
     vivienda: "Vivienda", viaje: "Viajes", formacion: "Formación", emergencia: "Colchón de emergencia",
     vehiculo: "Vehículo", tecnologia: "Tecnología", independencia: "Independencia financiera", otro: "Otro objetivo"
 };
-const blank = () => ({ v: 3, goals: [], lessons: [], quiz: null, flags: {} });
+const blank = () => ({ v: 3, goals: [], lessons: [], quiz: null, tests: [], budget: null, courses: {}, flags: {} });
 function normalize(s) {
     const b = blank();
     if (!s || typeof s !== "object") return b;
@@ -48,6 +132,8 @@ function normalize(s) {
         ...b, ...s,
         goals: Array.isArray(s.goals) ? s.goals.map(g => ({ monthly: 0, ...g, category: CATS[g.category] ? g.category : "otro", contribs: Array.isArray(g.contribs) ? g.contribs : [] })) : [],
         lessons: Array.isArray(s.lessons) ? s.lessons : [],
+        tests: Array.isArray(s.tests) ? s.tests : [],
+        courses: s.courses && typeof s.courses === "object" ? s.courses : {},
         flags: s.flags && typeof s.flags === "object" ? s.flags : {}
     };
 }
@@ -60,7 +146,7 @@ function save() {
     if (!user) return;
     clearTimeout(syncTimer);
     syncTimer = setTimeout(async () => {
-        try { await api("/state", { method: "PUT", body: { state: S } }); }
+        try { await cloudSave(S); }
         catch (e) { if (e.status === 401) { user = null; paintChrome(); toast("Tu sesión ha caducado. Accede de nuevo para sincronizar."); } }
     }, 600);
 }
@@ -133,7 +219,7 @@ const MILESTONES = [
     { name: "1.000 € destinados a objetivos", on: () => totalSaved() >= 1000 },
     { name: "Un objetivo alcanzado", on: () => S.goals.some(isDone) },
     { name: "Perfil de inversor completado", on: () => !!S.quiz },
-    { name: "Tres temas dominados", on: () => topicsDone() >= 3 },
+    { name: "Tres cursos completados", on: () => coursesDone() >= 3 },
     { name: "Miembro de un círculo", on: () => !!S.flags.circle }
 ];
 
@@ -164,6 +250,8 @@ function paintChrome() {
     const tb = $("#themeBtn"), pb = $("#privBtn");
     if (tb) { const l = dark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"; tb.title = l; tb.setAttribute("aria-label", l); }
     if (pb) { const l = priv ? "Mostrar importes" : "Ocultar importes"; pb.title = l; pb.setAttribute("aria-label", l); pb.setAttribute("aria-pressed", priv); }
+    const rn = $('#nav a[data-tab="resumen"]');
+    if (rn) { $(".nl", rn).textContent = user ? "Tu perfil" : "Resumen"; $(".ns", rn).textContent = user ? "Perfil" : "Inicio"; $("svg", rn).innerHTML = user ? USER_ICON : HOME_ICON; }
     const b = $("#authBtn");
     b.textContent = user ? user.username : "Acceder";
     b.dataset.act = user ? "profile" : "auth";
@@ -394,18 +482,68 @@ addEventListener("resize", () => {
 });
 function mountHero() { const r = $("#hz"); if (!r) return; hz.shown = null; void r.offsetHeight; paintHero(true); }
 
+const LOCK = `<svg class="lock-i" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
+const HOME_ICON = '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>';
+const USER_ICON = '<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/>';
+
+function budgetResult(v) {
+    if (!(v > 0)) return `<p class="muted small">Introduce tus ingresos para ver la distribución orientativa.</p>`;
+    return `<div class="split"><div style="flex:50;background:var(--cx-deep, var(--navy))">50 %</div><div style="flex:30;background:var(--cx)">30 %</div><div style="flex:20;background:var(--up)">20 %</div></div>
+        <table class="tbl"><tbody><tr><td>Necesidades</td><td class="r"><b>${fmt(v * .5)}</b></td></tr><tr><td>Ocio y estilo de vida</td><td class="r"><b>${fmt(v * .3)}</b></td></tr><tr><td>Ahorro e inversión</td><td class="r"><b>${fmt(v * .2)}</b></td></tr></tbody></table>
+        <button class="btn sm ghost" style="margin-top:16px" data-act="newGoalFromBudget" data-v="${Math.round(v * .2)}">Crear un objetivo con el 20 %</button>`;
+}
+function profHeader() {
+    const name = user.username || "Tu perfil", streak = pulseStreak();
+    return `<section class="prof" id="p-top">
+        <div class="prof-head"><span class="avatar" aria-hidden="true">${esc(name.trim().charAt(0).toUpperCase() || "H")}</span>
+            <div><p class="hz-hello">Tu perfil</p><h1>${esc(name)}</h1>${user.email ? `<p class="muted">${esc(user.email)}</p>` : ""}</div>
+            <div class="row"><button class="btn ghost sm" data-act="profile">Ajustes y datos</button></div></div>
+        <dl class="hz-facts prof-facts">
+            <div><dt>Ahorrado en objetivos</dt><dd class="money">${fmtR(totalSaved())}</dd></div>
+            <div><dt>Objetivos activos</dt><dd>${S.goals.length}</dd></div>
+            <div><dt>Racha de estudio</dt><dd>${streak} ${streak === 1 ? "día" : "días"}</dd></div>
+            <div><dt>Cursos completados</dt><dd>${coursesDone()}/${COURSES.length}</dd></div>
+        </dl></section>`;
+}
+function testsTable() {
+    const list = [...(S.tests || [])].reverse();
+    if (!list.length) return `<p class="muted">Aún no has hecho ningún test. Cuando lo hagas, quedará registrado aquí.</p>`;
+    return `<table class="tbl tests"><thead><tr><th>Fecha</th><th>Perfil</th><th class="r">Puntuación</th></tr></thead><tbody>${list.map((t, i) =>
+        `<tr><td>${longDate(t.date)}${i === 0 ? ` <span class="tag ok">Último</span>` : ""}</td><td><b>${esc(t.profile)}</b></td><td class="r">${t.score}/10</td></tr>`).join("")}</tbody></table>`;
+}
+function perfilSection() {
+    const q = S.quiz;
+    return `<section class="section" id="p-perfil"><div class="sec-head"><div><p class="kicker">Perfil de inversor</p><h2>${q ? `Perfil ${q.profile.toLowerCase()}` : "Conoce tu perfil"}</h2>
+        <p>${q ? PROFILES[q.profile] : "Cinco preguntas para orientar el escenario de referencia del simulador. Ejercicio educativo, no evaluación de idoneidad."}</p></div>
+        <button class="btn ${q ? "ghost" : ""}" data-act="quiz">${q ? "Repetir el test" : `Hacer el test ${ARROW}`}</button></div>
+        ${user
+            ? `<h3 class="sub-h">Historial de tests</h3>${testsTable()}`
+            : `<p class="locked">${LOCK}<span>Accede a tu perfil para guardar el historial de tus tests y ver cómo cambia tu perfil con el tiempo.</span><button class="link" data-act="auth">Acceder</button></p>`}</section>`;
+}
+function ingresosSection() {
+    const head = `<div class="sec-head"><div><p class="kicker">Regla 50 / 30 / 20</p><h2>Distribuye tus ingresos</h2>
+        <p>${user ? "Una referencia sencilla para repartir lo que ganas entre necesidades, ocio y ahorro." : "Una herramienta de tu perfil: disponible al acceder."}</p></div>${user ? "" : `<button class="btn" data-act="auth">Acceder ${ARROW}</button>`}</div>`;
+    if (!user) return `<section class="section" id="p-ingresos">${head}<p class="locked">${LOCK}<span>Calcula cuánto destinar a cada cosa según tus ingresos y crea un objetivo con el 20 % en un clic.</span></p></section>`;
+    const inc = S.budget?.income || "";
+    return `<section class="section" id="p-ingresos">${head}<div class="ing"><div class="field"><label for="income">Ingresos netos mensuales</label><input id="income" type="number" min="0" step="10" placeholder="1.200" value="${inc}" data-input="income"></div>
+        <div id="budgetOut">${budgetResult(+inc)}</div></div></section>`;
+}
 function viewResumen() {
     const t = today(), due = CARDS.filter(c => pulseState().due[c.id] !== undefined && pulseState().due[c.id] <= t).length;
     const g = gState(), cx = cxState(), vozLeft = VOZ.filter(v => !cx.votes[v.id]).length;
     return `
-    ${heroHTML()}
+    ${user ? profHeader() : heroHTML()}
+
+    ${perfilSection()}
+
+    ${ingresosSection()}
 
     ${S.goals.length ? `<section class="section" id="s-objetivos"><div class="sec-head"><div><h2>Tus objetivos</h2></div><a class="link" href="#/objetivos">Gestionar</a></div>
         <ul class="goal-rows">${S.goals.map(goalRow).join("")}</ul></section>` : ""}
 
     <section class="section" id="s-hoy"><div class="sec-head"><div><h2>Hoy en Horizonte</h2></div></div>
         <div class="today-grid">
-            <a class="t-card" href="#/practica"><span class="t-lbl">Aprende · 3 min</span><b>${due ? `${due} tarjeta${due === 1 ? "" : "s"} por repasar` : "Tu práctica de hoy"}</b><span>Decide antes de ver la respuesta.</span><i>${ARROW}</i></a>
+            <a class="t-card" href="#/aprende"><span class="t-lbl">Aprende · cursos</span><b>${coursesDone() ? `${coursesDone()} de ${COURSES.length} cursos completados` : "Empieza tu primer curso"}</b><span>${due ? `${due} tarjeta${due === 1 ? "" : "s"} por repasar.` : "Teoría, mates, gráficas y un test."}</span><i>${ARROW}</i></a>
             <a class="t-card" href="#/aguanta"><span class="t-lbl">Juegos · reto #${gDayNo()}</span><b>${g.aguanta.day === t ? "Aguanta: ya jugado" : "¿Aguantarías la caída?"}</b><span>Diez años de bolsa en un minuto.</span><i>${ARROW}</i></a>
             <a class="t-card" href="#/conecta"><span class="t-lbl">Conecta · tu voz</span><b>${vozLeft ? `${vozLeft} propuesta${vozLeft === 1 ? "" : "s"} esperan tu opinión` : "Ya has opinado en todo"}</b><span>Di qué harías tú en las empresas.</span><i>${ARROW}</i></a>
         </div>
@@ -604,6 +742,7 @@ function circleCard(c) {
 }
 async function loadCircles(force = false) {
     if (!user) return;
+    if (SB) { circ.err = "Los círculos compartidos todavía no están disponibles con las cuentas en la nube; funcionan ejecutando el servidor de Horizonte (npm start) sin Supabase."; if (route() === "circulo" && !circ.list) render(false); return; }
     try {
         const { circles } = await api("/circles");
         const sig = JSON.stringify(circles);
@@ -658,39 +797,22 @@ const PROFILES = {
     Dinámico: "Mayor tolerancia a las oscilaciones en busca de crecimiento a largo plazo. Más potencial implica también más riesgo de pérdida."
 };
 
-function viewAprende() {
+function practiceMini() {
     const p = pulseState(), t = today();
     const due = CARDS.filter(c => p.due[c.id] !== undefined && p.due[c.id] <= t).length;
-    const fresh = CARDS.filter(c => p.due[c.id] === undefined).length;
-    const streak = pulseStreak();
-    return `<section class="section"><div class="sec-head"><div><p class="kicker">Aprende</p><h2 class="page-title">Tres minutos al día, con casos reales.</h2>
-        <p>Cada tarjeta te pide decidir antes de ver la respuesta. Lo que falles vuelve más adelante; lo que aciertes, cada vez más espaciado.</p></div></div>
-        <div class="panel today">
-            <div><p class="kicker">Práctica de hoy · 3 minutos</p>
-                <h3>${due ? `${due} tarjeta${due === 1 ? "" : "s"} para repasar` : fresh ? "Siete tarjetas nuevas" : "Todo al día"}</h3>
-                <p class="muted">${due ? "Primero lo que toca repasar, después contenido nuevo." : fresh ? `Te quedan ${fresh} tarjetas por descubrir.` : "Ya has visto todas las tarjetas. Puedes repasar las que quieras."}</p></div>
-            <dl class="today-stats"><div><dt>Racha</dt><dd>${streak} d</dd></div><div><dt>Precisión</dt><dd>${p.answered ? Math.round((p.correct / p.answered) * 100) : 0} %</dd></div><div><dt>Temas dominados</dt><dd>${topicsDone()}/${TOPICS.length}</dd></div></dl>
-            <div class="row"><button class="btn" data-act="practice">Empezar ${ARROW}</button>${p.saved.length ? `<button class="btn line" data-act="practice" data-saved="1">Repasar guardadas (${p.saved.length})</button>` : ""}</div>
-        </div>
-    </section>
-
-    <section class="section" id="a-temas"><div class="sec-head"><div><p class="kicker">Temas</p><h2>Las ideas que más te van a servir</h2>
-        <p>Lee la idea clave y practica solo ese tema. Un tema está dominado cuando aciertas todas sus tarjetas dos veces.</p></div></div>
-    <div class="lessons">${TOPICS.map((tp, i) => {
-        const m = tp.cards.filter(isMastered).length;
-        return `<button class="lesson ${topicDone(tp) ? "done" : ""}" data-act="topic" data-id="${tp.id}">
-        <span class="n">${String(i + 1).padStart(2, "0")}</span><span><h3>${tp.title}</h3><p>${tp.sub}</p></span><span class="st">${topicDone(tp) ? "Dominado" : `${m} de ${tp.cards.length}`}</span></button>`;
-    }).join("")}</div>
-    </section>
-
-    <section class="section cols c2" id="a-herramientas">
-        <div class="panel"><p class="kicker">Perfil de inversor</p><h3>${S.quiz ? `Perfil ${S.quiz.profile.toLowerCase()}` : "Conoce tu perfil"}</h3>
-            <p class="muted" style="margin:8px 0 22px">${S.quiz ? PROFILES[S.quiz.profile] : "Cinco preguntas para orientar el escenario de referencia del simulador. Ejercicio educativo, no evaluación de idoneidad."}</p>
-            <button class="btn ${S.quiz ? "line" : ""}" data-act="quiz">${S.quiz ? "Repetir cuestionario" : `Iniciar cuestionario ${ARROW}`}</button></div>
-        <div class="panel"><p class="kicker">Regla 50 / 30 / 20</p><h3>Distribuye tus ingresos</h3>
-            <div class="field" style="margin-top:16px"><label for="income">Ingresos netos mensuales</label><input id="income" type="number" min="0" step="10" placeholder="1.200" data-input="income"></div>
-            <div id="budgetOut" class="muted small">Introduce un importe para ver la distribución orientativa.</div></div>
-    </section>`;
+    const fresh = CARDS.filter(c => p.due[c.id] === undefined).length, streak = pulseStreak();
+    return `<aside class="ap-side"><div class="mini">
+        <p class="kicker">Práctica de hoy · 3 min</p>
+        <h3>${due ? `${due} tarjeta${due === 1 ? "" : "s"} para repasar` : fresh ? "Siete tarjetas nuevas" : "Todo al día"}</h3>
+        <p class="muted small">${due ? "Primero lo que toca repasar." : fresh ? `Te quedan ${fresh} por descubrir.` : "Repasa las que quieras."} Decide antes de ver la respuesta.</p>
+        <dl class="mini-stats"><div><dt>Racha</dt><dd>${streak} d</dd></div><div><dt>Precisión</dt><dd>${p.answered ? Math.round((p.correct / p.answered) * 100) : 0} %</dd></div></dl>
+        <div class="row"><button class="btn sm" data-act="practice">Empezar ${ARROW}</button>${p.saved.length ? `<button class="btn sm ghost" data-act="practice" data-saved="1">Guardadas (${p.saved.length})</button>` : ""}</div>
+    </div></aside>`;
+}
+function viewAprende() {
+    return `<section class="section"><div class="sec-head"><div><p class="kicker">Aprende</p><h2 class="page-title">De cero a invertir con criterio.</h2>
+        <p>Cursos cortos con teoría, mates, gráficas claras y un test final. Empieza por el principio o salta al nivel que ya conoces.</p></div></div>
+        <div class="ap-grid" id="a-cursos">${rutaHTML()}${practiceMini()}</div></section>`;
 }
 
 /* ---- Práctica: feed vertical de decisiones ----
@@ -939,9 +1061,9 @@ function answerPulse(el) {
 /* =========================================================
    Render + router
 ========================================================= */
-const VIEWS = { practica: viewPulso, resumen: viewResumen, aprende: viewAprende, juegos: viewJuegos, conecta: viewConecta, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, ...GAME_VIEWS };
-const IMMERSIVE = ["practica", ...GAME_ROUTES];
-const TITLES = { practica: "Práctica", conecta: "Conecta", resumen: "Resumen", aprende: "Aprende", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", ...GAME_TITLES };
+const VIEWS = { curso: viewCurso, practica: viewPulso, resumen: viewResumen, aprende: viewAprende, juegos: viewJuegos, conecta: viewConecta, objetivos: viewObjetivos, simulador: viewSimulador, circulo: viewCirculo, ...GAME_VIEWS };
+const IMMERSIVE = ["practica", "curso", ...GAME_ROUTES];
+const TITLES = { practica: "Práctica", conecta: "Conecta", get resumen() { return user ? "Tu perfil" : "Resumen"; }, aprende: "Aprende", curso: "Curso", objetivos: "Objetivos", simulador: "Simulador", circulo: "Círculo", ...GAME_TITLES };
 let lastRoute = null;
 
 /* =========================================================
@@ -950,20 +1072,21 @@ let lastRoute = null;
    Móvil: barra bajo la cabecera con el nombre de la sección y su índice.
 ========================================================= */
 const MENU = {
-    resumen: { name: "Inicio", main: [{ t: "Tu horizonte", go: "resumen", sec: "hz" }, { t: "Tus objetivos", go: "resumen", sec: "s-objetivos" }, { t: "Hoy en Horizonte", go: "resumen", sec: "s-hoy" }],
+    resumen: { get name() { return user ? "Tu perfil" : "Inicio"; },
+        get main() { return [...(user ? [] : [{ t: "El poder de empezar", go: "resumen", sec: "hz" }]), { t: user ? "Tu perfil de inversor" : "Conoce tu perfil", go: "resumen", sec: "p-perfil" }, { t: "Distribuye tus ingresos", go: "resumen", sec: "p-ingresos" }, { t: "Tus objetivos", go: "resumen", sec: "s-objetivos" }, { t: "Hoy en Horizonte", go: "resumen", sec: "s-hoy" }]; },
         cols: () => [["Enlaces rápidos", [{ t: "Nuevo objetivo", act: "newGoal" }, { t: "Ver escenarios", go: "simulador" }, { t: "Hablar con el asistente", act: "coach" }]]] },
-    aprende: { name: "Aprende", main: [{ t: "Práctica de hoy", go: "practica" }, { t: "Temas", go: "aprende", sec: "a-temas" }, { t: "Perfil de inversor", act: "quiz" }, { t: "Regla 50/30/20", go: "aprende", sec: "a-herramientas" }],
-        cols: () => [["Temas más útiles", TOPICS.slice(0, 5).map(tp => ({ t: tp.title, act: "topic", id: tp.id }))]] },
+    aprende: { name: "Aprende", main: [{ t: "Cursos", go: "aprende", sec: "a-cursos" }, { t: "Práctica de hoy", go: "practica" }],
+        cols: () => [["Por niveles", LEVELS.map(l => ({ t: `Nivel ${l.n} · ${l.name}`, go: "aprende", sec: `lv-${l.n}` }))]] },
     juegos: { name: "Juegos", main: [{ t: "Aguanta", go: "aguanta" }, { t: "Silueta", go: "silueta" }, { t: "Más o menos", go: "masomenos" }, { t: "Draft Night", go: "draft" }],
         cols: () => [["Enlaces rápidos", [{ t: "Todos los juegos", go: "juegos" }, { t: "Retos diarios", go: "juegos" }]]] },
     conecta: { name: "Conecta", main: [{ t: "Tu voz", go: "conecta", tab: "voz" }, { t: "Tu calle", go: "conecta", tab: "calle" }, { t: "Tu proyecto", go: "conecta", tab: "proyecto" }],
         cols: () => [["Qué es cada una", [{ t: "Vota propuestas de empresas", go: "conecta", tab: "voz" }, { t: "Descubre empresas cerca de ti", go: "conecta", tab: "calle" }, { t: "Encuentra apoyo para tu idea", go: "conecta", tab: "proyecto" }]]] },
     objetivos: { name: "Objetivos", main: [{ t: "Tus objetivos", go: "objetivos" }, { t: "Simulador", go: "simulador" }, { t: "Datos de mercado", go: "simulador", sec: "s-mercado" }],
-        cols: () => [["Enlaces rápidos", [{ t: "Nuevo objetivo", act: "newGoal" }, { t: "Conoce tu perfil", act: "quiz" }]]] },
+        cols: () => [["Enlaces rápidos", [{ t: "Nuevo objetivo", act: "newGoal" }, { t: user ? "Tu perfil de inversor" : "Conoce tu perfil", go: "resumen", sec: "p-perfil" }]]] },
     circulo: { name: "Círculo", main: [{ t: "Tus círculos", go: "circulo" }],
         cols: () => [["Enlaces rápidos", [{ t: "Crear círculo", act: user ? "newCircle" : "auth" }, { t: "Unirme con código", act: user ? "joinCircle" : "auth" }]]] }
 };
-const navKey = r => r === "practica" ? "aprende" : r === "simulador" ? "objetivos" : GAME_MOUNT[r] ? "juegos" : r;
+const navKey = r => r === "practica" || r === "curso" ? "aprende" : r === "simulador" ? "objetivos" : GAME_MOUNT[r] ? "juegos" : r;
 function menuLink(it, cls) {
     if (it.act) return `<li><button class="fl-link ${cls}" data-act="${it.act}"${it.id ? ` data-id="${it.id}"` : ""}>${it.t}</button></li>`;
     return `<li><a class="fl-link ${cls}" href="#/${it.go}"${it.sec ? ` data-sec="${it.sec}"` : ""}${it.tab ? ` data-cxtab="${it.tab}"` : ""}>${it.t}</a></li>`;
@@ -1025,8 +1148,8 @@ function render(animate = true) {
     const r = VIEWS[route()] ? route() : "resumen";
     const el = $("#view");
     const changed = r !== lastRoute;
-    if (!changed && ((r === "practica" && $("#pulseFeed")) || (GAME_MOUNT[r] && $("#gRoot")))) return paintChrome(); // no reiniciar el feed ni la partida
-    if (changed) { if ($(".sheet")) closeSheet(); pulse?.io?.disconnect(); gameLeave(); document.body.classList.toggle("immersive", IMMERSIVE.includes(r)); el.classList.remove("fade"); }
+    if (!changed && ((r === "curso" && $("#crs") && crs && crs.c === crsCourse()) || (r === "practica" && $("#pulseFeed")) || (GAME_MOUNT[r] && $("#gRoot")))) return paintChrome(); // no reiniciar el feed ni la partida
+    if (changed) { if ($(".sheet")) closeSheet(); pulse?.io?.disconnect(); gameLeave(); cursoLeave(); document.body.classList.toggle("immersive", IMMERSIVE.includes(r)); el.classList.remove("fade"); }
     el.innerHTML = VIEWS[r]();
     if (animate && changed && !IMMERSIVE.includes(r)) { el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); window.scrollTo(0, 0); }
     $$("#nav a").forEach(a => { const on = a.dataset.tab === navKey(r); a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
@@ -1035,6 +1158,7 @@ function render(animate = true) {
     if (r === "simulador") { sim.hover = null; requestAnimationFrame(drawSim); }
     if (r === "resumen") mountHero();
     if (r === "practica") mountPulse();
+    if (r === "curso") mountCurso();
     GAME_MOUNT[r]?.();
     if (r === "conecta") mountConecta();
     paintLocalNav(r);
@@ -1111,7 +1235,7 @@ const ACTIONS = {
     authSwitch: el => authSheet(el.dataset.mode),
     profile: () => profileSheet(),
     logout: async () => {
-        try { await api("/auth/logout", { method: "POST", body: {} }); } catch { /* ignorar */ }
+        await authLogout();
         user = null; S = normalize(lsGet("hz_guest")); resetCirc();
         closeSheet(); lastRoute = null; render(false); toast("Sesión cerrada.");
     },
@@ -1204,7 +1328,8 @@ const ACTIONS = {
     coach: () => coachSheet(),
     coachChip: el => sendCoach(el.dataset.q),
     ...GAME_ACTIONS,
-    ...CX_ACTIONS
+    ...CX_ACTIONS,
+    ...COURSE_ACTIONS
 };
 
 function showDetail(id) {
@@ -1228,9 +1353,12 @@ function showDetail(id) {
 function authSheet(mode) {
     const reg = mode === "register";
     openSheet(`<p class="kicker">${reg ? "Alta de usuario" : "Acceso"}</p><h2>${reg ? "Crea tu cuenta" : "Accede a Horizonte"}</h2>
-    <p class="muted">Tus objetivos se sincronizan entre dispositivos. Las contraseñas se almacenan cifradas.</p>
+    <p class="muted">Tu progreso, tus objetivos y tus tests se guardan en tu perfil y te acompañan en cualquier dispositivo.</p>
     <form data-form="${reg ? "register" : "login"}" style="margin-top:24px" novalidate>
-        <div class="field"><label for="aU">Usuario</label><input id="aU" name="username" autocomplete="username" maxlength="40" required></div>
+        ${SB
+            ? `<div class="field"><label for="aE">Correo electrónico</label><input id="aE" name="email" type="email" autocomplete="email" maxlength="120" required></div>
+               ${reg ? `<div class="field"><label for="aN">Nombre para mostrar (opcional)</label><input id="aN" name="username" autocomplete="nickname" maxlength="30"></div>` : ""}`
+            : `<div class="field"><label for="aU">Usuario</label><input id="aU" name="username" autocomplete="username" maxlength="40" required></div>`}
         <div class="field"><label for="aP">Contraseña${reg ? " (mínimo 8 caracteres)" : ""}</label><input id="aP" name="password" type="password" autocomplete="${reg ? "new-password" : "current-password"}" minlength="8" required></div>
         ${reg ? `<div class="field"><label for="aP2">Confirmar contraseña</label><input id="aP2" name="password2" type="password" autocomplete="new-password" required></div>` : ""}
         <p class="err" hidden></p><button class="btn full" type="submit">${reg ? "Crear cuenta" : "Acceder"}</button></form>
@@ -1243,7 +1371,7 @@ function profileSheet() {
     <table class="tbl" style="margin:24px 0"><tbody>
         <tr><td>Objetivos activos</td><td class="r"><b>${S.goals.length}</b></td></tr>
         <tr><td>Perfil de inversor</td><td class="r"><b>${S.quiz ? S.quiz.profile : "Pendiente"}</b></td></tr>
-        <tr><td>Temas dominados</td><td class="r"><b>${topicsDone()} de ${TOPICS.length}</b></td></tr>
+        <tr><td>Cursos completados</td><td class="r"><b>${coursesDone()} de ${COURSES.length}</b></td></tr>
     </tbody></table>
     <div style="display:grid;gap:10px">
         ${S.goals.length ? "" : `<button class="btn line" data-act="demo">Cargar datos de demostración</button>`}
@@ -1264,7 +1392,8 @@ function profileQuiz(step, acc) {
     if (step >= PROFILE_QS.length) {
         const score = acc.reduce((a, b) => a + b, 0); // 0..10
         const profile = score <= 3 ? "Conservador" : score <= 6 ? "Moderado" : "Dinámico";
-        S.quiz = { profile, score };
+        S.quiz = { profile, score, date: isoDate() };
+        S.tests = [...(S.tests || []), { id: uid(), date: isoDate(), profile, score, answers: acc }].slice(-30);
         save(); render(false);
         return openSheet(`<p class="kicker">Resultado</p><h2>Perfil ${profile.toLowerCase()}</h2><p style="margin:16px 0">${PROFILES[profile]}</p>
         <p class="muted small">Resultado orientativo con fines educativos. No sustituye la evaluación de idoneidad ni el asesoramiento de un profesional. El simulador destacará este escenario.</p>
@@ -1337,10 +1466,12 @@ async function sendCoach(text) {
    Formularios
 ========================================================= */
 function formErr(form, msg) { const e = $(".err", form); e.textContent = msg; e.hidden = false; }
+const hasProgress = s => !!(s && (s.goals?.length || s.quiz || (s.tests || []).length || Object.keys(s.courses || {}).length));
 function afterAuth(res) {
     user = res.user;
-    if (res.state && (hasData(normalize(res.state)) || !hasData(S))) S = normalize(res.state);
-    save(); // si el servidor no tenía datos, se suben los locales
+    const cloud = res.state ? normalize(res.state) : null;
+    if (cloud && (hasProgress(cloud) || !hasProgress(S))) S = cloud;
+    save(); // si la nube no tenía datos, se suben los locales
     resetCirc(); lastRoute = null;
     closeSheet(); render(false);
     toast(`Sesión iniciada como ${user.username}.`);
@@ -1369,14 +1500,18 @@ const FORMS = {
     },
     login: async form => {
         const f = new FormData(form);
-        try { afterAuth(await api("/auth/login", { method: "POST", body: { username: f.get("username"), password: f.get("password") } })); }
-        catch (e) { formErr(form, e.message); }
+        try { afterAuth(await authLogin(String(f.get("email") || f.get("username") || "").trim(), String(f.get("password")))); }
+        catch (e) { formErr(form, authErr(e)); }
     },
     register: async form => {
         const f = new FormData(form);
         if (f.get("password") !== f.get("password2")) return formErr(form, "Las contraseñas no coinciden.");
-        try { afterAuth(await api("/auth/register", { method: "POST", body: { username: f.get("username"), password: f.get("password") } })); }
-        catch (e) { formErr(form, e.message); }
+        if (String(f.get("password")).length < 8) return formErr(form, "La contraseña debe tener al menos 8 caracteres.");
+        try {
+            const res = await authRegister(String(f.get("email") || f.get("username") || "").trim(), String(f.get("password")), String(f.get("username") || "").trim());
+            if (res.needsConfirm) { authSheet("login"); return toast("Cuenta creada. Revisa tu correo para confirmarla y luego accede.", 7000); }
+            afterAuth(res);
+        } catch (e) { formErr(form, authErr(e)); }
     },
     circle: async form => {
         const f = new FormData(form);
@@ -1420,6 +1555,7 @@ document.addEventListener("submit", e => {
 });
 document.addEventListener("input", e => {
     const t = e.target, k = t.dataset.input;
+    if (k === "crsCalc") { crsCalcInput(t); return; }
     if (k === "hzGuess") { $("#hzGuessOut").textContent = fmtR(+t.value); return; }
     if (k === "hzRange") { hz[t.dataset.key] = +t.value; paintHero(); return; }
     if (k === "pulseRange") { const c = pulse.cards[+t.dataset.i]; $(`#pv${t.dataset.i}`).textContent = c.fmt(+t.value); return; }
@@ -1434,11 +1570,8 @@ document.addEventListener("input", e => {
         if (g) sim = { ...sim, initial: Math.round(saved(g)), monthly: Math.round(g.monthly), years: Math.min(40, Math.max(1, g.year - YEAR)) };
         render(false);
     } else if (k === "income") {
-        const v = +t.value, out = $("#budgetOut");
-        if (!(v > 0)) { out.textContent = "Introduce un importe para ver la distribución orientativa."; return; }
-        out.innerHTML = `<div class="split"><div style="flex:50;background:var(--navy)">50 %</div><div style="flex:30;background:var(--blue)">30 %</div><div style="flex:20;background:var(--accent)">20 %</div></div>
-        <table class="tbl"><tbody><tr><td>Necesidades</td><td class="r"><b>${fmt(v * .5)}</b></td></tr><tr><td>Ocio y estilo de vida</td><td class="r"><b>${fmt(v * .3)}</b></td></tr><tr><td>Ahorro e inversión</td><td class="r"><b>${fmt(v * .2)}</b></td></tr></tbody></table>
-        <button class="btn sm line" style="margin-top:16px" data-act="newGoalFromBudget" data-v="${Math.round(v * .2)}">Crear un objetivo con el 20 %</button>`;
+        S.budget = { income: +t.value > 0 ? +t.value : "" }; save();
+        $("#budgetOut").innerHTML = budgetResult(+t.value);
     }
 });
 document.addEventListener("keydown", e => {
@@ -1471,12 +1604,15 @@ document.addEventListener("pointerleave", e => { if (e.target.id === "simChart")
     initMenus();
     render();
     try {
-        const me = await api("/auth/me");
-        if (me.user) {
+        const me = await authRestore();
+        if (me?.user) {
             user = me.user;
             S = me.state ? normalize(me.state) : normalize(lsGet(`hz_user_${user.id}`) || S);
             if (!me.state) save();
             lastRoute = null; render(false);
         }
-    } catch { /* sin servidor: modo invitado */ }
+    } catch (e) {
+        // sin conexión pero con sesión guardada: se sigue con los datos locales de esa cuenta
+        if (SB && sbSess && e.status !== 401) { user = sbSess.user; S = normalize(lsGet(`hz_user_${user.id}`) || S); lastRoute = null; render(false); }
+    }
 })();
