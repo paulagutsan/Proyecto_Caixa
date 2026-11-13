@@ -263,17 +263,24 @@ function crearGraficos() {
   if (form) form.getItems(FormApp.ItemType.GRID).forEach(function (g) { filasActuales = g.asGridItem().getRows(); });
   // Si la pregunta cambió de título, la hoja tiene dos columnas por idea (respuestas antiguas y nuevas):
   // las juntamos por idea, cogiendo para cada persona la columna en la que respondió.
-  var colsPorIdea = {}, ordenIdeas = [];
+  var colsPorIdea = {}, ordenIdeas = [], nombreIdea = {};
   cab.forEach(function (h, c) {
     if (h.indexOf('¿Cuánto te interesa') !== 0) return;
-    var m = h.match(/\[(.*)\]\s*$/), idea = m ? m[1].trim() : h;
-    if (filasActuales && filasActuales.indexOf(idea) < 0) return;
-    if (!colsPorIdea[idea]) { colsPorIdea[idea] = []; ordenIdeas.push(idea); }
-    colsPorIdea[idea].push(c);
+    var m = h.match(/\[([^\]]*)\]\s*$/), idea = m ? m[1].trim() : h, clave = clave_(idea);
+    if (filasActuales && !filasActuales.some(function (f) { return clave_(f) === clave; })) return;
+    if (!colsPorIdea[clave]) {
+      colsPorIdea[clave] = []; ordenIdeas.push(clave);
+      nombreIdea[clave] = (filasActuales || []).filter(function (f) { return clave_(f) === clave; })[0] || idea;
+    }
+    colsPorIdea[clave].push(c);
   });
-  ordenIdeas.forEach(function (idea) {
+  ordenIdeas.forEach(function (k) {
+    Logger.log('Idea «' + nombreIdea[k] + '»: ' + colsPorIdea[k].length + ' columna(s) en la hoja, unidas');
+  });
+  ordenIdeas.forEach(function (clave) {
+    var idea = nombreIdea[clave];
     var notas = filas.map(function (r) {
-      var v = colsPorIdea[idea].map(function (c) { return r[c]; }).filter(function (x) { return x !== '' && x !== null; })[0];
+      var v = colsPorIdea[clave].map(function (c) { return r[c]; }).filter(function (x) { return x !== '' && x !== null; })[0];
       return v === undefined ? NaN : Number(v);
     });
     if (!notas.some(function (x) { return !isNaN(x); })) return;
@@ -446,6 +453,8 @@ function media_(a) {
   return v.length ? v.reduce(function (s, x) { return s + x; }, 0) / v.length : 0;
 }
 function mediaOVacio_(a) { return a.some(function (x) { return !isNaN(x); }) ? media_(a) : ''; }
+// Normaliza un texto para comparar: sin mayúsculas, espacios dobles ni diferencias invisibles
+function clave_(t) { return String(t).normalize('NFC').replace(/[\s\u00a0\u200b]+/g, ' ').replace(/[.…]+$/, '').trim().toLowerCase(); }
 function redondea_(x, d) { var p = Math.pow(10, d); return Math.round(x * p) / p; }
 function valorDe_(tabla, etiqueta) { var r = tabla.filter(function (t) { return t[0] === etiqueta; })[0]; return r ? r[1] : 0; }
 function unicos_(v) { return v.filter(function (x, i) { return x && v.indexOf(x) === i; }); }
