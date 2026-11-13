@@ -4,6 +4,6 @@
    NUNCA pegues aquí la clave «service_role» ni la «secret».
    Pasos para activarlo: README.md, apartado «Cuentas gratuitas con Supabase». */
 window.HZ_CONFIG = {
-    supabaseUrl: "",      // p. ej. https://abcdxyz.supabase.co
-    supabaseAnonKey: ""   // clave «anon public» o «publishable»
+    supabaseUrl: "https://norfjljehjyjovgmshdr.supabase.co",
+    supabaseAnonKey: "sb_publishable_hIwboI96RdfDtUQZ5b3AwQ_kbbdRdgd"   // clave pública (publishable)
 };

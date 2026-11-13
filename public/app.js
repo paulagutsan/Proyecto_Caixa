@@ -713,10 +713,11 @@ const resetCirc = () => { clearInterval(circ.timer); circ = { list: null, err: n
 function viewCirculo() {
     const head = `<section class="section"><div class="sec-head"><div><p class="kicker">Círculo</p><h2 class="page-title">Ahorrad juntos para lo mismo</h2>
         <p>Fija una meta común con amigos o familia e invítalos con un código. Cada participante solo comparte lo que decide aportar a ese objetivo.</p></div>
-        ${user ? `<div class="row"><button class="btn line" data-act="joinCircle">Unirme con código</button><button class="btn" data-act="newCircle">Crear círculo</button></div>` : ""}</div>`;
+        ${user && !SB ? `<div class="row"><button class="btn line" data-act="joinCircle">Unirme con código</button><button class="btn" data-act="newCircle">Crear círculo</button></div>` : ""}</div>`;
     const privacy = `<div class="panel tint" style="margin-top:24px"><p class="kicker">Privacidad</p><p class="muted">Nadie puede ver ni gestionar tus inversiones. El círculo comparte únicamente el objetivo común y las aportaciones que cada persona decide registrar en él.</p></div>`;
     let body;
     if (!user) body = `<div class="empty"><h3>Accede para crear o unirte a un círculo</h3><p class="muted" style="margin-bottom:24px">Los círculos requieren una cuenta para compartir el progreso entre participantes.</p><button class="btn" data-act="auth">Acceder ${ARROW}</button></div>`;
+    else if (SB) body = `<div class="empty"><h3>Los círculos aún no están disponibles</h3><p class="muted">Con las cuentas en la nube, los círculos compartidos todavía no funcionan: necesitan el servidor propio de Horizonte. Todo lo demás de tu perfil sí se guarda y se sincroniza.</p></div>`;
     else if (circ.err) body = `<div class="err">${esc(circ.err)}</div>`;
     else if (!circ.list) body = `<p class="muted">Cargando…</p>`;
     else if (!circ.list.length) body = `<div class="empty"><h3>Aún no participas en ningún círculo</h3><p class="muted">Crea uno o únete con el código que te hayan facilitado.</p></div>`;
@@ -742,7 +743,7 @@ function circleCard(c) {
 }
 async function loadCircles(force = false) {
     if (!user) return;
-    if (SB) { circ.err = "Los círculos compartidos todavía no están disponibles con las cuentas en la nube; funcionan ejecutando el servidor de Horizonte (npm start) sin Supabase."; if (route() === "circulo" && !circ.list) render(false); return; }
+    if (SB) return; // con cuentas en la nube los círculos no están disponibles: la vista lo explica sin pedir nada
     try {
         const { circles } = await api("/circles");
         const sig = JSON.stringify(circles);
