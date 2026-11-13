@@ -1,7 +1,7 @@
 "use strict";
 /* Horizonte · Conecta: tu dinero, en el mundo real
    - Tu voz: desliza sobre propuestas de junta de accionistas y dile a la gestora qué prefieres (consultivo).
-   - Tu calle: caza en tu calle las empresas que usas cada día y descubre cómo podrías ser dueño de un trocito.
+   - Tu calle: caza con la cámara las empresas cotizadas que tienes cerca (mapa de OpenStreetMap), gana puntos y descubre cómo podrías ser dueño de un trocito.
    - Tu proyecto: cuenta tu proyecto en privado y encuentra empresas asociadas que podrían apoyarlo.
    Se carga antes que app.js: sus utilidades solo se usan dentro de funciones. */
 
@@ -34,21 +34,87 @@ const VOZ = [
 ];
 const VOZ_LABEL = { a: "A favor", c: "En contra", s: "No lo tengo claro" };
 
-/* ---------- Tu calle ---------- */
-const CALLE = [
-    { id: "moda", e: "👕", n: "Moda", where: "una tienda de ropa", fact: "Cuando hay crisis es de lo primero que se recorta, así que sus beneficios suben y bajan con la economía." },
-    { id: "comida", e: "🍔", n: "Comida rápida", where: "un local de comida rápida", fact: "Muchas cadenas no son dueñas de sus locales: cobran a franquiciados por usar la marca." },
-    { id: "super", e: "🛒", n: "Supermercados", where: "un supermercado", fact: "Se sigue comprando comida en las crisis: por eso se consideran empresas defensivas." },
-    { id: "cafe", e: "☕", n: "Cafeterías", where: "una cadena de cafeterías", fact: "Ganan más con lo que añades al café (leches especiales, siropes) que con el café en sí." },
-    { id: "tele", e: "📶", n: "Telefonía", where: "una tienda de telefonía", fact: "Cobran cuotas cada mes: ingresos estables que suelen permitir repartir dividendos." },
-    { id: "energia", e: "⚡", n: "Energía", where: "una gasolinera o una eléctrica", fact: "Las eléctricas suelen pagar dividendos estables; las petroleras dependen mucho del precio del crudo." },
-    { id: "banco", e: "🏦", n: "Bancos", where: "una oficina bancaria", fact: "Ganan más cuando suben los tipos de interés y sufren cuando la economía va mal." },
-    { id: "salud", e: "💊", n: "Salud", where: "una farmacia o una óptica", fact: "Necesitamos medicinas en cualquier ciclo económico, pero investigar un fármaco nuevo puede costar años." },
-    { id: "tech", e: "🎧", n: "Tecnología", where: "una tienda de tecnología", fact: "Muchas tecnológicas reinvierten casi todo en crecer y apenas reparten dividendos." },
-    { id: "deporte", e: "👟", n: "Deporte", where: "una tienda de deporte", fact: "Las grandes marcas gastan una parte enorme en publicidad y patrocinios de deportistas." },
-    { id: "viajes", e: "✈️", n: "Viajes", where: "una agencia, un hotel o una aerolínea", fact: "En 2020 la pandemia hundió el sector; es de los más sensibles a sustos globales." },
-    { id: "ocio", e: "🎬", n: "Ocio", where: "un cine o una tienda de videojuegos", fact: "El negocio se mueve a suscripciones: pagas cada mes en lugar de una vez." }
+/* ---------- Tu calle: caza de empresas cotizadas ---------- */
+// m = cómo suelen llamarse sus locales en OpenStreetMap (se busca en name y en brand).
+// pts: 10 muy común · 20 menos común · 30 rara. no:true = famosa pero NO cotiza (lección sorpresa).
+const CAZA = [
+    { id: "inditex", n: "Inditex", tk: "ITX", sec: "Moda", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35 y Euro Stoxx 50", pts: 10, m: "Zara|Pull ?& ?Bear|Bershka|Massimo Dutti|Stradivarius|Oysho|Lefties",
+      where: "una tienda Zara, Bershka o Pull&Bear", fact: "Es la dueña de Zara, Bershka, Pull&Bear o Massimo Dutti. Renueva las tiendas casi cada semana y fabrica buena parte de la ropa cerca de España para reaccionar rápido a lo que se vende." },
+    { id: "santander", n: "Santander", tk: "SAN", sec: "Banca", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35 y Euro Stoxx 50", pts: 10, m: "Banco Santander|Santander",
+      where: "una oficina del Banco Santander", fact: "Es un banco español, pero gran parte de lo que gana llega de fuera: Reino Unido, Brasil, México, EE. UU. Que una empresa sea de aquí no significa que dependa solo de aquí." },
+    { id: "bbva", n: "BBVA", tk: "BBVA", sec: "Banca", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35 y Euro Stoxx 50", pts: 10, m: "BBVA",
+      where: "una oficina de BBVA", fact: "Una parte enorme de su beneficio viene de México. Cuando una empresa depende tanto de otro país, ese país también te afecta a ti como accionista." },
+    { id: "caixabank", n: "CaixaBank", tk: "CABK", sec: "Banca", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35", pts: 10, m: "CaixaBank|la Caixa",
+      where: "una oficina de CaixaBank", fact: "Es el banco con más clientes de España. Su accionista principal, la Fundación «la Caixa», destina parte del dividendo que cobra a programas sociales." },
+    { id: "sabadell", n: "Sabadell", tk: "SAB", sec: "Banca", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35", pts: 10, m: "Banco Sabadell|Sabadell",
+      where: "una oficina del Banco Sabadell", fact: "Un fallo informático en el banco británico que compró le costó cientos de millones en 2018. Los riesgos operativos también cuentan, aunque no salgan en una gráfica." },
+    { id: "bankinter", n: "Bankinter", tk: "BKT", sec: "Banca", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35", pts: 20, m: "Bankinter",
+      where: "una oficina de Bankinter", fact: "Es un banco mediano con pocas oficinas y mucha tecnología: consigue unos beneficios altos para su tamaño. Ser grande no es lo único que importa." },
+    { id: "mapfre", n: "Mapfre", tk: "MAP", sec: "Seguros", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35", pts: 20, m: "Mapfre",
+      where: "una oficina de seguros de Mapfre", fact: "Las aseguradoras cobran las primas hoy y pagan los siniestros mañana. Mientras tanto invierten ese dinero, y parte de su beneficio sale de ahí." },
+    { id: "movistar", n: "Movistar", co: "Telefónica", tk: "TEF", sec: "Telefonía", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35", pts: 10, m: "Movistar|Telefónica|Telefonica",
+      where: "una tienda Movistar", fact: "Sus ingresos son cuotas mensuales de móvil, fibra y televisión: muy estables. A cambio, tiene que invertir sin parar en redes de fibra y 5G." },
+    { id: "repsol", n: "Repsol", tk: "REP", sec: "Energía", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35", pts: 10, m: "Repsol",
+      where: "una gasolinera Repsol", fact: "Gana mucho cuando sube el petróleo y sufre cuando baja. Por eso su dividendo y su cotización suben y bajan con el precio del crudo." },
+    { id: "endesa", n: "Endesa", tk: "ELE", sec: "Energía", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35", pts: 20, m: "Endesa",
+      where: "una tienda o punto de atención de Endesa", fact: "Cerca del 70 % de Endesa es de la italiana Enel, que también cotiza. Una empresa cotizada puede ser dueña de otra cotizada." },
+    { id: "iberdrola", n: "Iberdrola", tk: "IBE", sec: "Energía", reg: "es", mk: "la Bolsa de Madrid", idx: "IBEX 35 y Euro Stoxx 50", pts: 20, m: "Iberdrola",
+      where: "una oficina de Iberdrola", fact: "Es una eléctrica española, pero buena parte de sus beneficios vienen de fuera: Reino Unido, EE. UU. y Brasil. Y apuesta fuerte por redes y renovables." },
+    { id: "melia", n: "Meliá", tk: "MEL", sec: "Viajes", reg: "es", mk: "la Bolsa de Madrid", idx: "", pts: 20, m: "Meliá|Melia|ME by Meliá|ME by Melia",
+      where: "un hotel Meliá", fact: "Cada vez gestiona más hoteles que no son suyos y cobra una comisión: crece sin tener que comprar edificios. El turismo le va bien o mal según el mundo viaje más o menos." },
+    { id: "dia", n: "Dia", tk: "DIA", sec: "Supermercados", reg: "es", mk: "la Bolsa de Madrid", idx: "", pts: 10, m: "Dia",
+      where: "un supermercado Dia", fact: "Un supermercado gana unos pocos céntimos por cada euro que vende, así que vive de que entre mucha gente cada día. Con márgenes tan pequeños, cualquier error de gestión se nota." },
+    { id: "carrefour", n: "Carrefour", tk: "CA", sec: "Supermercados", reg: "eu", mk: "Euronext París", idx: "CAC 40", pts: 10, m: "Carrefour",
+      where: "un Carrefour", fact: "Se sigue comprando comida en las crisis, así que los supermercados se consideran empresas defensivas: sus ventas bajan poco cuando la economía va mal." },
+    { id: "mcdonalds", n: "McDonald's", tk: "MCD", sec: "Comida rápida", reg: "us", mk: "la Bolsa de Nueva York", idx: "S&P 500", pts: 10, m: "McDonald.?s|Mc Donald.?s",
+      where: "un McDonald's", fact: "La mayoría de sus restaurantes son de franquiciados que le pagan un porcentaje de las ventas y, muchas veces, el alquiler del local. Parte de su negocio es casi inmobiliario." },
+    { id: "burgerking", n: "Burger King", co: "Restaurant Brands International", tk: "QSR", sec: "Comida rápida", reg: "us", mk: "la Bolsa de Nueva York", idx: "", pts: 10, m: "Burger King",
+      where: "un Burger King", fact: "Burger King pertenece a Restaurant Brands, que también tiene Tim Hortons y Popeyes. Casi todos los locales son de franquiciados que pagan un canon por usar la marca." },
+    { id: "kfc", n: "KFC", co: "Yum! Brands", tk: "YUM", sec: "Comida rápida", reg: "us", mk: "la Bolsa de Nueva York", idx: "S&P 500", pts: 20, m: "KFC|Kentucky Fried Chicken",
+      where: "un KFC", fact: "KFC es de Yum! Brands, que también tiene Pizza Hut y Taco Bell. Casi el 100 % de los locales son franquicias: la empresa cobra royalties y no carga con los restaurantes." },
+    { id: "dominos", n: "Domino's", tk: "DPZ", sec: "Comida rápida", reg: "us", mk: "la Bolsa de Nueva York", idx: "", pts: 20, m: "Domino.?s Pizza|Domino.?s|Dominos",
+      where: "una pizzería Domino's", fact: "Presume de ser casi una empresa tecnológica: en EE. UU. la mayor parte de sus pedidos son digitales. Su ventaja no es la masa, es la logística y la app." },
+    { id: "starbucks", n: "Starbucks", tk: "SBUX", sec: "Cafeterías", reg: "us", mk: "Nasdaq", idx: "S&P 500", pts: 10, m: "Starbucks",
+      where: "una cafetería Starbucks", fact: "Gana mucho más con bebidas personalizadas que con el café en sí. Y su app guarda saldo prepagado de clientes por más de mil millones de dólares." },
+    { id: "apple", n: "Apple", tk: "AAPL", sec: "Tecnología", reg: "us", mk: "Nasdaq", idx: "S&P 500", pts: 30, m: "Apple Store|Apple$",
+      where: "una Apple Store", fact: "El iPhone es lo que ves en la tienda, pero casi una cuarta parte de sus ingresos ya son servicios: App Store, iCloud, suscripciones. Es lo que más crece y más margen deja." },
+    { id: "amazon", n: "Amazon", tk: "AMZN", sec: "Tecnología", reg: "us", mk: "Nasdaq", idx: "S&P 500", pts: 20, m: "Amazon",
+      where: "una taquilla Amazon Locker o una tienda Amazon", fact: "Las taquillas de paquetes son la parte visible. Gran parte de su beneficio viene de AWS, la nube que alquila a otras empresas, no de vender productos." },
+    { id: "tesla", n: "Tesla", tk: "TSLA", sec: "Motor", reg: "us", mk: "Nasdaq", idx: "S&P 500", pts: 30, m: "Tesla",
+      where: "una tienda o supercargador de Tesla", fact: "Ha llegado a valer en bolsa más que muchos fabricantes juntos pese a vender muchos menos coches: la bolsa paga por el futuro que espera, no por el pasado." },
+    { id: "nike", n: "Nike", tk: "NKE", sec: "Deporte", reg: "us", mk: "la Bolsa de Nueva York", idx: "S&P 500", pts: 20, m: "Nike",
+      where: "una tienda Nike", fact: "Diseña y vende, pero casi no fabrica: encarga la producción a fábricas de terceros, sobre todo en Asia. Su gran activo es la marca." },
+    { id: "adidas", n: "Adidas", tk: "ADS", sec: "Deporte", reg: "eu", mk: "la Bolsa de Fráncfort", idx: "DAX", pts: 20, m: "adidas",
+      where: "una tienda Adidas", fact: "Gasta una parte enorme en marketing y patrocinios deportivos, porque su principal activo es la marca. Cuando una marca se resiente, se nota en bolsa." },
+    { id: "hm", n: "H&M", tk: "HM-B", sec: "Moda", reg: "eu", mk: "la Bolsa de Estocolmo", idx: "", pts: 10, m: "H ?& ?M",
+      where: "una tienda H&M", fact: "Moda rápida: prendas baratas y mucha rotación. Su gran riesgo es quedarse con ropa sin vender, que hay que rebajar y recorta el beneficio." },
+    { id: "primark", n: "Primark", co: "Associated British Foods", tk: "ABF", sec: "Moda", reg: "eu", mk: "la Bolsa de Londres", idx: "FTSE 100", pts: 20, m: "Primark",
+      where: "una tienda Primark", fact: "Primark es de Associated British Foods, un grupo que también hace azúcar y alimentos. Casi no vende por internet y gasta poco en publicidad para mantener precios bajos." },
+    { id: "lvmh", n: "LVMH", tk: "MC", sec: "Lujo y belleza", reg: "eu", mk: "la Bolsa de París", idx: "CAC 40 y Euro Stoxx 50", pts: 20, m: "Sephora|Louis Vuitton|Christian Dior|Dior|Loewe|Tiffany.*|Bulgari|Fendi|Celine|Givenchy|Kenzo",
+      where: "una tienda Sephora, Louis Vuitton, Dior o Loewe", fact: "LVMH es dueña de Louis Vuitton, Dior, Loewe, Tiffany o Sephora. En lujo, vender menos pero más caro deja más margen, y depende mucho de turistas y clientes de Asia." },
+    { id: "shell", n: "Shell", tk: "SHEL", sec: "Energía", reg: "eu", mk: "la Bolsa de Londres", idx: "FTSE 100", pts: 10, m: "Shell",
+      where: "una gasolinera Shell", fact: "Las petroleras ganan mucho cuando sube el crudo y sufren cuando baja. Shell reparte buena parte del beneficio en dividendos y recompra de acciones." },
+    { id: "bp", n: "BP", tk: "BP", sec: "Energía", reg: "eu", mk: "la Bolsa de Londres", idx: "FTSE 100", pts: 10, m: "BP",
+      where: "una gasolinera BP", fact: "El vertido del Golfo de México en 2010 le costó decenas de miles de millones: un riesgo que no se ve en la gráfica hasta que ocurre." },
+    { id: "total", n: "TotalEnergies", tk: "TTE", sec: "Energía", reg: "eu", mk: "la Bolsa de París", idx: "CAC 40 y Euro Stoxx 50", pts: 20, m: "TotalEnergies|Total Energies",
+      where: "una gasolinera TotalEnergies", fact: "Es una petrolera francesa que invierte cada vez más en electricidad y renovables sin dejar el petróleo: una empresa en plena transición." },
+    // Famosas que no cotizan: no se pueden comprar en bolsa
+    { id: "mercadona", n: "Mercadona", tk: "—", sec: "Supermercados", no: true, pts: 5, m: "Mercadona",
+      where: "un Mercadona", fact: "Es la mayor cadena de supermercados de España y no cotiza: pertenece sobre todo a la familia Roig. No hay acciones suyas que comprar en bolsa." },
+    { id: "corteingles", n: "El Corte Inglés", tk: "—", sec: "Grandes almacenes", no: true, pts: 5, m: "El Corte Ingl.s",
+      where: "un El Corte Inglés", fact: "Es una empresa enorme, pero no cotiza en bolsa: sus acciones no se compran ni se venden como las de Inditex." },
+    { id: "lidl", n: "Lidl", tk: "—", sec: "Supermercados", no: true, pts: 5, m: "Lidl",
+      where: "un Lidl", fact: "Pertenece a Schwarz, un grupo familiar alemán que no cotiza en bolsa. Vende lo mismo que Dia o Carrefour, pero tú no puedes ser accionista." },
+    { id: "aldi", n: "Aldi", tk: "—", sec: "Supermercados", no: true, pts: 5, m: "Aldi",
+      where: "un Aldi", fact: "Aldi es un grupo familiar alemán que tampoco cotiza. Un negocio puede ser enorme y no estar al alcance de quien invierte en bolsa." }
 ];
+const CAZA_R = 150, CAZA_AREA = 900;
+const CAZA_API = ["https://overpass.openstreetmap.fr/api/interpreter", "https://overpass-api.de/api/interpreter", "https://lz4.overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+const CAZA_LV = [["Aprendiz", 0], ["Analista", 40], ["Estratega", 120], ["Referente", 250], ["Leyenda", 450]];
+const CAZA_OWN = { es: "un fondo de bolsa española o europea", us: "un fondo indexado al S&amp;P 500 o de bolsa mundial", eu: "un fondo de bolsa europea o mundial" };
+const CAZA_DEMO = { lat: 40.41694, lon: -3.70351, nombre: "la Puerta del Sol (Madrid)" };
+const LEAFLET = "https://unpkg.com/leaflet@1.9.4/dist/leaflet";
+CAZA.forEach(c => { c.re = new RegExp(`^(${c.m})([^A-Za-z].*)?$`, "i"); });
 
 /* ---------- Tu proyecto ---------- */
 const PJ_SECTORS = { sostenibilidad: "Sostenibilidad y energía", tecnologia: "Tecnología y apps", salud: "Salud y bienestar", educacion: "Educación", social: "Impacto social", moda: "Moda y consumo", comida: "Alimentación", cultura: "Cultura y ocio" };
@@ -67,11 +133,13 @@ const PJ_PARTNERS = [
 ];
 
 /* ---------- estado ---------- */
-let cx = { tab: "voz", i: 0, last: null, totals: null, drag: null, newCard: null };
+let cx = { tab: "voz", i: 0, last: null, totals: null, drag: null, pend: null, leaf: null, caza: { st: "idle", pos: null, places: [], msg: "", map: null } };
 function cxState() {
     if (!S.conecta || typeof S.conecta !== "object") S.conecta = {};
     const c = S.conecta;
-    c.votes ||= {}; c.album ||= {}; c.project ||= null; c.requests ||= {};
+    c.votes ||= {}; c.project ||= null; c.requests ||= {};
+    if (!c.caza || typeof c.caza !== "object") c.caza = {};
+    c.caza.found ||= {}; c.caza.pts = +c.caza.pts || 0;
     return c;
 }
 const cxIco = (txt, cls = "") => `<i class="ico ${cls}" aria-hidden="true">${txt}</i>`;
@@ -99,12 +167,21 @@ function viewConecta() {
         <div id="cxBody">${{ voz: vozHTML, calle: calleHTML, proyecto: pjHTML }[cx.tab]()}</div>
     </section>`;
 }
-function cxPaint() { const b = $("#cxBody"); if (b) b.innerHTML = { voz: vozHTML, calle: calleHTML, proyecto: pjHTML }[cx.tab](); }
-function mountConecta() { if (cx.tab === "voz" && !cx.totals) loadVoz(); }
+function cxPaint() { const b = $("#cxBody"); if (b) { b.innerHTML = { voz: vozHTML, calle: calleHTML, proyecto: pjHTML }[cx.tab](); if (cx.tab === "calle") cazaMountMap(); } }
+function mountConecta() { if (cx.tab === "voz" && !cx.totals) loadVoz(); if (cx.tab === "calle") cazaMountMap(); }
 
 /* ---------- Tu voz ---------- */
+// Con Supabase los votos se suman con dos funciones SQL; sin él, con el servidor local.
+const vozApi = {
+    totals: async () => SB ? sbFetch("/rest/v1/rpc/totales_voz", { method: "POST", body: {} }) : (await api("/voz")).totals,
+    vote: async (id, v) => {
+        if (!SB) return (await api(`/voz/${id}`, { method: "POST", body: { v, voter: voterId() } })).totals;
+        if (!sbSess) throw new Error("Sin sesión");
+        return sbRpc("votar_voz", { p_propuesta: id, p_voto: v });
+    }
+};
 async function loadVoz() {
-    try { cx.totals = (await api("/voz")).totals; }
+    try { cx.totals = await vozApi.totals(); }
     catch { cx.totals = {}; cx.offline = true; }
     if (cx.tab === "voz" && route() === "conecta") cxPaint();
 }
@@ -113,7 +190,7 @@ function vozResult(id, mine) {
     if (cx.offline && mine) t[mine] = Math.max(t[mine], 1);
     const n = t.a + t.c + t.s || 1;
     return `<div class="vz-res">${["a", "c", "s"].map(k => `<div class="${k === mine ? "me" : ""}"><span>${VOZ_LABEL[k]}${k === mine ? " · tú" : ""}</span><i style="width:${Math.round(t[k] / n * 100)}%"></i><b>${Math.round(t[k] / n * 100)} %</b></div>`).join("")}</div>
-        <p class="small muted">${cx.offline ? "Sin conexión con el servidor: solo cuenta tu voto." : `${n} ${n === 1 ? "persona ha" : "personas han"} opinado en Horizonte.`}</p>`;
+        <p class="small muted">${cx.offline ? (SB && !sbSess ? "Accede con tu cuenta para sumar tu voto al de los demás." : "Sin conexión con el servidor: solo cuenta tu voto.") : `${n} ${n === 1 ? "persona ha" : "personas han"} opinado en Horizonte.`}</p>`;
 }
 function vozHTML() {
     const st = cxState(), pending = VOZ.filter(v => !st.votes[v.id]);
@@ -154,64 +231,257 @@ async function vozVote(v) {
     card.classList.add(v === "a" ? "out-r" : v === "c" ? "out-l" : "out-d");
     st.votes[id] = v; save();
     cx.last = id;
-    try { cx.totals = (await api(`/voz/${id}`, { method: "POST", body: { v, voter: voterId() } })).totals; cx.offline = false; }
+    try { cx.totals = await vozApi.vote(id, v); cx.offline = false; }
     catch { cx.offline = true; }
     setTimeout(cxPaint, 260);
 }
 
-/* ---------- Tu calle ---------- */
+/* ---------- Tu calle: caza de empresas cotizadas ---------- */
+const cazaDist = (a, b) => {
+    const r = x => x * Math.PI / 180, R = 6371000, dl = r(b.lat - a.lat), dn = r(b.lon - a.lon);
+    const h = Math.sin(dl / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dn / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+};
+const cazaFmt = m => m < 1000 ? `${Math.max(10, Math.round(m / 10) * 10)} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`;
+const cazaById = id => CAZA.find(c => c.id === id);
+const cazaMatch = t => CAZA.find(c => c.re.test(t.name || "") || c.re.test(t.brand || ""));
+const cazaPaint = () => { if (cx.tab === "calle" && route() === "conecta") cxPaint(); };
+const cazaFotosKey = () => `hz_caza_fotos_${user ? user.id : "guest"}`;
+const cazaFotos = () => lsGet(cazaFotosKey(), {});
+function cazaFotoSet(id, url) { const f = cazaFotos(); f[id] = url; lsSet(cazaFotosKey(), f); }
+function cazaLevel(pts) {
+    let i = 0; CAZA_LV.forEach(([, from], j) => { if (pts >= from) i = j; });
+    const nx = CAZA_LV[i + 1], from = CAZA_LV[i][1];
+    return { i, name: CAZA_LV[i][0], next: nx ? nx[1] : null, nextName: nx ? nx[0] : "", pct: nx ? Math.round((pts - from) / (nx[1] - from) * 100) : 100 };
+}
+
+/* búsqueda de locales cercanos con OpenStreetMap (Overpass) */
+function cazaQuery(lat, lon) {
+    const re = `^(${CAZA.map(c => c.m).join("|")})([^A-Za-z].*)?$`;
+    const kv = `[~"^(shop|amenity|office|tourism)$"~"."]`, at = `(around:${CAZA_AREA},${lat},${lon})`;
+    return `[out:json][timeout:25];(nwr${kv}["name"~"${re}",i]${at};nwr${kv}["brand"~"${re}",i]${at};);out center tags 400;`;
+}
+// Los servidores públicos de Overpass se saturan a menudo: se prueban por turnos y gana el primero que responde.
+function cazaFetch(lat, lon) {
+    const key = `${lat},${lon}`, hit = cx.cache && cx.cache.get(key);
+    if (hit && Date.now() - hit.t < 600000) return Promise.resolve(hit.els);
+    const body = "data=" + encodeURIComponent(cazaQuery(lat, lon)), ctl = new AbortController(), timers = [];
+    return new Promise((ok, ko) => {
+        let done = false, next = 0, fails = 0;
+        const finish = (fn, v) => { if (done) return; done = true; timers.forEach(clearTimeout); ctl.abort(); fn(v); };
+        const launch = () => {
+            if (done || next >= CAZA_API.length) return;
+            const url = CAZA_API[next++], tm = setTimeout(launch, 3500);
+            timers.push(tm);
+            fetch(url, { method: "POST", body, headers: { "Content-Type": "application/x-www-form-urlencoded" }, signal: ctl.signal })
+                .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+                .then(d => {
+                    if (!Array.isArray(d.elements)) throw new Error("sin datos");
+                    (cx.cache ||= new Map()).set(key, { t: Date.now(), els: d.elements });
+                    finish(ok, d.elements);
+                })
+                .catch(e => { if (done) return; clearTimeout(tm); if (++fails >= CAZA_API.length) finish(ko, e); else launch(); });
+        };
+        timers.push(setTimeout(() => finish(ko, new Error("tiempo agotado")), 30000));
+        launch();
+    });
+}
+function cazaBuild(els, pos) {
+    const out = [];
+    for (const e of els) {
+        const t = e.tags || {}, co = cazaMatch(t), p = e.type === "node" ? e : e.center;
+        if (!co || !p || p.lat == null) continue;
+        if (out.some(o => o.co === co && cazaDist(o, p) < 25)) continue;      // el mismo local como punto y como edificio
+        out.push({ co, name: t.name || t.brand || co.n, lat: p.lat, lon: p.lon, d: cazaDist(pos, p) });
+    }
+    return out.filter(o => o.d <= CAZA_AREA + 100).sort((a, b) => a.d - b.d).slice(0, 120);
+}
+function cazaGroups() {
+    const g = new Map();
+    cx.caza.places.forEach((p, i) => { const s = g.get(p.co.id); if (s) s.n++; else g.set(p.co.id, { p, i, n: 1 }); });
+    return [...g.values()];
+}
+function cazaLocate() {
+    const z = cx.caza;
+    if (!navigator.geolocation) { z.st = "error"; z.msg = "Tu navegador no permite saber dónde estás. Prueba la zona de ejemplo o caza sin ubicación."; return cazaPaint(); }
+    z.st = "locating"; cazaPaint();
+    navigator.geolocation.getCurrentPosition(
+        g => { z.pos = { lat: g.coords.latitude, lon: g.coords.longitude, acc: g.coords.accuracy, t: Date.now() }; cazaSearch(); },
+        er => { z.st = "error"; z.msg = er.code === 1 ? "No has dado permiso de ubicación. Actívalo en el navegador (el candado junto a la dirección) o prueba la zona de ejemplo." : "No hemos podido saber dónde estás. Inténtalo otra vez o usa la zona de ejemplo."; cazaPaint(); },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
+}
+async function cazaSearch() {
+    const z = cx.caza, pos = z.pos;
+    z.st = "searching"; cazaPaint();
+    try {
+        // al servicio de mapas solo le llega una ubicación aproximada (redondeada a ~100 m)
+        const els = await cazaFetch(Math.round(pos.lat * 1000) / 1000, Math.round(pos.lon * 1000) / 1000);
+        z.places = cazaBuild(els, pos); z.st = "done";
+    } catch { z.st = "error"; z.msg = "No hemos podido consultar el mapa abierto ahora mismo. Inténtalo de nuevo en un minuto."; }
+    cazaPaint();
+}
+
+/* mapa (Leaflet se carga solo cuando se busca por primera vez) */
+function cazaLeaflet() {
+    if (window.L) return Promise.resolve();
+    return cx.leaf ||= new Promise((ok, ko) => {
+        const css = Object.assign(document.createElement("link"), { rel: "stylesheet", href: LEAFLET + ".css", integrity: "sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H", crossOrigin: "" });
+        const js = Object.assign(document.createElement("script"), { src: LEAFLET + ".js", integrity: "sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH", crossOrigin: "", onload: ok, onerror: () => { cx.leaf = null; ko(new Error("leaflet")); } });
+        document.head.append(css, js);
+    });
+}
+async function cazaMountMap() {
+    const z = cx.caza, el = $("#czMap");
+    if (!el || !z.pos) return;
+    try { await cazaLeaflet(); } catch { if ($("#czMap") === el) el.outerHTML = `<p class="small muted">No hemos podido cargar el mapa. La lista funciona igual.</p>`; return; }
+    if ($("#czMap") !== el) return;                                           // se repintó mientras cargaba
+    try { z.map?.remove(); } catch { /* el contenedor anterior ya no existe */ }
+    const k = cxState().caza, me = [z.pos.lat, z.pos.lon];
+    const map = z.map = L.map(el, { scrollWheelZoom: false, worldCopyJump: false });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
+    L.circle(me, { radius: CAZA_R, color: "#0a84ff", weight: 1.5, dashArray: "4 5", fillOpacity: .08 }).addTo(map);
+    L.circleMarker(me, { radius: 8, color: "#fff", weight: 3, fillColor: "#0a84ff", fillOpacity: 1 }).addTo(map);
+    const bounds = L.latLngBounds([me]);
+    cazaGroups().forEach(({ p }) => {                                         // un pin por empresa: el local más cercano
+        const cls = p.co.no ? "no" : k.found[p.co.id] ? "got" : "";
+        L.marker([p.lat, p.lon], { keyboard: false, title: p.co.n, icon: L.divIcon({ className: `cz-pin ${cls}`, html: `<span>${esc(p.co.no ? "?" : p.co.tk)}</span>`, iconSize: [0, 0] }) })
+            .on("click", () => cazaSheet(p)).addTo(map);
+        bounds.extend([p.lat, p.lon]);
+    });
+    map.fitBounds(bounds.pad(.18), { maxZoom: 18 });
+    setTimeout(() => map.invalidateSize(), 120);
+}
+
+/* vista */
+function cazaSearchHTML() {
+    const z = cx.caza, k = cxState().caza;
+    const btns = `<div class="cz-btns"><button class="btn cx-cta" data-act="cazaLocate">Buscar cerca de mí</button><button class="btn quiet" data-act="cazaDemo">Probar en Madrid</button></div>
+        <p class="small muted cz-alt">¿Ya has visto una? <button class="link" data-act="cazaManual">Cázala sin ubicación</button> (la foto cuenta la mitad).</p>`;
+    if (z.st === "locating") return `<div class="cz-state"><span class="cz-spin"></span>Buscando tu ubicación…</div>`;
+    if (z.st === "searching") return `<div class="cz-state"><span class="cz-spin"></span>Buscando empresas cerca de ti…</div>`;
+    if (z.st === "error") return `<div class="cz-state err">${esc(z.msg)}</div>${btns}`;
+    if (z.st !== "done") return btns;
+    const groups = cazaGroups();
+    const rows = groups.map(({ p, i, n }) => {
+        const c = p.co, f = k.found[c.id];
+        return `<button class="cz-row ${f ? "got" : ""}" data-act="cazaOpen" data-i="${i}"><span class="cz-tk ${c.no ? "no" : ""}">${c.no ? "?" : esc(c.tk)}</span>
+            <span class="cz-main"><b>${esc(c.n)}</b><small>${esc(p.name !== c.n ? p.name : c.sec)}${n > 1 ? ` · ${n - 1} más por la zona` : ""}</small></span>
+            <span class="cz-dist${p.d <= CAZA_R ? " near" : ""}">${cazaFmt(p.d)}</span><span class="cz-pts">${f ? "✓" : c.no ? "Ojo" : "+" + c.pts}</span></button>`;
+    }).join("");
+    return `<div class="row between cz-head"><b>Cerca de ${z.pos.fake ? CAZA_DEMO.nombre : "ti"}</b>
+            <span class="small muted">${groups.length ? `${groups.length} empresa${groups.length === 1 ? "" : "s"} en ${cazaFmt(CAZA_AREA)}` : ""}</span>
+            <button class="link" data-act="cazaLocate">${z.pos.fake ? "Usar mi ubicación" : "Actualizar"}</button></div>
+        ${z.pos.fake ? `<p class="small muted">Zona de ejemplo: para sumar puntos completos tienes que estar a menos de ${CAZA_R} m del local, así que aquí la foto cuenta la mitad.</p>` : ""}
+        ${groups.length ? `<div class="cz-map" id="czMap" role="img" aria-label="Mapa con las empresas cercanas"></div><div class="cz-list">${rows}</div>`
+            : `<div class="cz-state">Ahora mismo no hay empresas del catálogo a menos de ${CAZA_AREA} m. Prueba en una calle comercial o en la zona de ejemplo.</div>`}
+        <p class="small muted cz-alt">¿Ya has visto una? <button class="link" data-act="cazaManual">Cázala sin ubicación</button> (la foto cuenta la mitad).</p>`;
+}
 function calleHTML() {
-    const st = cxState(), got = Object.keys(st.album).length;
+    const k = cxState().caza, lv = cazaLevel(k.pts), real = CAZA.filter(c => !c.no), traps = CAZA.filter(c => c.no), fotos = cazaFotos();
+    const got = real.filter(c => k.found[c.id]).length, gotT = traps.filter(c => k.found[c.id]).length;
+    const card = c => { const f = k.found[c.id];
+        return f ? `<button class="cl-card got" data-act="cazaAlbum" data-id="${c.id}">${fotos[c.id] ? `<img src="${fotos[c.id]}" alt="">` : `<span class="cl-e">${esc(c.tk)}</span>`}<b>${esc(c.n)}</b><small>${f.ok ? "Verificada" : "Sin verificar"}</small></button>`
+            : `<button class="cl-card" data-act="cazaHint" data-id="${c.id}"><span class="cl-e">?</span><b>${esc(c.sec)}</b><small>Por descubrir</small></button>`; };
     return `<div class="cx-grid">
         <div>
-            <p class="cx-intro">Las empresas en las que invierte un fondo están en tu calle: la tienda donde compras ropa, el súper, tu compañía de móvil. Cuando pases por una, <b>cázala</b> y descubre cómo gana dinero y cómo podrías ser dueño de un trocito.</p>
-            <button class="btn cx-cta" data-act="calleCapture">Cazar una empresa</button>
-            <p class="small muted" style="margin-top:10px">Las fotos se quedan en tu móvil y no guardamos tu ubicación.</p>
-            <div class="row between" style="margin:30px 0 12px"><b>Tu álbum</b><span class="small muted">${got} de ${CALLE.length} sectores</span></div>
-            <div class="bar" style="margin-bottom:16px"><i style="width:${got / CALLE.length * 100}%"></i></div>
-            <div class="cl-album">${CALLE.map(c => { const a = st.album[c.id];
-                return a ? `<button class="cl-card got" data-act="calleOpen" data-id="${c.id}">${a.photo ? `<img src="${a.photo}" alt="">` : `<span class="cl-e">${cxCode(c.n)}</span>`}<b>${c.n}</b><small>${esc(a.brand || "Cazada")}</small></button>`
-                    : `<div class="cl-card"><span class="cl-e">?</span><b>${c.n}</b><small>Por descubrir</small></div>`; }).join("")}</div>
+            <p class="cx-intro">Las empresas de las que hablamos en Horizonte —las del IBEX 35, el S&amp;P 500…— están en tu calle. <b>Encuentra las que tienes cerca, hazles una foto</b> y gana puntos por descubrir cómo ganan dinero y cómo podrías ser dueño de un trocito.</p>
+            <div class="cz-stats">
+                <div class="cz-lv"><span class="cz-badge">${lv.i + 1}</span><div><b>${lv.name}</b><small>${k.pts} puntos${lv.next ? ` · ${lv.next - k.pts} para ser ${lv.nextName}` : " · nivel máximo"}</small></div></div>
+                <div class="bar"><i style="width:${lv.pct}%"></i></div>
+            </div>
+            ${cazaSearchHTML()}
+            <div class="row between" style="margin:34px 0 12px"><b>Tu álbum</b><span class="small muted">${got} de ${real.length} empresas</span></div>
+            <div class="cl-album">${real.map(card).join("")}</div>
+            <div class="row between" style="margin:30px 0 12px"><b>Famosas, pero no cotizan</b><span class="small muted">${gotT} de ${traps.length}</span></div>
+            <div class="cl-album">${traps.map(card).join("")}</div>
         </div>
-
+        <aside class="cz-how">
+            <p class="kicker">Cómo se juega</p>
+            <ol class="cx-list">
+                <li><b>Busca.</b> Te enseñamos qué empresas cotizadas hay a tu alrededor.</li>
+                <li><b>Acércate</b> a menos de ${CAZA_R} m y hazle una foto al local: puntos completos.</li>
+                <li><b>Aprende.</b> Cada carta cuenta cómo gana dinero esa empresa y cómo podrías tener un trocito.</li>
+            </ol>
+            <p class="kicker" style="margin-top:22px">Puntos</p>
+            <ul class="cx-list"><li>Muy común +10 · menos común +20 · rara +30.</li><li>Sin ubicación o sin verificar: la mitad.</li><li>Hay marcas famosas que no cotizan: también suman (+5) porque se aprende igual.</li></ul>
+            <p class="disclaim">Locales de OpenStreetMap. Para buscar se envía una ubicación aproximada (redondeada a unos 100 m) y no la guardamos. Las fotos se quedan en tu dispositivo. Es un juego para aprender, no una recomendación de inversión.</p>
+        </aside>
     </div>`;
 }
-function calleSheet(pre) {
-    cx.newCard = { sector: pre || null, photo: null };
-    openSheet(`<p class="kicker">Cazar una empresa</p><h2>¿Qué has encontrado?</h2>
-        <form data-form="calle" style="margin-top:18px" novalidate>
-            <label class="cl-photo" id="clPhotoLbl"><input type="file" accept="image/*" capture="environment" id="clPhoto" hidden><b>Hacer una foto</b><small>Opcional</small></label>
-            <div class="field"><label>Sector</label><div class="cl-pick">${CALLE.map(c => `<button type="button" class="${pre === c.id ? "on" : ""}" data-act="callePick" data-id="${c.id}">${c.n}</button>`).join("")}</div></div>
-            <div class="field"><label for="clBrand">¿Qué tienda era? (opcional)</label><input id="clBrand" name="brand" maxlength="30" placeholder="El nombre del sitio"></div>
-            <p class="err" hidden></p>
-            <button class="btn full">Añadir a mi álbum</button>
-        </form>`);
+
+/* ficha de un local: foto y puntos */
+function cazaSheet(p) {
+    const c = p.co, z = cx.caza, k = cxState().caza, had = k.found[c.id], pos = z.pos;
+    const real = !!(pos && !pos.fake && p.d != null), stale = real && Date.now() - pos.t > 600000;
+    const near = real && !stale && p.d <= CAZA_R + Math.min(pos.acc || 0, 60);
+    cx.pend = { id: c.id, ok: near, place: p.name || c.n };
+    const pr = had ? had.pts : 0, half = Math.ceil(c.pts / 2);
+    const lab = v => Math.max(0, v - pr) ? `+${Math.max(0, v - pr)} puntos` : "sin puntos nuevos";
+    const shot = (cls, txt) => `<label class="btn ${cls} cz-shot">${txt}<input type="file" accept="image/*" capture="environment" id="czPhoto" hidden></label>`;
+    const dirs = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}&travelmode=walking`;
+    let body;
+    if (stale) body = `<p class="note">Tu ubicación es de hace un rato. Actualízala para comprobar si estás junto al local.</p><button class="btn" data-act="cazaLocate">Actualizar mi ubicación</button>`;
+    else if (near) body = `<p class="note">Estás a ${cazaFmt(p.d)}: puedes cazarla con puntos completos.</p>${shot("", `Hacer una foto · ${lab(c.pts)}`)}`;
+    else if (real) body = `<p class="note">Estás a ${cazaFmt(p.d)}. Acércate a menos de ${CAZA_R} m del local para sumar los puntos completos.</p>
+        <div class="row"><a class="btn" href="${dirs}" target="_blank" rel="noopener">Cómo llegar</a>${shot("quiet", `Ya la vi: foto sin verificar · ${lab(half)}`)}</div>`;
+    else body = `<p class="note">${pos && pos.fake ? "Estás en una zona de ejemplo" : "Sin ubicación"}: la foto cuenta la mitad de puntos.</p>${shot("", `Hacer una foto · ${lab(half)}`)}`;
+    openSheet(`<p class="kicker">${esc(c.sec)} · ${c.no ? "No cotiza" : esc(c.tk)}</p><h2>${esc(c.n)}</h2>
+        <p class="muted">${esc(p.name || c.n)}${p.d != null ? ` · a ${cazaFmt(p.d)} de ti` : ""}</p>
+        ${had ? `<p class="small" style="margin-top:8px">Ya está en tu álbum (${had.ok ? "verificada" : "sin verificar"}, +${had.pts} puntos).</p>` : ""}
+        <div style="margin-top:16px">${body}</div>
+        <p class="small muted" style="margin-top:14px">La foto se queda en tu dispositivo.</p>`);
 }
-function calleReveal(c, a) {
-    openSheet(`<div class="cl-reveal">${a.photo ? `<img src="${a.photo}" alt="">` : `<span class="cl-e big">${cxCode(c.n)}</span>`}
-        <p class="kicker">${a.isNew ? "¡Nueva carta!" : "Tu carta"}</p><h2>${c.n}${a.brand ? ` · ${esc(a.brand)}` : ""}</h2></div>
-        <p style="margin:14px 0">${c.fact}</p>
-        <div class="note">¿Puedes ser dueño de un trocito? <b>Sí.</b> No hace falta comprar acciones sueltas: un fondo indexado de bolsa mundial o europea suele incluir empresas de ${c.n.toLowerCase()} junto a cientos de otras, desde pocos euros.</div>
+function cazaManualSheet() {
+    cx.pend = null;
+    openSheet(`<p class="kicker">Sin ubicación</p><h2>¿Qué empresa has visto?</h2>
+        <p class="muted">La foto cuenta la mitad de puntos porque no podemos comprobar dónde estás.</p>
+        <div class="cl-pick" style="margin-top:16px">${CAZA.map(c => `<button type="button" data-act="cazaPick" data-id="${c.id}">${esc(c.n)}</button>`).join("")}</div>`);
+}
+function cazaAward(c, { photo, ok, place }) {
+    const k = cxState().caza, had = k.found[c.id], before = cazaLevel(k.pts);
+    const earned = ok ? c.pts : Math.ceil(c.pts / 2), prev = had ? had.pts : 0, gain = Math.max(0, earned - prev);
+    k.found[c.id] = { t: Date.now(), pts: Math.max(prev, earned), ok: !!(ok || (had && had.ok)), n: (had ? had.n : 0) + 1, place: String(place || "").slice(0, 40) };
+    k.pts += gain;
+    cazaFotoSet(c.id, photo);
+    save();
+    const after = cazaLevel(k.pts);
+    cazaPaint();
+    cazaReveal(c, { gain, first: !had, up: after.i > before.i ? after : null });
+}
+function cazaReveal(c, o = {}) {
+    const f = cxState().caza.found[c.id], photo = cazaFotos()[c.id], meta = [c.sec, c.no ? "No cotiza" : c.tk, c.mk && c.mk.replace(/^la /, ""), c.idx].filter(Boolean).map(esc).join(" · ");
+    const gain = o.gain == null ? "" : o.gain > 0 ? `+${o.gain} puntos${f.ok ? "" : " · sin verificar (la mitad)"}` : "Ya la tenías: sin puntos nuevos";
+    const own = c.no
+        ? `¿Puedes ser dueño de un trocito? <b>No directamente.</b> No cotiza en bolsa, así que no hay acciones que comprar. Que una marca sea famosa no significa que puedas invertir en ella.`
+        : `¿Puedes ser dueño de un trocito? <b>Sí.</b> ${esc(c.co || c.n)} cotiza en ${c.mk}${c.tk && c.tk !== "—" ? ` (${esc(c.tk)})` : ""}. No hace falta comprar sus acciones sueltas: ${CAZA_OWN[c.reg]} la incluye junto a cientos de empresas más, desde pocos euros.`;
+    openSheet(`<div class="cl-reveal">${photo ? `<img src="${photo}" alt="">` : `<span class="cl-e big">${esc(c.tk)}</span>`}
+        <p class="kicker">${o.gain == null ? "Tu carta" : o.first ? "¡Nueva carta!" : "Otra vez por aquí"}</p><h2>${esc(c.n)}</h2>
+        ${gain ? `<p class="cz-gain">${gain}</p>` : ""}${o.up ? `<p class="cz-up">Subes a nivel ${esc(o.up.name)}</p>` : ""}</div>
+        <p class="small muted" style="text-align:center;margin-top:6px">${meta}</p>
+        <p style="margin:14px 0">${esc(c.fact)}</p>
+        <div class="note">${own}</div>
+        ${f && !f.ok && !c.no ? `<p class="small muted" style="margin-top:10px">Cázala de nuevo junto al local, con tu ubicación, para sumar la otra mitad.</p>` : ""}
         <div class="row" style="margin-top:20px"><button class="btn" data-act="closeSheet">Seguir cazando</button><a class="btn ghost" href="#/aprende">Qué es un fondo</a></div>`);
 }
 function shrinkPhoto(file) {
     return new Promise(res => {
         const img = new Image(), url = URL.createObjectURL(file);
         img.onload = () => {
-            const k = 240 / Math.max(img.width, img.height), cv = document.createElement("canvas");
-            cv.width = Math.round(img.width * Math.min(1, k)); cv.height = Math.round(img.height * Math.min(1, k));
+            const k = 220 / Math.max(img.width, img.height), cv = document.createElement("canvas");
+            cv.width = Math.max(1, Math.round(img.width * Math.min(1, k))); cv.height = Math.max(1, Math.round(img.height * Math.min(1, k)));
             cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
-            URL.revokeObjectURL(url); res(cv.toDataURL("image/jpeg", .7));
+            URL.revokeObjectURL(url); res(cv.toDataURL("image/jpeg", .65));
         };
-        img.onerror = () => res(null);
+        img.onerror = () => { URL.revokeObjectURL(url); res(null); };
         img.src = url;
     });
 }
 document.addEventListener("change", async e => {
-    if (e.target.id !== "clPhoto" || !e.target.files?.[0] || !cx.newCard) return;
-    cx.newCard.photo = await shrinkPhoto(e.target.files[0]);
-    const l = $("#clPhotoLbl");
-    if (l && cx.newCard.photo) l.innerHTML = `<img src="${cx.newCard.photo}" alt=""><b>Foto lista</b><small>Toca para cambiarla</small><input type="file" accept="image/*" capture="environment" id="clPhoto" hidden>`;
+    if (e.target.id !== "czPhoto" || !e.target.files?.[0] || !cx.pend) return;
+    const pend = cx.pend, c = cazaById(pend.id), photo = await shrinkPhoto(e.target.files[0]);
+    if (!photo) return toast("No hemos podido leer esa foto. Prueba con otra.");
+    cx.pend = null;
+    cazaAward(c, { photo, ok: pend.ok, place: pend.place });
 });
 
 /* ---------- Tu proyecto ---------- */
@@ -274,22 +544,18 @@ const CX_ACTIONS = {
     cxTab: el => { cx.tab = el.dataset.v; $$(".cx-tabs button").forEach(b => { const on = b.dataset.v === cx.tab; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); }); cxPaint(); if (cx.tab === "voz" && !cx.totals) loadVoz(); },
     vozVote: el => vozVote(el.dataset.v),
     vozReset: () => { cxState().votes = {}; cx.last = null; save(); cxPaint(); },
-    calleCapture: () => calleSheet(),
-    callePick: el => { if (cx.newCard) cx.newCard.sector = el.dataset.id; $$(".cl-pick button").forEach(b => b.classList.toggle("on", b === el)); },
-    calleOpen: el => { const c = CALLE.find(x => x.id === el.dataset.id); calleReveal(c, cxState().album[c.id]); },
+    cazaLocate: () => { closeSheet(); cazaLocate(); },
+    cazaDemo: () => { cx.caza.pos = { ...CAZA_DEMO, acc: 0, fake: true, t: Date.now() }; cazaSearch(); },
+    cazaOpen: el => { const p = cx.caza.places[+el.dataset.i]; if (p) cazaSheet(p); },
+    cazaManual: () => cazaManualSheet(),
+    cazaPick: el => { const c = cazaById(el.dataset.id); cazaSheet({ co: c, name: c.n, d: null, lat: 0, lon: 0 }); },
+    cazaAlbum: el => cazaReveal(cazaById(el.dataset.id)),
+    cazaHint: el => { const c = cazaById(el.dataset.id); toast(`Pista: busca ${c.where}. Vale ${c.pts} puntos.`, 5200); },
     pjEdit: () => pjForm(),
     pjAsk: el => pjConsent(PJ_PARTNERS.find(x => x.id === el.dataset.id)),
     pjSend: el => { cxState().requests[el.dataset.id] = { t: Date.now() }; save(); closeSheet(); cxPaint(); toast("Resumen enviado. Si le encaja, te responderá aquí."); }
 };
 const CX_FORMS = {
-    calle: form => {
-        const n = cx.newCard;
-        if (!n?.sector) return formErr(form, "Elige el sector de lo que has encontrado.");
-        const st = cxState(), c = CALLE.find(x => x.id === n.sector), isNew = !st.album[c.id];
-        st.album[c.id] = { t: Date.now(), brand: String(new FormData(form).get("brand") || "").trim().slice(0, 30), photo: n.photo || st.album[c.id]?.photo || null };
-        save(); cx.newCard = null; cxPaint();
-        calleReveal(c, { ...st.album[c.id], isNew });
-    },
     pj: form => {
         const f = new FormData(form), title = String(f.get("title") || "").trim(), sector = f.get("sector"), desc = String(f.get("desc") || "").trim();
         if (!title) return formErr(form, "Ponle un nombre a tu proyecto.");

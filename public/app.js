@@ -124,7 +124,7 @@ const CATS = {
     vivienda: "Vivienda", viaje: "Viajes", formacion: "Formación", emergencia: "Colchón de emergencia",
     vehiculo: "Vehículo", tecnologia: "Tecnología", independencia: "Independencia financiera", otro: "Otro objetivo"
 };
-const blank = () => ({ v: 3, goals: [], lessons: [], quiz: null, tests: [], budget: null, courses: {}, flags: {} });
+const blank = () => ({ v: 3, goals: [], lessons: [], quiz: null, tests: [], budget: null, courses: {}, account: { balance: null, log: [] }, flags: {} });
 function normalize(s) {
     const b = blank();
     if (!s || typeof s !== "object") return b;
@@ -134,6 +134,7 @@ function normalize(s) {
         lessons: Array.isArray(s.lessons) ? s.lessons : [],
         tests: Array.isArray(s.tests) ? s.tests : [],
         courses: s.courses && typeof s.courses === "object" ? s.courses : {},
+        account: { balance: typeof s.account?.balance === "number" ? s.account.balance : null, log: Array.isArray(s.account?.log) ? s.account.log : [] },
         flags: s.flags && typeof s.flags === "object" ? s.flags : {}
     };
 }
@@ -204,14 +205,14 @@ function mondayKey(d) {
     return isoDate(x);
 }
 function weekStreak() {
-    const weeks = new Set(S.goals.flatMap(g => g.contribs.map(c => mondayKey(c.date))));
+    const weeks = new Set(S.goals.flatMap(g => g.contribs.filter(c => c.amount > 0).map(c => mondayKey(c.date))));
     const cursor = new Date(mondayKey(isoDate()) + "T12:00:00");
     if (!weeks.has(isoDate(cursor))) cursor.setDate(cursor.getDate() - 7); // la semana en curso aún está abierta
     let n = 0;
     while (weeks.has(isoDate(cursor))) { n++; cursor.setDate(cursor.getDate() - 7); }
     return n;
 }
-const contributedThisWeek = () => S.goals.some(g => g.contribs.some(c => mondayKey(c.date) === mondayKey(isoDate())));
+const contributedThisWeek = () => S.goals.some(g => g.contribs.some(c => c.amount > 0 && mondayKey(c.date) === mondayKey(isoDate())));
 const MILESTONES = [
     { name: "Primer objetivo definido", on: () => S.goals.length > 0 },
     { name: "Primera aportación registrada", on: () => totalSaved() > 0 },
@@ -544,7 +545,7 @@ function viewResumen() {
     <section class="section" id="s-hoy"><div class="sec-head"><div><h2>Hoy en Horizonte</h2></div></div>
         <div class="today-grid">
             <a class="t-card" href="#/aprende"><span class="t-lbl">Aprende · cursos</span><b>${coursesDone() ? `${coursesDone()} de ${COURSES.length} cursos completados` : "Empieza tu primer curso"}</b><span>${due ? `${due} tarjeta${due === 1 ? "" : "s"} por repasar.` : "Teoría, mates, gráficas y un test."}</span><i>${ARROW}</i></a>
-            <a class="t-card" href="#/aguanta"><span class="t-lbl">Juegos · reto #${gDayNo()}</span><b>${g.aguanta.day === t ? "Aguanta: ya jugado" : "¿Aguantarías la caída?"}</b><span>Diez años de bolsa en un minuto.</span><i>${ARROW}</i></a>
+            <a class="t-card" href="#/noticia"><span class="t-lbl">Juegos · reto #${gDayNo()}</span><b>${g.noticia.day === t ? "Noticia al vuelo: ya jugado" : "¿Sabes cómo acabó ese año?"}</b><span>Un titular, siete segundos y a competir con tus amigos.</span><i>${ARROW}</i></a>
             <a class="t-card" href="#/conecta"><span class="t-lbl">Conecta · tu voz</span><b>${vozLeft ? `${vozLeft} propuesta${vozLeft === 1 ? "" : "s"} esperan tu opinión` : "Ya has opinado en todo"}</b><span>Di qué harías tú en las empresas.</span><i>${ARROW}</i></a>
         </div>
     </section>`;
@@ -561,16 +562,44 @@ function goalCard(g) {
             <div><dt>Avance</dt><dd>${pct(Math.round(p * 10) / 10)}</dd></div>
             <div><dt>${isDone(g) ? "Estado" : need > g.monthly ? "Necesario (5 % hip.)" : "Fecha estimada"}</dt><dd>${isDone(g) ? "Completado" : need > g.monthly ? `${fmt(roundUp5(need))}/mes` : etaLabel(monthsToReach(g, 0))}</dd></div>
         </dl>
-        <div class="acts"><button class="btn sm" data-act="contribute" data-id="${g.id}">Aportar</button>
+        <div class="acts"><button class="btn sm" data-act="contribute" data-id="${g.id}">${acctOn() ? "Apartar dinero" : "Aportar"}</button>
+            ${acctOn() && saved(g) > 0 ? `<button class="link" data-act="returnMoney" data-id="${g.id}">Devolver</button>` : ""}
             <button class="link" data-act="goalDetail" data-id="${g.id}">Detalle</button>
             <button class="link" data-act="simGoal" data-id="${g.id}">Proyectar</button></div>
     </article>`;
 }
 
+/* ---- Tu dinero: cuenta principal y dinero apartado en objetivos ----
+   Saldo de demostración que indica la persona. Al aportar a un objetivo el dinero sale de la cuenta
+   y se puede devolver cuando quiera; en una versión real el saldo vendría del banco (Open Banking). */
+const acct = () => (S.account && typeof S.account === "object" ? S.account : (S.account = { balance: null, log: [] }));
+const acctOn = () => typeof acct().balance === "number";
+const cents = n => Math.round(n * 100) / 100;
+function acctMove(kind, amount, note = "", goalId = null) {
+    const a = acct();
+    a.balance = cents((a.balance || 0) + amount);
+    a.log = [{ id: uid(), date: isoDate(), kind, amount: cents(amount), note, goalId }, ...(a.log || [])].slice(0, 150);
+}
+function moneyPanel() {
+    const held = totalSaved();
+    if (!acctOn()) return `<section class="money" id="m-panel"><div class="mp-copy"><p class="kicker">Tu dinero</p><h3>Conecta tu dinero con tus objetivos</h3>
+        <p class="muted">Indica cuánto tienes en tu cuenta principal. Cada vez que apartes dinero para un objetivo saldrá de ahí y, si cambias de planes, puedes devolverlo cuando quieras.</p>
+        <p class="small muted mp-note">Saldo de demostración: en una versión real se conectaría con tu banco.</p></div>
+        <div class="row"><button class="btn" data-act="acctSet">Indicar mi saldo ${ARROW}</button></div></section>`;
+    const a = acct();
+    return `<section class="money" id="m-panel"><div class="mp-head"><div><p class="kicker">Tu dinero</p><strong class="mp-total money">${fmtR(a.balance + held)}</strong></div>
+        <div class="row"><button class="btn sm" data-act="acctDeposit">Ingresar dinero</button><button class="btn sm ghost" data-act="acctSet">Ajustar saldo</button><button class="link" data-act="acctLog">Movimientos</button></div></div>
+        <div class="mp-bar" aria-hidden="true"><i class="free" style="flex:${Math.max(a.balance, 0)}"></i><i class="held" style="flex:${Math.max(held, 0)}"></i></div>
+        <dl class="mp-legend"><div><dt><i class="free"></i>Disponible en tu cuenta</dt><dd class="money">${fmt(a.balance)}</dd></div><div><dt><i class="held"></i>Apartado en objetivos</dt><dd class="money">${fmt(held)}</dd></div></dl>
+        <p class="small muted mp-note">Saldo de demostración: en una versión real se conectaría con tu banco. Lo apartado siempre puede volver a tu cuenta.</p></section>`;
+}
+const ACCT_KIND = { ingreso: "Ingreso", ajuste: "Ajuste de saldo", aporte: "Apartado para un objetivo", retirada: "Devuelto a tu cuenta" };
+
 function viewObjetivos() {
     return `<section class="section"><div class="sec-head"><div><p class="kicker">Objetivos</p><h2 class="page-title">Para qué estás ahorrando</h2>
-        <p>Registra tus aportaciones reales. El seguimiento de lo aportado y las proyecciones se muestran siempre por separado.</p></div>
+        <p>Aparta dinero de tu cuenta para cada meta y sigue cómo avanza. Si al final no lo haces, lo devuelves a tu cuenta cuando quieras.</p></div>
         <button class="btn" data-act="newGoal">Nuevo objetivo ${ARROW}</button></div>
+    ${moneyPanel()}
     ${S.goals.length ? `<div class="cols c3">${S.goals.map(goalCard).join("")}</div>`
         : `<div class="empty"><h3>Todavía no has definido ningún objetivo</h3><p class="muted">Parte de una propuesta o crea uno a medida.</p>
         <div class="tpl">${TEMPLATES.map((t, i) => `<button data-act="tpl" data-i="${i}"><span class="goal-cat">${CATS[t.category]}</span><b>${esc(t.name)}</b><small>${fmt(t.target)} · ${t.years} año${t.years === 1 ? "" : "s"}</small></button>`).join("")}</div></div>`}
@@ -708,16 +737,15 @@ function drawSim() {
 
 /* ---- Círculo ---- */
 let circ = { list: null, err: null, timer: null, last: "" };
-const resetCirc = () => { clearInterval(circ.timer); circ = { list: null, err: null, timer: null, last: "" }; };
+const resetCirc = () => { socReset(); gamesReset(); clearInterval(circ.timer); circ = { list: null, err: null, timer: null, last: "" }; };
 
 function viewCirculo() {
     const head = `<section class="section"><div class="sec-head"><div><p class="kicker">Círculo</p><h2 class="page-title">Ahorrad juntos para lo mismo</h2>
         <p>Fija una meta común con amigos o familia e invítalos con un código. Cada participante solo comparte lo que decide aportar a ese objetivo.</p></div>
-        ${user && !SB ? `<div class="row"><button class="btn line" data-act="joinCircle">Unirme con código</button><button class="btn" data-act="newCircle">Crear círculo</button></div>` : ""}</div>`;
+        ${user ? `<div class="row"><button class="btn line" data-act="joinCircle">Unirme con código</button><button class="btn" data-act="newCircle">Crear círculo</button></div>` : ""}</div>`;
     const privacy = `<div class="panel tint" style="margin-top:24px"><p class="kicker">Privacidad</p><p class="muted">Nadie puede ver ni gestionar tus inversiones. El círculo comparte únicamente el objetivo común y las aportaciones que cada persona decide registrar en él.</p></div>`;
     let body;
     if (!user) body = `<div class="empty"><h3>Accede para crear o unirte a un círculo</h3><p class="muted" style="margin-bottom:24px">Los círculos requieren una cuenta para compartir el progreso entre participantes.</p><button class="btn" data-act="auth">Acceder ${ARROW}</button></div>`;
-    else if (SB) body = `<div class="empty"><h3>Los círculos aún no están disponibles</h3><p class="muted">Con las cuentas en la nube, los círculos compartidos todavía no funcionan: necesitan el servidor propio de Horizonte. Todo lo demás de tu perfil sí se guarda y se sincroniza.</p></div>`;
     else if (circ.err) body = `<div class="err">${esc(circ.err)}</div>`;
     else if (!circ.list) body = `<p class="muted">Cargando…</p>`;
     else if (!circ.list.length) body = `<div class="empty"><h3>Aún no participas en ningún círculo</h3><p class="muted">Crea uno o únete con el código que te hayan facilitado.</p></div>`;
@@ -743,9 +771,8 @@ function circleCard(c) {
 }
 async function loadCircles(force = false) {
     if (!user) return;
-    if (SB) return; // con cuentas en la nube los círculos no están disponibles: la vista lo explica sin pedir nada
     try {
-        const { circles } = await api("/circles");
+        const { circles } = await circApi.list();
         const sig = JSON.stringify(circles);
         circ.err = null;
         if (force || sig !== circ.last || !circ.list) { circ.list = circles; circ.last = sig; if (route() === "circulo" && !$(".sheet")) render(false); }
@@ -1078,8 +1105,8 @@ const MENU = {
         cols: () => [["Enlaces rápidos", [{ t: "Nuevo objetivo", act: "newGoal" }, { t: "Ver escenarios", go: "simulador" }, { t: "Hablar con el asistente", act: "coach" }]]] },
     aprende: { name: "Aprende", main: [{ t: "Cursos", go: "aprende", sec: "a-cursos" }, { t: "Práctica de hoy", go: "practica" }],
         cols: () => [["Por niveles", LEVELS.map(l => ({ t: `Nivel ${l.n} · ${l.name}`, go: "aprende", sec: `lv-${l.n}` }))]] },
-    juegos: { name: "Juegos", main: [{ t: "Aguanta", go: "aguanta" }, { t: "Silueta", go: "silueta" }, { t: "Más o menos", go: "masomenos" }, { t: "Draft Night", go: "draft" }],
-        cols: () => [["Enlaces rápidos", [{ t: "Todos los juegos", go: "juegos" }, { t: "Retos diarios", go: "juegos" }]]] },
+    juegos: { name: "Juegos", main: [{ t: "Noticia al vuelo", go: "noticia" }, { t: "Silueta", go: "silueta" }, { t: "Más o menos", go: "masomenos" }, { t: "Draft Night", go: "draft" }],
+        cols: () => [["Compite", [{ t: "Liga de amigos", go: "juegos", sec: "liga" }, { t: "Todos los juegos", go: "juegos" }]]] },
     conecta: { name: "Conecta", main: [{ t: "Tu voz", go: "conecta", tab: "voz" }, { t: "Tu calle", go: "conecta", tab: "calle" }, { t: "Tu proyecto", go: "conecta", tab: "proyecto" }],
         cols: () => [["Qué es cada una", [{ t: "Vota propuestas de empresas", go: "conecta", tab: "voz" }, { t: "Descubre empresas cerca de ti", go: "conecta", tab: "calle" }, { t: "Encuentra apoyo para tu idea", go: "conecta", tab: "proyecto" }]]] },
     objetivos: { name: "Objetivos", main: [{ t: "Tus objetivos", go: "objetivos" }, { t: "Simulador", go: "simulador" }, { t: "Datos de mercado", go: "simulador", sec: "s-mercado" }],
@@ -1161,6 +1188,7 @@ function render(animate = true) {
     if (r === "practica") mountPulse();
     if (r === "curso") mountCurso();
     GAME_MOUNT[r]?.();
+    if (r === "juegos") ligaMount();
     if (r === "conecta") mountConecta();
     paintLocalNav(r);
     if (pendingSec) { const id = pendingSec; pendingSec = null; requestAnimationFrame(() => goSec(id)); }
@@ -1202,27 +1230,57 @@ const ACTIONS = {
     },
     editGoal: el => openSheet(goalForm(find(el.dataset.id))),
     deleteGoal: el => {
-        const g = find(el.dataset.id);
-        if (!confirm(`¿Eliminar «${g.name}» y todas sus aportaciones? Esta acción no se puede deshacer.`)) return;
-        S.goals = S.goals.filter(x => x !== g); save(); closeSheet(); render(false); toast("Objetivo eliminado.");
+        const g = find(el.dataset.id), held = Math.max(0, saved(g)), back = acctOn() && held > 0;
+        if (!confirm(back ? `¿Eliminar «${g.name}»? Los ${fmt(held)} apartados volverán a tu cuenta principal.` : `¿Eliminar «${g.name}» y todas sus aportaciones? Esta acción no se puede deshacer.`)) return;
+        if (back) acctMove("retirada", held, `Objetivo «${g.name}» eliminado`, g.id);
+        S.goals = S.goals.filter(x => x !== g); save(); closeSheet(); render(false); toast(back ? `Objetivo eliminado. ${fmt(held)} vuelven a tu cuenta.` : "Objetivo eliminado.");
     },
 
     contribute: el => {
-        const g = find(el.dataset.id);
-        const sug = [...new Set([g.monthly > 0 ? g.monthly : null, 25, 50, 100, 250].filter(Boolean))].slice(0, 4);
-        openSheet(`<p class="kicker">Registrar aportación</p><h2>${esc(g.name)}</h2>
-        <p class="muted">Acumulado: ${fmt(saved(g))} de ${fmt(g.target)}.</p>
+        const g = find(el.dataset.id), on = acctOn(), av = on ? acct().balance : null;
+        const sug = [...new Set([g.monthly > 0 ? g.monthly : null, 25, 50, 100, 250].filter(v => v && (!on || v <= av)))].slice(0, 4);
+        openSheet(`<p class="kicker">${on ? "Apartar dinero" : "Registrar aportación"}</p><h2>${esc(g.name)}</h2>
+        <p class="muted">Acumulado: ${fmt(saved(g))} de ${fmt(g.target)}.${on ? ` Disponible en tu cuenta: <b>${fmt(av)}</b>.` : ""}</p>
+        ${on ? "" : `<p class="small muted" style="margin-top:6px">¿Quieres que salga de tu cuenta principal? <button class="link" data-act="acctSet">Indica tu saldo</button> y podrás apartar y devolver dinero.</p>`}
         <form data-form="contrib" style="margin-top:24px" novalidate><input type="hidden" name="id" value="${g.id}">
             <div class="opts">${sug.map(v => `<button type="button" data-act="quickAmt" data-v="${v}">${fmt(v)}</button>`).join("")}</div>
-            <div class="field"><label for="cAmt">Importe (€)</label><input id="cAmt" name="amount" type="number" min="0.01" step="0.01" required></div>
-            <div class="field"><label for="cNote">Concepto (opcional)</label><input id="cNote" name="note" maxlength="60" placeholder="Ej. nómina de octubre"></div>
-            <p class="err" hidden></p><button class="btn full" type="submit">Registrar</button></form>`);
+            <div class="field"><label for="cAmt">Importe (€)</label><input id="cAmt" name="amount" type="number" min="0.01" ${on ? `max="${av}"` : ""} step="0.01" required></div>
+            <div class="field"><label for="cNote">Concepto (opcional)</label><input id="cNote" name="note" maxlength="60" placeholder="${on ? "Ej. lo que sobró de la nómina" : "Ej. nómina de octubre"}"></div>
+            <p class="err" hidden></p><button class="btn full" type="submit">${on ? "Apartar" : "Registrar"}</button></form>`);
+    },
+    returnMoney: el => {
+        const g = find(el.dataset.id), held = Math.max(0, cents(saved(g)));
+        openSheet(`<p class="kicker">Devolver a tu cuenta</p><h2>${esc(g.name)}</h2>
+        <p class="muted">Tienes <b>${fmt(held)}</b> apartados para este objetivo. Lo que devuelvas vuelve a tu cuenta principal al instante.</p>
+        <form data-form="ret" style="margin-top:24px" novalidate><input type="hidden" name="id" value="${g.id}">
+            <div class="opts"><button type="button" data-act="quickAmt" data-v="${held}">Todo · ${fmt(held)}</button>${held >= 20 ? `<button type="button" data-act="quickAmt" data-v="${cents(held / 2)}">La mitad · ${fmt(held / 2)}</button>` : ""}</div>
+            <div class="field"><label for="cAmt">Importe a devolver (€)</label><input id="cAmt" name="amount" type="number" min="0.01" max="${held}" step="0.01" value="${held}" required></div>
+            <p class="err" hidden></p><button class="btn full" type="submit">Devolver a mi cuenta</button></form>`);
+    },
+    acctSet: () => openSheet(`<p class="kicker">Tu dinero</p><h2>${acctOn() ? "Ajustar saldo" : "Indica tu saldo"}</h2>
+        <p class="muted">¿Cuánto tienes ahora en tu cuenta principal? Lo que apartes para tus objetivos saldrá de aquí. Es un saldo de demostración que solo ves tú.</p>
+        <form data-form="acct" style="margin-top:24px" novalidate><input type="hidden" name="mode" value="set">
+            <div class="field"><label for="aAmt">Saldo de tu cuenta principal (€)</label><input id="aAmt" name="amount" type="number" min="0" step="0.01" value="${acctOn() ? acct().balance : ""}" placeholder="1.500" required></div>
+            <p class="err" hidden></p><button class="btn full" type="submit">Guardar saldo</button></form>`),
+    acctDeposit: () => openSheet(`<p class="kicker">Tu dinero</p><h2>Ingresar dinero</h2>
+        <p class="muted">Suma a tu cuenta principal lo que cobras o te ingresan.</p>
+        <form data-form="acct" style="margin-top:24px" novalidate><input type="hidden" name="mode" value="deposit">
+            <div class="field"><label for="aAmt">Importe (€)</label><input id="aAmt" name="amount" type="number" min="0.01" step="0.01" required></div>
+            <div class="field"><label for="aNote">Concepto (opcional)</label><input id="aNote" name="note" maxlength="60" placeholder="Ej. nómina"></div>
+            <p class="err" hidden></p><button class="btn full" type="submit">Ingresar</button></form>`),
+    acctLog: () => {
+        const log = acct().log || [];
+        openSheet(`<p class="kicker">Tu dinero</p><h2>Movimientos de tu cuenta</h2>
+        ${log.length ? `<div class="tbl-wrap" style="max-height:340px;overflow:auto;margin-top:16px"><table class="tbl"><thead><tr><th>Fecha</th><th>Movimiento</th><th class="r">Importe</th></tr></thead><tbody>
+            ${log.map(m => `<tr><td>${longDate(m.date)}</td><td>${ACCT_KIND[m.kind] || "Movimiento"}${m.note ? `<br><span class="muted small">${esc(m.note)}</span>` : ""}</td><td class="r"><b class="${m.amount < 0 ? "neg" : "pos"}">${m.amount > 0 ? "+" : ""}${fmt(m.amount)}</b></td></tr>`).join("")}</tbody></table></div>`
+            : `<p class="muted" style="margin-top:16px">Todavía no hay movimientos.</p>`}`);
     },
     quickAmt: el => { $("#cAmt").value = el.dataset.v; $$(".opts button").forEach(b => b.classList.toggle("on", b === el)); },
     goalDetail: el => showDetail(el.dataset.id),
     delContrib: el => {
-        const g = find(el.dataset.id);
-        g.contribs = g.contribs.filter(c => c.id !== el.dataset.cid);
+        const g = find(el.dataset.id), c = g.contribs.find(x => x.id === el.dataset.cid);
+        if (c?.acct && acctOn()) acctMove("ajuste", c.amount, `Anulado: ${c.note || g.name}`, g.id); // la anulación devuelve el movimiento a la cuenta
+        g.contribs = g.contribs.filter(x => x.id !== el.dataset.cid);
         save(); showDetail(g.id); render(false);
     },
     simGoal: el => {
@@ -1248,6 +1306,7 @@ const ACTIONS = {
             mk("viaje", "Viaje a Japón", 3000, YEAR + 1, 150, [[40, 400], [20, 150], [3, 150]]),
             mk("emergencia", "Colchón de emergencia", 3000, YEAR + 2, 125, [[30, 500], [9, 125]])
         );
+        if (!acctOn()) acct().balance = 1850;
         save(); closeSheet(); render(false); toast("Datos de demostración cargados.");
     },
     reset: () => {
@@ -1284,7 +1343,7 @@ const ACTIONS = {
     },
     leaveCircle: async el => {
         if (!confirm("¿Abandonar este círculo?")) return;
-        try { await api(`/circles/${el.dataset.code}/leave`, { method: "POST", body: {} }); await loadCircles(true); toast("Has abandonado el círculo."); }
+        try { await circApi.leave(el.dataset.code); await loadCircles(true); toast("Has abandonado el círculo."); }
         catch (e) { toast(e.message); }
     },
 
@@ -1329,6 +1388,7 @@ const ACTIONS = {
     coach: () => coachSheet(),
     coachChip: el => sendCoach(el.dataset.q),
     ...GAME_ACTIONS,
+    ...ARCADE_ACTIONS,
     ...CX_ACTIONS,
     ...COURSE_ACTIONS
 };
@@ -1344,9 +1404,9 @@ function showDetail(id) {
         <div class="fact" style="padding:16px 0 16px 12px;border-top:0"><span>Mensual</span><strong style="font-size:24px">${fmt(g.monthly)}</strong></div></div>
     <p class="kicker" style="margin-top:8px">Movimientos</p>
     ${hist.length ? `<div class="tbl-wrap" style="max-height:260px;overflow:auto"><table class="tbl"><thead><tr><th>Fecha</th><th>Concepto</th><th class="r">Importe</th><th class="r"></th></tr></thead><tbody>
-        ${hist.map(c => `<tr><td>${longDate(c.date)}</td><td class="muted">${esc(c.note) || "—"}</td><td class="r"><b>${fmt(c.amount)}</b></td><td class="r"><button class="x" data-act="delContrib" data-id="${g.id}" data-cid="${c.id}">Anular</button></td></tr>`).join("")}</tbody></table></div>`
+        ${hist.map(c => `<tr><td>${longDate(c.date)}</td><td class="muted">${esc(c.note) || "—"}</td><td class="r"><b>${fmt(c.amount)}</b></td><td class="r">${c.acct ? "" : `<button class="x" data-act="delContrib" data-id="${g.id}" data-cid="${c.id}">Anular</button>`}</td></tr>`).join("")}</tbody></table></div>`
         : `<p class="muted">Todavía no hay aportaciones registradas.</p>`}
-    <div class="row" style="margin-top:28px;gap:20px"><button class="btn sm" data-act="contribute" data-id="${g.id}">Aportar</button>
+    <div class="row" style="margin-top:28px;gap:20px"><button class="btn sm" data-act="contribute" data-id="${g.id}">${acctOn() ? "Apartar dinero" : "Aportar"}</button>${acctOn() && saved(g) > 0 ? `<button class="link" data-act="returnMoney" data-id="${g.id}">Devolver a mi cuenta</button>` : ""}
         <button class="link" data-act="editGoal" data-id="${g.id}">Editar</button>
         <button class="link neg" data-act="deleteGoal" data-id="${g.id}">Eliminar</button></div>`);
 }
@@ -1490,14 +1550,31 @@ const FORMS = {
         save(); closeSheet(); render(false);
     },
     contrib: form => {
-        const f = new FormData(form), amount = Math.round(+f.get("amount") * 100) / 100, g = find(f.get("id"));
+        const f = new FormData(form), amount = cents(+f.get("amount")), g = find(f.get("id")), on = acctOn();
         if (!(amount > 0) || amount > 1e7) return formErr(form, "Introduce un importe válido.");
-        const before = progress(g);
-        g.contribs.push({ id: uid(), amount, date: isoDate(), note: String(f.get("note")).trim() });
+        if (on && amount > acct().balance) return formErr(form, `Solo tienes ${fmt(acct().balance)} disponibles en tu cuenta principal.`);
+        const before = progress(g), note = String(f.get("note")).trim();
+        g.contribs.push({ id: uid(), amount, date: isoDate(), note: note || (on ? "Desde tu cuenta" : ""), ...(on ? { acct: true } : {}) });
+        if (on) acctMove("aporte", -amount, `${g.name}${note ? ` · ${note}` : ""}`, g.id);
         save();
         const after = progress(g), hit = [100, 75, 50, 25].find(m => before < m && after >= m);
         closeSheet(); render(false);
-        toast(hit === 100 ? `Objetivo «${g.name}» alcanzado.` : hit ? `«${g.name}» supera el ${hit} % de avance.` : `Aportación de ${fmt(amount)} registrada.`, hit ? 5000 : 3600);
+        toast(hit === 100 ? `Objetivo «${g.name}» alcanzado.` : hit ? `«${g.name}» supera el ${hit} % de avance.` : on ? `${fmt(amount)} apartados para «${g.name}».` : `Aportación de ${fmt(amount)} registrada.`, hit ? 5000 : 3600);
+    },
+    ret: form => {
+        const f = new FormData(form), g = find(f.get("id")), held = Math.max(0, cents(saved(g))), amount = cents(+f.get("amount"));
+        if (!(amount > 0)) return formErr(form, "Introduce un importe válido.");
+        if (amount > held) return formErr(form, `Solo hay ${fmt(held)} apartados en este objetivo.`);
+        g.contribs.push({ id: uid(), amount: -amount, date: isoDate(), note: "Devuelto a tu cuenta", acct: true });
+        acctMove("retirada", amount, g.name, g.id);
+        save(); closeSheet(); render(false); toast(`${fmt(amount)} vuelven a tu cuenta principal.`);
+    },
+    acct: form => {
+        const f = new FormData(form), mode = f.get("mode"), v = cents(+f.get("amount"));
+        if (!(v >= 0) || v > 1e9 || (mode === "deposit" && !(v > 0))) return formErr(form, "Introduce un importe válido.");
+        if (mode === "set") { const d = cents(v - (acctOn() ? acct().balance : 0)); acct().balance = v; acct().log = [{ id: uid(), date: isoDate(), kind: "ajuste", amount: d, note: acctOn() ? "Saldo ajustado" : "Saldo indicado", goalId: null }, ...(acct().log || [])].slice(0, 150); }
+        else acctMove("ingreso", v, String(f.get("note") || "").trim());
+        save(); closeSheet(); render(false); toast(mode === "set" ? "Saldo guardado." : `${fmt(v)} ingresados en tu cuenta.`);
     },
     login: async form => {
         const f = new FormData(form);
@@ -1517,25 +1594,26 @@ const FORMS = {
     circle: async form => {
         const f = new FormData(form);
         try {
-            await api("/circles", { method: "POST", body: { name: f.get("name"), target: f.get("target"), category: f.get("category") } });
+            await circApi.create({ name: f.get("name"), target: f.get("target"), category: f.get("category") });
             S.flags.circle = true; save(); closeSheet(); await loadCircles(true); toast("Círculo creado. Comparte el código para invitar a otros participantes.");
         } catch (e) { formErr(form, e.message); }
     },
     join: async form => {
         try {
-            await api("/circles/join", { method: "POST", body: { code: new FormData(form).get("code") } });
+            await circApi.join(new FormData(form).get("code"));
             S.flags.circle = true; save(); closeSheet(); await loadCircles(true); toast("Te has unido al círculo.");
         } catch (e) { formErr(form, e.message); }
     },
     circleContrib: async form => {
         const f = new FormData(form);
         try {
-            await api(`/circles/${f.get("code")}/contribute`, { method: "POST", body: { amount: f.get("amount") } });
+            await circApi.contribute(f.get("code"), f.get("amount"));
             closeSheet(); await loadCircles(true); toast("Aportación al círculo registrada.");
         } catch (e) { formErr(form, e.message); }
     },
     coach: form => { const i = form.elements.message; const t = i.value; i.value = ""; sendCoach(t); },
     ...GAME_FORMS,
+    ...ARCADE_FORMS,
     ...CX_FORMS
 };
 

@@ -1,11 +1,11 @@
 "use strict";
 /* Horizonte · Juegos
-   Cuatro minijuegos cortos con datos reales aproximados y dinero ficticio:
-   - Aguanta (diario): una gráfica avanza en directo; mantén pulsado para seguir invertido.
-   - Silueta (diario): adivina qué inversión es por la forma de su gráfica.
-   - Más o menos (infinito): ¿qué rinde más? Encadena aciertos.
-   - Draft Night (con amigos): elegid cartas por turnos y jugad una década secreta.
-   Se carga antes que app.js: las utilidades de app.js ($, S, save, fmtR, today…) solo se usan dentro de funciones. */
+   Cuatro juegos con datos reales aproximados y dinero ficticio, pensados para competir con amigos:
+   - Noticia al vuelo (diario): un titular real, siete segundos, ¿la bolsa acabó ese año arriba o abajo?
+   - Silueta (diario): adivina qué inversión es por la forma de su gráfica, contrarreloj.
+   - Más o menos (semanal, sin fin): ¿cuál rindió más? Cada vez con menos tiempo.
+   - Draft Night (con amigos): elegid cartas por turnos y jugad una década secreta; online con código de sala.
+   El reloj, los combos y la liga de amigos están en arcade.js. Se carga antes que app.js: las utilidades de app.js ($, S, save, fmtR, today…) solo se usan dentro de funciones. */
 
 /* =========================================================
    Datos: rentabilidades anuales aproximadas 2000-2024 (%, moneda local, ilustrativas)
@@ -113,7 +113,7 @@ const gDayNo = () => today() - 20700; // número del reto diario
 function gState() {
     if (!S.games || typeof S.games !== "object") S.games = {};
     const g = S.games;
-    g.days ||= []; g.aguanta ||= {}; g.silueta ||= {}; g.mm ||= { best: 0, played: 0 }; g.draft ||= { played: 0 };
+    g.days ||= []; g.noticia ||= {}; g.silueta ||= {}; g.mm ||= { best: 0, played: 0 }; g.draft ||= { played: 0 };
     return g;
 }
 function gMarkDay() { const g = gState(), t = today(); if (!g.days.includes(t)) g.days = [...g.days, t].slice(-120); }
@@ -149,196 +149,51 @@ const gRoot = () => $("#gRoot");
 ========================================================= */
 function viewJuegos() {
     const g = gState(), t = today();
-    const ag = g.aguanta.day === t ? g.aguanta : null, si = g.silueta.day === t ? g.silueta : null;
-    const G_ART = {"aguanta": "<polyline points=\"4,46 18,34 28,40 42,18 52,26 66,8\" /><circle cx=\"66\" cy=\"8\" r=\"4\" />", "silueta": "<path d=\"M4 48 L4 34 L16 28 L26 36 L38 16 L50 24 L66 10 L66 48 Z\" />", "masomenos": "<path d=\"M14 30 L26 10 L38 30 Z\" /><path d=\"M34 22 L46 42 L58 22 Z\" />", "draft": "<rect x=\"8\" y=\"12\" width=\"26\" height=\"36\" rx=\"2\" transform=\"rotate(-10 21 30)\" /><rect x=\"24\" y=\"8\" width=\"26\" height=\"36\" rx=\"2\" /><rect x=\"40\" y=\"12\" width=\"26\" height=\"36\" rx=\"2\" transform=\"rotate(10 53 30)\" />"};
+    const nwd = g.noticia.day === t ? g.noticia : null, si = g.silueta.day === t ? g.silueta : null;
+    const G_ART = {
+        noticia: '<rect x="8" y="8" width="54" height="36" rx="3" /><path d="M16 18h30M16 26h38M16 34h22" />',
+        silueta: '<path d="M4 48 L4 34 L16 28 L26 36 L38 16 L50 24 L66 10 L66 48 Z" />',
+        masomenos: '<path d="M14 30 L26 10 L38 30 Z" /><path d="M34 22 L46 42 L58 22 Z" />',
+        draft: '<rect x="8" y="12" width="26" height="36" rx="2" transform="rotate(-10 21 30)" /><rect x="24" y="8" width="26" height="36" rx="2" /><rect x="40" y="12" width="26" height="36" rx="2" transform="rotate(10 53 30)" />'
+    };
     const tiles = [
-        { id: "aguanta", e: "✋", badge: `Diario · #${gDayNo()}`, name: "Aguanta",
-          tag: "Una gráfica real avanza en directo sin decirte qué años son. Mantén pulsado para seguir invertido. ¿Aguantarás las caídas?",
-          status: ag ? `Hoy: <b class="${gTone(ag.ret)}">${gSigned(ag.ret)}</b>` : "Reto de hoy sin jugar" },
-        { id: "silueta", e: "🔍", badge: `Diario · #${gDayNo()}`, name: "Silueta",
-          tag: "¿Quién es esta inversión? Adivínala por la forma de su gráfica. Cinco rondas.",
-          status: si ? `Hoy: <b>${si.score}/5</b>` : "Reto de hoy sin jugar" },
-        { id: "masomenos", e: "⚖️", badge: "Sin fin", name: "Más o menos",
-          tag: "Dos inversiones, una pregunta: ¿cuál rindió más? Encadena aciertos hasta que falles.",
-          status: g.mm.best ? `Tu récord: <b>${g.mm.best}</b>` : "Aún sin récord" },
-        { id: "draft", e: "🃏", badge: "Con amigos", name: "Draft Night",
-          tag: "Elegid por turnos vuestras cartas de inversión y descubrid quién gana en una década secreta.",
+        { id: "noticia", badge: `Diario · #${gDayNo()}`, name: "Noticia al vuelo",
+          tag: "Un titular real y siete segundos: ¿la bolsa acabó ese año arriba o abajo? Combos, puntos y mucha tensión.",
+          status: nwd ? `Hoy: <b>${gPts(nwd.pts)}</b> · ${nwd.hits}/10` : "Reto de hoy sin jugar" },
+        { id: "silueta", badge: `Diario · #${gDayNo()}`, name: "Silueta",
+          tag: "¿Quién es esta inversión? Adivínala por la forma de su gráfica. Cinco rondas de 15 segundos.",
+          status: si ? `Hoy: <b>${si.score}/5</b> · ${gPts(si.pts || 0)}` : "Reto de hoy sin jugar" },
+        { id: "masomenos", badge: "Semanal · sin fin", name: "Más o menos",
+          tag: "Dos inversiones, una pregunta y cada vez menos tiempo. Encadena aciertos hasta que falles.",
+          status: g.mm.best ? `Récord: <b>${g.mm.best}</b> · ${gPts(g.mm.bestPts || 0)}` : "Aún sin récord" },
+        { id: "draft", badge: "Con amigos", name: "Draft Night",
+          tag: "Elegid por turnos vuestras cartas de inversión y descubrid quién gana en una década secreta. También online.",
           status: g.draft.played ? `${g.draft.played} partida${g.draft.played === 1 ? "" : "s"} jugada${g.draft.played === 1 ? "" : "s"}` : "De 2 a 5 jugadores" }
     ];
     return `<section class="section"><div class="sec-head"><div><p class="kicker">Juegos</p><h2>Dos minutos al día. Pica a tus amigos.</h2>
-        <p>Datos reales de mercado y dinero de mentira. Los retos diarios son los mismos para todo el mundo, así que podéis compararos en el grupo.</p></div>
+        <p>Datos reales de mercado y dinero de mentira. Los retos diarios son los mismos para todo el mundo: juega, suma puntos y compáralos con tu liga.</p></div>
         <div class="g-streak" title="Días seguidos con algún reto diario jugado"><b>${gStreak()}</b><span>día${gStreak() === 1 ? "" : "s"} de racha</span></div></div>
         <div class="g-grid">${tiles.map((o, i) => `<a class="g-tile t-${o.id}" href="#/${o.id}">
             <span class="g-badge">${o.badge}</span><span class="g-num" aria-hidden="true">0${i + 1}</span><svg class="g-art" viewBox="0 0 70 52" aria-hidden="true">${G_ART[o.id]}</svg>
             <h3>${o.name}</h3><p>${o.tag}</p><span class="g-status">${o.status}</span><span class="g-play">Jugar →</span></a>`).join("")}</div>
-        ${ag || si ? `<div class="g-sharebar"><div><b>Tus resultados de hoy están listos.</b><p class="muted">Compártelos en el grupo y mira quién lo ha hecho mejor.</p></div><button class="btn" data-act="gShareDay">Compartir resultados de hoy</button></div>` : ""}
+        ${nwd || si ? `<div class="g-sharebar"><div><b>Tus resultados de hoy están listos.</b><p class="muted">Compártelos en el grupo y mira quién lo ha hecho mejor.</p></div><button class="btn" data-act="gShareDay">Compartir resultados de hoy</button></div>` : ""}
         <p class="disclaim">Rentabilidades anuales aproximadas de índices entre 2000 y 2024, en moneda local, sin comisiones ni impuestos. Juegos educativos: rentabilidades pasadas no garantizan rentabilidades futuras.</p>
-    </section>`;
+    </section>
+    <section class="section liga" id="liga"><div id="ligaBox"></div></section>`;
 }
 function gShareDayText() {
     const g = gState(), t = today(), lines = [`Horizonte · Juegos #${gDayNo()}`];
-    if (g.aguanta.day === t) lines.push(`✋ Aguanta ${g.aguanta.emo} ${gSigned(g.aguanta.ret)}`);
-    if (g.silueta.day === t) lines.push(`🔍 Silueta ${g.silueta.grid} ${g.silueta.score}/5`);
+    if (g.noticia.day === t) lines.push(`📰 Noticia al vuelo ${g.noticia.grid} ${g.noticia.hits}/10 · ${gPts(g.noticia.pts)}`);
+    if (g.silueta.day === t) lines.push(`🔍 Silueta ${g.silueta.grid} ${g.silueta.score}/5 · ${gPts(g.silueta.pts || 0)}`);
     if (g.mm.best) lines.push(`⚖️ Más o menos: récord ${g.mm.best}`);
     return lines.join("\n");
-}
-
-/* =========================================================
-   1 · AGUANTA
-   Diez años del S&P 500 en 60 segundos. Pulsado = invertido; suelto = fuera.
-   Los cierres anuales son reales (aproximados); el camino dentro de cada año es ilustrativo.
-========================================================= */
-const AG_ASSET = "usa", AG_MONTHS = G_SPAN * 12, AG_MS = 500, AG_START = 10000;
-let ag = null;
-function agBuild(seed) {
-    const rnd = gRand(seed), start = Math.floor(rnd() * (G_LAST + 1)), c = gCard(AG_ASSET);
-    const normal = () => Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(2 * Math.PI * rnd());
-    const p = [100];
-    for (let y = 0; y < G_SPAN; y++) {
-        const target = Math.log(1 + c.r[start + y] / 100);
-        const inc = Array.from({ length: 12 }, () => normal() * .045);
-        const adj = (target - inc.reduce((s, x) => s + x, 0)) / 12;
-        inc.forEach(x => p.push(p.at(-1) * Math.exp(x + adj)));
-    }
-    return { start, p };
-}
-function agNew(practice = false) {
-    const seed = practice ? Math.floor(Math.random() * 1e9) : today() * 9301 + 49297;
-    const d = agBuild(seed);
-    ag = { phase: "ready", practice, day: today(), ...d, m: 0, t0: 0, inv: false, held: false, val: AG_START, inMonths: [], raf: 0,
-        leo: { val: AG_START, inv: true, peak: 100, sold: 0, sells: 0 }, newsShown: -1 };
-}
-function agMount() {
-    if (!ag || ag.phase !== "end" || (!ag.practice && ag.day !== today())) agNew(ag?.phase === "end" ? false : ag?.practice);
-    agPaint();
-}
-function agPaint() {
-    const root = gRoot();
-    if (!root) return;
-    if (ag.phase === "end") return (root.innerHTML = agEndHTML());
-    const done = gState().aguanta.day === today() && !ag.practice ? gState().aguanta : null;
-    root.innerHTML = `
-        <div class="ag-hud">
-            <div><span class="g-lbl">Tu dinero</span><output id="agVal" class="ag-val">${fmtR(ag.val)}</output></div>
-            <div class="ag-side"><span class="g-lbl">Año</span><b id="agYear">1/10</b><span class="g-lbl">Leo</span><b id="agLeo">${fmtR(ag.leo.val)}</b></div>
-        </div>
-        <div class="ag-stage" id="agStage">
-            <canvas id="agChart" aria-label="Gráfica de la década en curso"></canvas>
-            <div class="ag-news" id="agNews" aria-live="polite"></div>
-            <div class="ag-state" id="agState">${ag.phase === "ready" ? "" : "FUERA DEL MERCADO"}</div>
-            ${ag.phase === "ready" ? `<div class="ag-rules">
-                ${done ? `<p class="g-note">Ya has jugado el reto de hoy (${gSigned(done.ret)}). Puedes repetirlo, pero no cuenta.</p>` : ""}
-                <ul><li><b>Pulsado:</b> tu dinero está invertido.</li><li><b>Suelto:</b> vendes y te quedas fuera.</li>
-                <li><b>10 años en 60 segundos.</b> No sabes qué década es: lo descubres al final.</li>
-                <li><b>Leo</b>, tu rival, vende en cuanto la bolsa cae un 15 %.</li></ul></div>` : ""}
-        </div>
-        <button class="ag-pad" id="agPad" aria-label="Mantén pulsado para estar invertido"><span id="agPadTxt">${ag.phase === "ready" ? "Mantén pulsado para empezar" : "Mantén pulsado"}</span></button>`;
-    agDraw();
-}
-function agHold(on) {
-    if (!ag || ag.phase === "end") return;
-    if (on && ag.phase === "ready") {
-        ag.phase = "run"; ag.t0 = performance.now(); ag.inv = true;
-        $(".ag-rules")?.remove();
-        ag.raf = requestAnimationFrame(agTick);
-    }
-    if (ag.phase !== "run") return;
-    ag.inv = on;
-    $("#agStage")?.classList.toggle("out", !on);
-    $("#agPad")?.classList.toggle("on", on);
-    const st = $("#agState"); if (st) st.textContent = on ? "" : "FUERA DEL MERCADO";
-    const tx = $("#agPadTxt"); if (tx) tx.textContent = on ? "Invertido · no sueltes" : "Mantén pulsado para volver a entrar";
-    if (navigator.vibrate) try { navigator.vibrate(on ? 12 : 30); } catch { /* sin vibración */ }
-}
-function agStep() {
-    const m = ag.m, r = ag.p[m + 1] / ag.p[m];
-    ag.inMonths[m] = ag.inv;
-    if (ag.inv) ag.val *= r;
-    const L = ag.leo, price = ag.p[m + 1];
-    if (L.inv) { L.val *= r; L.peak = Math.max(L.peak, price); if (price < L.peak * .85) { L.inv = false; L.sold = price; L.sells++; } }
-    else if (price > L.sold * 1.08) { L.inv = true; L.peak = price; }
-    ag.m++;
-}
-function agTick(now) {
-    if (!ag || ag.phase !== "run" || !$("#agChart")) return;
-    const target = Math.min(AG_MONTHS, (now - ag.t0) / AG_MS);
-    while (ag.m < Math.floor(target)) agStep();
-    const year = Math.min(G_SPAN - 1, Math.floor(ag.m / 12));
-    if (year !== ag.newsShown) {
-        ag.newsShown = year;
-        const n = $("#agNews");
-        if (n) { n.innerHTML = `<span>Año ${year + 1}</span>«${G_NEWS[ag.start + year]}»`; n.classList.remove("in"); void n.offsetWidth; n.classList.add("in"); }
-    }
-    $("#agVal").textContent = fmtR(ag.val);
-    $("#agYear").textContent = `${year + 1}/10`;
-    $("#agLeo").textContent = fmtR(ag.leo.val);
-    agDraw(target);
-    if (ag.m >= AG_MONTHS) return agFinish();
-    ag.raf = requestAnimationFrame(agTick);
-}
-function agDraw(upto = 0) {
-    const cv = $("#agChart");
-    if (!cv) return;
-    const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
-    cv.width = w * dpr; cv.height = h * dpr;
-    const x = cv.getContext("2d");
-    x.scale(dpr, dpr);
-    const last = Math.min(AG_MONTHS, upto), n = Math.floor(last);
-    const pts = ag.p.slice(0, n + 1);
-    if (last > n && n < AG_MONTHS) pts.push(ag.p[n] + (ag.p[n + 1] - ag.p[n]) * (last - n));
-    let max = Math.max(...pts, 115), min = Math.min(...pts, 85);
-    const pad = (max - min) * .1; max += pad; min -= pad;
-    const X = i => 8 + (i / AG_MONTHS) * (w - 16), Y = v => h - 10 - ((v - min) / (max - min)) * (h - 20);
-    x.strokeStyle = "rgba(255,255,255,.07)"; x.lineWidth = 1;
-    for (let yy = 1; yy < G_SPAN; yy++) { x.beginPath(); x.moveTo(X(yy * 12), 0); x.lineTo(X(yy * 12), h); x.stroke(); }
-    x.setLineDash([4, 4]); x.strokeStyle = "rgba(255,255,255,.3)";
-    x.beginPath(); x.moveTo(0, Y(100)); x.lineTo(w, Y(100)); x.stroke(); x.setLineDash([]);
-    x.lineWidth = 3; x.lineJoin = x.lineCap = "round";
-    for (let i = 0; i < pts.length - 1; i++) {
-        const inv = i < ag.inMonths.length ? ag.inMonths[i] : ag.inv;
-        x.strokeStyle = inv ? "#30d158" : "rgba(255,255,255,.35)";
-        x.beginPath(); x.moveTo(X(i), Y(pts[i])); x.lineTo(X(i + 1 > last ? last : i + 1), Y(pts[i + 1])); x.stroke();
-    }
-    if (pts.length > 1) { x.fillStyle = "#ffffff"; x.beginPath(); x.arc(X(last), Y(pts.at(-1)), 5, 0, 7); x.fill(); }
-}
-function agFinish() {
-    cancelAnimationFrame(ag.raf);
-    ag.phase = "end";
-    const ret = (ag.val / AG_START - 1) * 100;
-    ag.emo = Array.from({ length: G_SPAN }, (_, y) => { const k = ag.inMonths.slice(y * 12, y * 12 + 12).filter(Boolean).length; return k === 12 ? "🟢" : k === 0 ? "⚪" : "🟡"; }).join("");
-    if (!ag.practice) {
-        const g = gState();
-        if (g.aguanta.day !== today()) { g.aguanta = { day: today(), ret: Math.round(ret * 10) / 10, emo: ag.emo }; gMarkDay(); save(); }
-    }
-    agPaint();
-}
-function agEndHTML() {
-    const ret = (ag.val / AG_START - 1) * 100, hold = AG_START * ag.p.at(-1) / ag.p[0], leo = ag.leo.val;
-    const rows = [{ n: "Tú", v: ag.val, me: true }, { n: "Aguantar siempre", v: hold }, { n: "Leo", v: leo }].sort((a, b) => b.v - a.v);
-    const maxV = Math.max(...rows.map(r => r.v));
-    const monthly = ag.p.slice(1).map((v, i) => ({ i, r: v / ag.p[i] - 1 }));
-    const best = [...monthly].sort((a, b) => b.r - a.r).slice(0, 10), missed = best.filter(b => !ag.inMonths[b.i]).length;
-    const outMonths = ag.inMonths.filter(v => !v).length;
-    const lesson = outMonths === 0 ? "No soltaste ni una vez. Aguantar las caídas es justo lo que hace que el interés compuesto funcione."
-        : missed >= 3 ? `Estuviste fuera en ${missed} de los 10 mejores meses de la década. Los mejores meses suelen llegar justo después de los peores: quien sale por miedo se los pierde.`
-        : ag.val >= hold ? "Saliste algunas veces y te salió bien. Ojo: acertar el momento de salir y volver a entrar casi nunca se repite."
-        : "Salir y entrar tiene un coste: casi siempre se vuelve a entrar más caro de lo que se vendió.";
-    return `<div class="g-end">
-        <p class="g-lbl">${ag.practice ? "Partida de práctica · " : `Reto #${gDayNo()} · `}La década era</p>
-        <h1 class="g-big">${gYears(ag.start)}</h1>
-        <p class="g-emo">${gGrid(ag.emo)}</p>
-        <p class="g-score ${gTone(ret)}">${gSigned(ret)}</p>
-        <div class="g-bars">${rows.map(r => `<div class="${r.me ? "me" : ""}"><span>${r.n}</span><i style="width:${Math.max(4, r.v / maxV * 100)}%"></i><b>${fmtR(r.v)}</b></div>`).join("")}</div>
-        <div class="g-lesson"><p class="g-lbl">Lo que enseña</p><p>${lesson}</p>${ag.leo.sells ? `<p>Leo vendió por miedo ${ag.leo.sells === 1 ? "una vez" : `${ag.leo.sells} veces`}.</p>` : ""}</div>
-        <div class="g-row"><button class="p-opt p-go" data-act="agShare">Compartir resultado</button><button class="p-opt" data-act="agAgain">Practicar otra década</button></div>
-        <p class="small g-muted">Cierres anuales aproximados del S&P 500 (con dividendos). El recorrido dentro de cada año es ilustrativo.</p>
-    </div>`;
 }
 
 /* =========================================================
    2 · SILUETA
    Cinco gráficas sin nombre: adivina qué inversión es.
 ========================================================= */
+const SI_SECONDS = 15;
 let si = null;
 function siRounds(seed) {
     const rnd = gRand(seed), keys = gShuffle(G_CARDS.map(c => c.k), rnd).slice(0, 5);
@@ -352,7 +207,8 @@ function siRounds(seed) {
     });
 }
 function siNew(practice = false) {
-    si = { practice, day: today(), rounds: siRounds(practice ? Math.floor(Math.random() * 1e9) : today() * 7919 + 101), i: 0, res: [], answered: false, last: null };
+    const official = !practice && gState().silueta.day !== today();
+    si = { practice, official, day: today(), rounds: siRounds(practice ? Math.floor(Math.random() * 1e9) : today() * 7919 + 101), i: 0, res: [], answered: false, last: null, pick: null, pts: 0, streak: 0, gain: 0 };
 }
 function siMount() {
     if (!si || (!si.practice && si.day !== today())) siNew();
@@ -361,32 +217,38 @@ function siMount() {
 function siPaint() {
     const root = gRoot();
     if (!root) return;
-    if (si.res.length === 5 && !si.answered) return (root.innerHTML = siEndHTML());
+    gTimerStop();
+    if (si.res.length === 5 && !si.answered) { root.innerHTML = siEndHTML(); return ligaFillBoard("silueta", gIso()); }
     const R = si.rounds[si.i], c = gCard(R.k);
     const vals = [100]; c.r.slice(R.start, R.start + G_SPAN).forEach(x => vals.push(vals.at(-1) * (1 + x / 100)));
-    const done = gState().silueta.day === today() && !si.practice ? gState().silueta : null;
     $("#gMeta").textContent = si.practice ? "Práctica" : `#${gDayNo()}`;
     root.innerHTML = `
-        ${done && si.i === 0 && !si.answered ? `<p class="g-note">Ya has jugado el reto de hoy (${done.score}/5). Esta partida no cuenta.</p>` : ""}
+        ${!si.official && !si.practice && si.i === 0 && !si.answered ? `<p class="g-note">Ya has jugado el reto de hoy. Esta partida no cuenta para la liga.</p>` : ""}
+        ${si.answered ? "" : `<div class="g-timer"><i id="gBar"></i><span id="gLeft">${SI_SECONDS}</span></div>`}
+        <div class="nw-top"><span>Ronda <b>${si.i + 1}</b>/5</span><span class="nw-pts">${gPts(si.pts)}</span><span class="nw-combo ${si.streak >= 2 ? "hot" : ""}">${gMultTxt(gMult(si.streak))}</span></div>
         <div class="si-dots">${si.rounds.map((_, i) => `<i class="${si.res[i] === true ? "ok" : si.res[i] === false ? "ko" : i === si.i ? "now" : ""}"></i>`).join("")}</div>
-        <p class="g-lbl">Ronda ${si.i + 1} de 5 · De ${G_FROM + R.start} a ${G_FROM + R.start + G_SPAN - 1}</p>
+        <p class="g-lbl">De ${G_FROM + R.start} a ${G_FROM + R.start + G_SPAN - 1}</p>
         <h2 class="g-h2">¿Quién es esta inversión?</h2>
         <div class="si-chart">${gSpark(vals, { h: 160, cls: si.answered ? (si.last ? "ok" : "ko") : "" })}
             <div class="si-axis"><span>100 €</span><span>${si.answered ? `${fmtR(vals.at(-1))}` : "?"}</span></div></div>
         <div class="si-opts">${R.opts.map(k => { const o = gCard(k);
             const cls = si.answered ? (k === R.k ? "right" : k === si.pick ? "wrong" : "") : "";
             return `<button class="si-opt ${cls}" data-act="siPick" data-k="${k}" ${si.answered ? "disabled" : ""}>${gIco(o)}<b>${o.name}</b></button>`; }).join("")}</div>
-        ${si.answered ? `<div class="g-lesson"><p class="g-lbl">${si.last ? "¡Bien visto!" : `Era ${c.name}`}</p>
+        ${si.answered ? `<div class="g-lesson"><p class="g-lbl">${si.last ? `¡Bien visto! +${gPts(si.gain)}` : si.pick === null ? "Se acabó el tiempo" : `Era ${c.name}`}</p>
             <p>100 € se convirtieron en <b>${fmtR(vals.at(-1))}</b> en esos diez años. ${G_TIPS[R.k]}</p></div>
             <button class="p-opt p-go" data-act="siNext">${si.res.length === 5 ? "Ver resultado" : "Siguiente ronda →"}</button>` : ""}`;
+    if (!si.answered) gTimerStart(SI_SECONDS, () => siPick(null));
 }
 function siPick(k) {
     if (si.answered) return;
-    const R = si.rounds[si.i], ok = k === R.k;
-    si.answered = true; si.last = ok; si.pick = k; si.res.push(ok);
-    if (si.res.length === 5 && !si.practice) {
-        const g = gState();
-        if (g.silueta.day !== today()) { g.silueta = { day: today(), score: si.res.filter(Boolean).length, grid: si.res.map(v => v ? "🟩" : "🟥").join("") }; gMarkDay(); save(); }
+    const R = si.rounds[si.i], ok = k === R.k, frac = gFrac();
+    gTimerStop();
+    const gain = ok ? Math.round((150 + Math.round(150 * frac)) * gMult(si.streak)) : 0;
+    si.answered = true; si.last = ok; si.pick = k; si.res.push(ok); si.streak = ok ? si.streak + 1 : 0; si.pts += gain; si.gain = gain;
+    if (si.res.length === 5 && si.official) {
+        const g = gState(), score = si.res.filter(Boolean).length;
+        g.silueta = { day: today(), score, grid: si.res.map(v => v ? "🟩" : "🟥").join(""), pts: si.pts }; gMarkDay(); save();
+        gScore("silueta", gIso(), si.pts, { score });
     }
     siPaint();
 }
@@ -396,8 +258,10 @@ function siEndHTML() {
         "Muy bien. Tienes buen ojo para el riesgo.", "Casi perfecto. Estás listo para un Draft Night.", "Pleno. Conoces las cartas mejor que nadie: reta a tus amigos."][score];
     return `<div class="g-end">
         <p class="g-lbl">${si.practice ? "Práctica" : `Silueta #${gDayNo()}`}</p>
-        <h1 class="g-big">${score}/5</h1><p class="g-emo">${gGrid(grid)}</p>
+        <h1 class="g-big">${Math.round(si.pts).toLocaleString("es-ES", { useGrouping: "always" })}</h1><p class="g-muted">puntos · ${score}/5 aciertos</p><p class="g-emo">${gGrid(grid)}</p>
+        ${!si.official && !si.practice ? `<p class="g-note">Esta partida no cuenta: ya jugaste el reto de hoy.</p>` : ""}
         <div class="g-lesson"><p>${msg}</p></div>
+        <div class="g-board" id="gBoard"></div>
         <div class="g-row"><button class="p-opt p-go" data-act="siShare">Compartir resultado</button><button class="p-opt" data-act="siAgain">Practicar con otras</button></div>
     </div>`;
 }
@@ -428,7 +292,8 @@ function mmItem(prev) {
         if (!prev || (Math.abs(it.v / prev.v - 1) > .04 && it.t + it.s !== prev.t + prev.s)) return it;
     }
 }
-function mmNew() { const a = mmItem(); mm = { a, b: mmItem(a), streak: 0, phase: "play", busy: false }; }
+const mmSeconds = () => Math.max(4, 9 - Math.floor(mm.streak / 3)); // cada tres aciertos, un segundo menos
+function mmNew() { const a = mmItem(); mm = { a, b: mmItem(a), streak: 0, pts: 0, phase: "play", busy: false, timeout: false }; }
 function mmMount() { if (!mm || mm.phase === "over") mmNew(); mmPaint(); }
 function mmCard(it, hidden, id) {
     return `<div class="mm-card" id="${id}"><span class="mm-e">${it.ico || `<i class="ico lg" style="--c:#8a96a3" aria-hidden="true">${it.code}</i>`}</span><div><b>${it.t}</b><small>${it.s}</small></div>
@@ -437,44 +302,65 @@ function mmCard(it, hidden, id) {
 function mmPaint() {
     const root = gRoot();
     if (!root) return;
+    gTimerStop();
     const g = gState();
-    $("#gMeta").innerHTML = `Racha <b>${mm.streak}</b> · Récord ${g.mm.best}`;
-    if (mm.phase === "over") return (root.innerHTML = mmOverHTML());
+    $("#gMeta").innerHTML = `${gPts(mm.pts)} · Récord ${g.mm.best}`;
+    if (mm.phase === "over") { root.innerHTML = mmOverHTML(); return ligaFillBoard("masomenos", gWeek()); }
     root.innerHTML = `
-        <p class="g-lbl">Racha actual</p><p class="mm-streak">${mm.streak}</p>
+        <div class="g-timer"><i id="gBar"></i><span id="gLeft">${mmSeconds()}</span></div>
+        <div class="nw-top"><span>Racha <b>${mm.streak}</b></span><span class="nw-pts">${gPts(mm.pts)}</span><span class="nw-combo ${mm.streak >= 3 ? "hot" : ""}">${mmSeconds()} s por pregunta</span></div>
         ${mmCard(mm.a, false, "mmA")}
         <p class="mm-q">¿Esta acaba con <b>más</b> o con <b>menos</b>?</p>
         ${mmCard(mm.b, true, "mmB")}
-        <div class="mm-btns"><button class="p-opt mm-up" data-act="mmGuess" data-v="up">▲ Más</button><button class="p-opt mm-down" data-act="mmGuess" data-v="down">▼ Menos</button></div>
+        <div class="mm-btns"><button class="p-opt mm-up" data-act="mmGuess" data-v="up">▲ Más</button><button class="p-opt mm-down" data-act="mmGuess" data-v="down">▼ Menos</button></div><div id="gPop" class="g-pop"></div>
         <p class="small g-muted">Rentabilidades aproximadas en moneda local, sin comisiones. Las de interés fijo son hipotéticas.</p>`;
+    gTimerStart(mmSeconds(), () => { if (!mm.busy && mm.phase === "play") { mm.timeout = true; mm.busy = true; mmReveal(false); } });
 }
 function mmGuess(dir) {
     if (mm.busy || mm.phase !== "play") return;
     mm.busy = true;
+    const frac = gFrac();
+    gTimerStop();
     const ok = dir === "up" ? mm.b.v > mm.a.v : mm.b.v < mm.a.v;
+    if (ok) { const gain = 100 + Math.round(60 * frac) + Math.min(50, mm.streak * 5); mm.pts += gain; gPop(`+${gain}`, "pos"); }
+    mmReveal(ok);
+}
+function mmReveal(ok) {
     const out = $("#mmB .mm-v"), to = mm.b.v, t0 = performance.now();
+    let fin = false;
     $$(".mm-btns button").forEach(b => (b.disabled = true));
-    const step = t => {
-        const k = Math.min(1, (t - t0) / 650), e = 1 - (1 - k) ** 3;
-        out.textContent = fmtR(to * e);
-        if (k < 1) return requestAnimationFrame(step);
-        $("#mmB").classList.add(ok ? "ok" : "ko");
+    const finish = () => {
+        if (fin) return; fin = true;
+        if (out) out.textContent = fmtR(to);
+        $("#mmB")?.classList.add(ok ? "ok" : "ko");
         setTimeout(() => {
             mm.busy = false;
             const g = gState();
-            if (ok) { mm.streak++; mm.a = mm.b; mm.b = mmItem(mm.a); if (mm.streak > g.mm.best) { g.mm.best = mm.streak; save(); } mmPaint(); }
-            else { mm.phase = "over"; g.mm.played = (g.mm.played || 0) + 1; save(); mmPaint(); }
+            if (ok) { mm.streak++; mm.a = mm.b; mm.b = mmItem(mm.a); if (mm.streak > g.mm.best) g.mm.best = mm.streak; if (mm.pts > (g.mm.bestPts || 0)) g.mm.bestPts = mm.pts; save(); mmPaint(); }
+            else {
+                mm.phase = "over"; g.mm.played = (g.mm.played || 0) + 1; if (mm.pts > (g.mm.bestPts || 0)) g.mm.bestPts = mm.pts; save();
+                if (mm.pts > 0) gScore("masomenos", gWeek(), mm.pts, { streak: mm.streak });
+                mmPaint();
+            }
         }, ok ? 550 : 900);
     };
+    const step = t => {
+        const k = Math.min(1, (t - t0) / 650), e = 1 - (1 - k) ** 3;
+        if (out) out.textContent = fmtR(to * e);
+        if (k < 1) return requestAnimationFrame(step);
+        finish();
+    };
     requestAnimationFrame(step);
+    setTimeout(finish, 900); // por si la pestaña no pinta fotogramas
 }
 function mmOverHTML() {
     const g = gState(), rec = mm.streak > 0 && mm.streak >= g.mm.best;
     return `<div class="g-end">
-        <p class="g-lbl">Fin de la racha</p><h1 class="g-big">${mm.streak}</h1>
-        <p class="g-muted">${rec ? "¡Nuevo récord personal!" : `Tu récord: ${g.mm.best}`}</p>
+        <p class="g-lbl">${mm.timeout ? "Se acabó el tiempo" : "Fin de la racha"}</p><h1 class="g-big">${mm.streak}</h1>
+        <p class="g-muted">${gPts(mm.pts)} · ${rec ? "¡nuevo récord personal!" : `tu récord: ${g.mm.best}`}</p>
         <div class="g-lesson"><p class="g-lbl">La que falló</p>
             <p>${mm.a.t} (${mm.a.s}): <b>${fmtR(mm.a.v)}</b><br>${mm.b.t} (${mm.b.s}): <b>${fmtR(mm.b.v)}</b></p></div>
+        <div class="g-board" id="gBoard"></div>
         <div class="g-row"><button class="p-opt p-go" data-act="mmAgain">Otra vez</button><button class="p-opt" data-act="mmShare">Retar a mi grupo</button></div>
     </div>`;
 }
@@ -513,7 +399,7 @@ function drMenu() {
                 <div class="g-join-row"><button type="button" class="p-opt" data-act="drCreate">Crear sala</button><span>o</span>
                 <input name="code" maxlength="5" placeholder="Código" aria-label="Código de sala" autocomplete="off"><button class="p-opt">Unirme</button></div>
             </form>
-            <p class="small g-muted" id="drMsg"></p></div>`;
+            <p class="small g-muted" id="drMsg">${socialOn() ? "" : "Para jugar online necesitas acceder a tu cuenta."}</p></div>`;
 }
 function drSetup() {
     return `<p class="g-lbl">Jugar en este móvil</p><h2 class="g-h2">¿Quién juega?</h2>
@@ -594,53 +480,92 @@ function drPoll() {
     drStop();
     dr.poll = setInterval(async () => {
         if (!$("#gRoot") || route() !== "draft") return drStop();
-        try { const r = await api(`/draft/${dr.code}?pid=${dr.pid}`); const sig = JSON.stringify(r.room); if (sig !== dr.sig) { dr.sig = sig; drApply(r.room); } }
+        try { const sala = await salaApi.read(dr.code); if (sala.version !== dr.ver) { dr.ver = sala.version; drApply(drRoomView(sala)); } }
         catch { /* reintenta en el siguiente ciclo */ }
     }, 1500);
 }
-const drOffline = "El modo online necesita el servidor de Horizonte (npm start). Mientras tanto, jugad en un solo móvil.";
+/* Online: la partida vive en una fila de Supabase (tabla «salas») con control de versión.
+   Cada jugada lee la sala, la modifica y la escribe; si alguien se adelantó, se repite. */
+const drMe = () => user?.id;
+function drRoomView(sala) {
+    const e = sala.estado;
+    return { phase: e.phase, players: e.players.map(p => p.name), picks: e.picks, t: e.t, per: e.per, start: e.start, me: e.players.findIndex(p => p.id === drMe()), host: e.players[0]?.id === drMe() };
+}
+async function drWrite(code, mutate, tries = 6) {
+    for (let k = 0; k < tries; k++) {
+        const sala = await salaApi.read(code), est = JSON.parse(JSON.stringify(sala.estado));
+        if (mutate(est) === false) return sala; // nada que cambiar
+        try { return await salaApi.write(code, sala.version, est); }
+        catch (e) { if (!/conflicto/i.test(e.message)) throw e; }
+    }
+    throw new Error("La sala está muy movida. Inténtalo otra vez.");
+}
+const drOffline = "Para jugar online necesitas acceder a tu cuenta. Mientras tanto, jugad en un solo móvil.";
 function drMsg(t) { const m = $("#drMsg"); if (m) m.textContent = t; else toast(t); }
 
 /* =========================================================
    Acciones, formularios y ciclo de vida (app.js los integra)
 ========================================================= */
-const GAME_ROUTES = ["aguanta", "silueta", "masomenos", "draft"];
+const GAME_ROUTES = ["noticia", "silueta", "masomenos", "draft"];
 const GAME_VIEWS = {
-    aguanta: () => gShell("aguanta", "Aguanta", `#${gDayNo()}`),
+    noticia: () => gShell("noticia", "Noticia al vuelo", `#${gDayNo()}`),
     silueta: () => gShell("silueta", "Silueta", `#${gDayNo()}`),
     masomenos: () => gShell("masomenos", "Más o menos"),
     draft: () => gShell("draft", "Draft Night")
 };
-const GAME_TITLES = { juegos: "Juegos", aguanta: "Aguanta", silueta: "Silueta", masomenos: "Más o menos", draft: "Draft Night" };
-const GAME_MOUNT = { aguanta: agMount, silueta: siMount, masomenos: mmMount, draft: drMount };
-function gameLeave() { if (ag) cancelAnimationFrame(ag.raf); drStop(); }
+const GAME_TITLES = { juegos: "Juegos", noticia: "Noticia al vuelo", silueta: "Silueta", masomenos: "Más o menos", draft: "Draft Night" };
+const GAME_MOUNT = { noticia: () => nwMount(), silueta: siMount, masomenos: mmMount, draft: drMount };
+// al cambiar de cuenta no deben quedar partidas ni clasificaciones de la persona anterior
+function gamesReset() { gTimerStop(); si = null; mm = null; dr = null; if (typeof nw !== "undefined") nw = null; if (typeof liga !== "undefined") Object.assign(liga, { rows: null, friends: null, alias: null, err: null }); }
+function gameLeave() { gTimerStop(); if (typeof nw !== "undefined" && nw) clearTimeout(nw.auto); drStop(); }
 
 const GAME_ACTIONS = {
     gShareDay: () => gShare(gShareDayText()),
-    agShare: () => gShare(`✋ Aguanta${ag.practice ? " (práctica)" : ` #${gDayNo()}`} · Horizonte\n${ag.emo}\n${gSigned((ag.val / AG_START - 1) * 100)} · Leo ${gSigned((ag.leo.val / AG_START - 1) * 100)}\n¿Aguantas más que yo?`),
-    agAgain: () => { agNew(true); agPaint(); },
     siPick: el => siPick(el.dataset.k),
     siNext: () => { si.answered = false; if (si.res.length < 5) si.i++; siPaint(); },
-    siShare: () => gShare(`🔍 Silueta${si.practice ? " (práctica)" : ` #${gDayNo()}`} · Horizonte\n${si.res.map(v => v ? "🟩" : "🟥").join("")} ${si.res.filter(Boolean).length}/5`),
+    siShare: () => gShare(`🔍 Silueta${si.practice ? " (práctica)" : ` #${gDayNo()}`} · Horizonte\n${si.res.map(v => v ? "🟩" : "🟥").join("")} ${si.res.filter(Boolean).length}/5 · ${gPts(si.pts)}`),
     siAgain: () => { siNew(true); siPaint(); },
     mmGuess: el => mmGuess(el.dataset.v),
     mmAgain: () => { mmNew(); mmPaint(); },
-    mmShare: () => gShare(`⚖️ Más o menos · Horizonte\nRacha de ${mm.streak} 🔥 (récord ${gState().mm.best})\n¿La superas?`),
+    mmShare: () => gShare(`⚖️ Más o menos · Horizonte\nRacha de ${mm.streak} 🔥 · ${gPts(mm.pts)} (récord ${gState().mm.best})\n¿La superas?`),
     drLocal: () => { dr = { phase: "setup", mode: "local", names: dr?.names?.length ? dr.names : ["", ""] }; drPaint(); },
     drAdd: () => { drKeepNames(); if (dr.names.length < 5) dr.names.push(""); drPaint(); },
     drDel: el => { drKeepNames(); dr.names.splice(+el.dataset.i, 1); drPaint(); },
     drCreate: async () => {
+        if (!socialOn()) return drMsg(drOffline);
         const name = ($("#drName")?.value || "").trim().slice(0, 14);
         if (!name) { $("#drName")?.focus(); return drMsg("Escribe tu nombre para crear la sala."); }
-        try { const r = await api("/draft", { method: "POST", body: { name } }); dr = { mode: "online", phase: "lobby", pid: r.pid, code: r.room.code }; drApply(r.room); drPoll(); }
-        catch { drMsg(drOffline); }
+        try {
+            const sala = await salaApi.create({ phase: "lobby", players: [{ id: drMe(), name }], picks: [], t: 0, per: 0, start: null });
+            dr = { mode: "online", phase: "lobby", code: sala.codigo, ver: sala.version, myName: name }; drApply(drRoomView(sala)); drPoll();
+        } catch (e) { drMsg(e.message); }
     },
     drInvite: () => gShare(`🃏 ¡Draft Night en Horizonte! Entra en Juegos → Draft Night → Unirme con el código ${dr.code}\n${location.origin}${location.pathname}#/draft`),
-    drStart: async () => { try { const r = await api(`/draft/${dr.code}/start`, { method: "POST", body: { pid: dr.pid } }); drApply(r.room); } catch (e) { toast(e.message); } },
+    drStart: async () => {
+        try {
+            const sala = await drWrite(dr.code, e => {
+                if (e.players[0].id !== drMe()) throw new Error("Solo el anfitrión puede empezar.");
+                if (e.players.length < 2) throw new Error("Hacen falta al menos 2 jugadores.");
+                if (e.phase !== "lobby") return false;
+                Object.assign(e, { phase: "draft", per: drPer(e.players.length), picks: e.players.map(() => []), t: 0, start: Math.floor(Math.random() * (G_LAST + 1)) });
+            });
+            dr.ver = sala.version; drApply(drRoomView(sala));
+        } catch (e) { toast(e.message); }
+    },
     drPick: async el => {
         const k = el.dataset.k;
         if (dr.mode === "local") { if (drTaken()[k] !== undefined) return; dr.picks[drTurn(dr.t, dr.players.length)].push(k); dr.t++; return drAfterPick(); }
-        try { const r = await api(`/draft/${dr.code}/pick`, { method: "POST", body: { pid: dr.pid, card: k } }); dr.sig = JSON.stringify(r.room); drApply(r.room); } catch (e) { toast(e.message); }
+        try {
+            const sala = await drWrite(dr.code, e => {
+                const n = e.players.length, me = e.players.findIndex(p => p.id === drMe());
+                if (e.phase !== "draft") throw new Error("No es momento de elegir.");
+                if (drTurn(e.t, n) !== me) throw new Error("Todavía no es tu turno.");
+                if (e.picks.flat().includes(k)) throw new Error("Esa carta ya está cogida.");
+                e.picks[me].push(k); e.t++;
+                if (e.t >= n * e.per) e.phase = "done";
+            });
+            dr.ver = sala.version; drApply(drRoomView(sala));
+        } catch (e) { toast(e.message); }
     },
     drYear: () => { if (dr.year < G_SPAN) { dr.year++; drPaint(); } else { dr.phase = "end"; drPaint(); } $(".game")?.scrollTo(0, 0); },
     drSkip: () => { dr.year = G_SPAN; dr.phase = "end"; drPaint(); $(".game")?.scrollTo(0, 0); },
@@ -661,18 +586,18 @@ const GAME_FORMS = {
         drBeginDraft(names, Math.floor(Math.random() * (G_LAST + 1))); drPaint();
     },
     drJoin: async form => {
-        const f = new FormData(form), code = String(f.get("code") || "").trim().toUpperCase(), name = String(f.get("name") || "").trim();
+        const f = new FormData(form), code = String(f.get("code") || "").trim().toUpperCase(), name = String(f.get("name") || "").trim().slice(0, 14);
+        if (!socialOn()) return drMsg(drOffline);
         if (!name) return drMsg("Escribe tu nombre.");
         if (!code) return drMsg("Escribe el código de la sala o pulsa «Crear sala».");
-        try { const r = await api(`/draft/${code}/join`, { method: "POST", body: { name } }); dr = { mode: "online", phase: "lobby", pid: r.pid, code }; drApply(r.room); drPoll(); }
-        catch (e) { drMsg(e.status ? e.message : drOffline); }
+        try {
+            const sala = await drWrite(code, e => {
+                if (e.players.some(p => p.id === drMe())) return false;
+                if (e.phase !== "lobby") throw new Error("La partida ya ha empezado.");
+                if (e.players.length >= 5) throw new Error("La sala está completa (5 jugadores).");
+                e.players.push({ id: drMe(), name });
+            });
+            dr = { mode: "online", phase: "lobby", code, ver: sala.version, myName: name }; drApply(drRoomView(sala)); drPoll();
+        } catch (e) { drMsg(e.message); }
     }
 };
-
-/* Aguanta: mantener pulsado (ratón, dedo o barra espaciadora) */
-document.addEventListener("pointerdown", e => { if (e.target.closest("#agPad")) { e.preventDefault(); ag.held = true; agHold(true); } });
-["pointerup", "pointercancel"].forEach(ev => document.addEventListener(ev, () => { if (ag?.held) { ag.held = false; agHold(false); } }));
-document.addEventListener("contextmenu", e => { if (e.target.closest("#agPad")) e.preventDefault(); });
-document.addEventListener("keydown", e => { if (e.code === "Space" && route() === "aguanta" && !e.repeat && ag) { e.preventDefault(); ag.held = true; agHold(true); } });
-document.addEventListener("keyup", e => { if (e.code === "Space" && route() === "aguanta" && ag?.held) { ag.held = false; agHold(false); } });
-document.addEventListener("visibilitychange", () => { if (document.hidden && ag?.held) { ag.held = false; agHold(false); } });
