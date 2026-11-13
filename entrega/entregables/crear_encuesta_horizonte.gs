@@ -261,16 +261,25 @@ function crearGraficos() {
   var ideas = [];
   var filasActuales = null;   // solo las ideas que hay ahora en el formulario
   if (form) form.getItems(FormApp.ItemType.GRID).forEach(function (g) { filasActuales = g.asGridItem().getRows(); });
+  // Si la pregunta cambió de título, la hoja tiene dos columnas por idea (respuestas antiguas y nuevas):
+  // las juntamos por idea, cogiendo para cada persona la columna en la que respondió.
+  var colsPorIdea = {}, ordenIdeas = [];
   cab.forEach(function (h, c) {
-    if (h.indexOf('¿Cuánto te interesa') === 0) {
-      var m = h.match(/\[(.*)\]\s*$/);
-      if (filasActuales && m && filasActuales.indexOf(m[1]) < 0) return;
-      var notas = filas.map(function (r) { return r[c] === '' ? NaN : Number(r[c]); });
-      if (!notas.some(function (x) { return !isNaN(x); })) return;
-      var notasInv = notas.filter(function (_, i) { return invierte[i]; });
-      var notasNo = notas.filter(function (_, i) { return !invierte[i]; });
-      ideas.push([m ? m[1] : h, media_(notas), mediaOVacio_(notasInv), mediaOVacio_(notasNo)]);
-    }
+    if (h.indexOf('¿Cuánto te interesa') !== 0) return;
+    var m = h.match(/\[(.*)\]\s*$/), idea = m ? m[1].trim() : h;
+    if (filasActuales && filasActuales.indexOf(idea) < 0) return;
+    if (!colsPorIdea[idea]) { colsPorIdea[idea] = []; ordenIdeas.push(idea); }
+    colsPorIdea[idea].push(c);
+  });
+  ordenIdeas.forEach(function (idea) {
+    var notas = filas.map(function (r) {
+      var v = colsPorIdea[idea].map(function (c) { return r[c]; }).filter(function (x) { return x !== '' && x !== null; })[0];
+      return v === undefined ? NaN : Number(v);
+    });
+    if (!notas.some(function (x) { return !isNaN(x); })) return;
+    var notasInv = notas.filter(function (_, i) { return invierte[i]; });
+    var notasNo = notas.filter(function (_, i) { return !invierte[i]; });
+    ideas.push([idea, media_(notas), mediaOVacio_(notasInv), mediaOVacio_(notasNo)]);
   });
   ideas.sort(function (a, b) { return b[1] - a[1]; });
 
