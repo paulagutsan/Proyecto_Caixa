@@ -285,34 +285,76 @@ function hzReveal(dramatic) {
     lastRoute = null; render(false); window.scrollTo(0, 0);
 }
 function heroSeries() {
-    const out = [];
+    const out = [{ y: 0, v: 0, put: 0, gain: 0 }];
     for (let y = 1; y <= hz.years; y++) { const v = fv(0, hz.pm, y, HERO_RATE), put = hz.pm * 12 * y; out.push({ y, v, put, gain: v - put }); }
     return out;
 }
 function heroHTML() {
-    const ser = heroSeries();
     const betting = hzPhase() === "bet";
     return `<section class="hz hzw${betting ? " betting" : ""}" id="hz" aria-label="El poder de empezar">
         ${betting ? betHTML() : ""}
         <div class="hz-reveal">
-        <p class="hz-hello">El poder de empezar</p>
-        <h1>Con solo <b id="hzPm"></b> al mes, en <b id="hzYr"></b> podrías tener</h1>
-        <p class="hz-big" id="hzBig" aria-live="polite">0 €</p>
-        <p class="hz-chg"><span class="put" id="hzPut"></span><span class="up" id="hzGain"></span></p>
-        ${hzVerdict()}
-        <div class="hz-split" aria-hidden="true"><i class="s-put" id="hzSplitPut"></i><i class="s-gain" id="hzSplitGain"></i></div>
-        <div class="hz-cols" id="hzCols" role="img" aria-label="Cada columna es un año: en azul lo que pones tú y en verde lo que añade el tiempo">${ser.map(() => `<div class="c"><i class="p"></i><i class="g"></i></div>`).join("")}</div>
-        <div class="hz-axis"><span>Hoy</span><span id="hzMid"></span><span id="hzEnd"></span></div>
-        <div class="hz-legend"><span><i class="l-put"></i>Lo que pones tú</span><span><i class="l-gain"></i>Lo que añade el tiempo</span></div>
-        <p class="hz-sub" id="hzSub"></p>
-        <div class="hz-ctl">
-            <label>Cada mes <output id="hzPmOut"></output><input type="range" min="10" max="300" step="10" value="${hz.pm}" data-input="hzRange" data-key="pm" aria-label="Aportación mensual"></label>
-            <label>Durante <output id="hzYrOut"></output><input type="range" min="5" max="40" step="1" value="${hz.years}" data-input="hzRange" data-key="years" aria-label="Años"></label>
-        </div>
-        <div class="row"><button class="btn" id="hzCta" data-act="newGoalFromBudget" data-v="${hz.pm}">Empezar ${ARROW}</button><a class="btn ghost" href="#/simulador">Ver escenarios</a></div>
-        <p class="hz-note">Hipótesis de rentabilidad del ${HERO_RATE} % anual, sin comisiones ni impuestos. No es una previsión ni una garantía: invertir conlleva riesgo de pérdida.</p>
+            <div class="hz-left">
+                <p class="hz-hello">El poder de empezar</p>
+                <h1>Con solo <b id="hzPm"></b> al mes, en <b id="hzYr"></b> podrías tener</h1>
+                <p class="hz-big" id="hzBig" aria-live="polite">0 €</p>
+                <p class="hz-chg"><span class="put" id="hzPut"></span><span class="up" id="hzGain"></span></p>
+                ${hzVerdict()}
+                <p class="hz-sub" id="hzSub"></p>
+                <div class="row"><button class="btn" id="hzCta" data-act="newGoalFromBudget" data-v="${hz.pm}">Empezar ${ARROW}</button><a class="btn ghost" href="#/simulador">Ver escenarios</a></div>
+            </div>
+            <div class="hz-right">
+                <p class="hz-read" id="hzRead"></p>
+                <div class="hz-chart-wrap" id="hzChart"></div>
+                <div class="hz-legend"><span><i class="l-put"></i>Lo que pones tú (solo guardarlo)</span><span><i class="l-gain"></i>Lo que añade el tiempo</span></div>
+                <div class="hz-ctl">
+                    <label>Cada mes <output id="hzPmOut"></output><input type="range" min="10" max="300" step="10" value="${hz.pm}" data-input="hzRange" data-key="pm" aria-label="Aportación mensual"></label>
+                    <label>Durante <output id="hzYrOut"></output><input type="range" min="5" max="40" step="1" value="${hz.years}" data-input="hzRange" data-key="years" aria-label="Años"></label>
+                </div>
+            </div>
+            <p class="hz-note">Hipótesis de rentabilidad del ${HERO_RATE} % anual, sin comisiones ni impuestos. No es una previsión ni una garantía: invertir conlleva riesgo de pérdida.</p>
         </div>
     </section>`;
+}
+const niceMax = v => { const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; };
+// Gráfica de líneas: lo que pones tú (línea y área azul) frente a lo que sumas invirtiendo (línea y área verde)
+function heroChart(ser) {
+    const W = Math.max(300, Math.min(760, Math.round($("#hzChart")?.clientWidth || 660))), small = W < 480; // se dibuja al ancho real para que el texto no se encoja
+    const H = Math.round(W * (small ? 0.74 : 0.5)), L = small ? 70 : 66, R = small ? 74 : 88, T = 14, B = 34, pw = W - L - R, ph = H - T - B, n = ser.length - 1;
+    const top = niceMax(ser[n].v * 1.02), X = i => L + i / n * pw, Y = v => T + ph - v / top * ph;
+    hz.geo = { L, pw, T, ph, top, n, W };
+    const pts = k => ser.map((d, i) => `${X(i).toFixed(1)},${Y(d[k]).toFixed(1)}`);
+    const inv = pts("v"), put = pts("put"), yI = Y(ser[n].v), yP = Y(ser[n].put), close = yP - yI < 18;
+    const grid = [0, .25, .5, .75, 1].map(f => { const v = top * f, y = Y(v).toFixed(1); return `<line class="g" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/><text class="yl" x="${L - 10}" y="${(+y + 4).toFixed(1)}" text-anchor="end">${fmtR(v)}</text>`; }).join("");
+    const step = [1, 2, 5, 10].find(k => n / k <= (small ? 3 : 6)) || 10;
+    const ticks = Array.from({ length: Math.floor(n / step) + 1 }, (_, k) => k * step).map(y => `<text class="xl" x="${X(y).toFixed(1)}" y="${H - 8}" text-anchor="${y === 0 ? "start" : "middle"}">${y === 0 ? "Hoy" : `${y} ${y === 1 ? "año" : "años"}`}</text>`).join("");
+    return `<svg class="hz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Con ${fmtR(hz.pm)} al mes durante ${hz.years} años: ${fmtR(ser[n].v)} invirtiendo frente a ${fmtR(ser[n].put)} solo guardando">
+        <defs><linearGradient id="hzG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--up)" stop-opacity=".32"/><stop offset="1" stop-color="var(--up)" stop-opacity=".04"/></linearGradient></defs>
+        ${grid}${ticks}
+        <polygon class="a-put" points="${put.join(" ")} ${X(n).toFixed(1)},${Y(0).toFixed(1)} ${X(0).toFixed(1)},${Y(0).toFixed(1)}"/>
+        <polygon class="a-gain" points="${inv.join(" ")} ${put.slice().reverse().join(" ")}"/>
+        <polyline class="l-put" points="${put.join(" ")}" pathLength="1"/>
+        <polyline class="l-inv" points="${inv.join(" ")}" pathLength="1"/>
+        <circle class="d-put" cx="${X(n).toFixed(1)}" cy="${yP.toFixed(1)}" r="4.5"/><circle class="d-inv" cx="${X(n).toFixed(1)}" cy="${yI.toFixed(1)}" r="5.5"/>
+        <text class="e-inv" x="${(X(n) + 11).toFixed(1)}" y="${(yI + (close ? -2 : 4)).toFixed(1)}">${fmtR(ser[n].v)}</text>
+        <text class="e-put" x="${(X(n) + 11).toFixed(1)}" y="${(yP + (close ? 14 : 4)).toFixed(1)}">${fmtR(ser[n].put)}</text>
+        <g class="cur"><line class="cl" x1="0" x2="0" y1="${T}" y2="${T + ph}"/><circle class="c-put" r="4.5"/><circle class="c-inv" r="5"/></g>
+        <rect class="hit" x="${L}" y="${T}" width="${pw}" height="${ph}"/>
+    </svg>`;
+}
+function hzReadout(ser, i) {
+    const d = ser[i], el = $("#hzRead"); if (!el) return;
+    el.innerHTML = i === 0 ? "Hoy: <b>0 €</b>" : `Año ${d.y}: <b>${fmtR(d.v)}</b> · tú ${fmtR(d.put)} + el tiempo ${fmtR(d.gain)}`;
+}
+function hzPointer(e) {
+    const svg = e.target.closest?.(".hz-svg"); if (!svg || !hz.geo) return;
+    const { L, pw, T, ph, top, n } = hz.geo, ser = heroSeries(), r = svg.getBoundingClientRect(), k = svg.viewBox.baseVal.width / r.width;
+    const i = Math.max(0, Math.min(n, Math.round(((e.clientX - r.left) * k - L) / pw * n))), d = ser[i], x = L + i / n * pw;
+    const Yv = v => T + ph - v / top * ph;
+    const cl = $(".cl", svg); cl.setAttribute("x1", x); cl.setAttribute("x2", x);
+    const ci = $(".c-inv", svg), cp = $(".c-put", svg);
+    ci.setAttribute("cx", x); ci.setAttribute("cy", Yv(d.v)); cp.setAttribute("cx", x); cp.setAttribute("cy", Yv(d.put));
+    svg.classList.add("hover"); hzReadout(ser, i);
 }
 function heroCount(el, to) {
     const from = hz.shown ?? 0; hz.shown = to;
@@ -328,31 +370,29 @@ function heroCount(el, to) {
     };
     requestAnimationFrame(step);
 }
-function paintHero() {
+function paintHero(animate = false) {
     const root = $("#hz"); if (!root || root.classList.contains("betting")) return;
-    const ser = heroSeries(), last = ser.at(-1), max = last.v;
-    const third = Math.max(1, Math.round(hz.years / 3)), before = ser[hz.years - third - 1], gainLast = last.gain - (before ? before.gain : 0);
+    const ser = heroSeries(), n = hz.years, last = ser[n];
+    const third = Math.max(1, Math.round(n / 3)), before = ser[n - third], gainLast = last.gain - (before ? before.gain : 0);
     const share = last.gain > 0 ? Math.round(gainLast / last.gain * 100) : 0, daily = hz.pm * 12 / 365;
     $("#hzPm").textContent = fmtR(hz.pm); $("#hzPmOut").textContent = `${fmtR(hz.pm)} al mes`;
-    $("#hzYr").textContent = `${hz.years} años`; $("#hzYrOut").textContent = `${hz.years} años`;
+    $("#hzYr").textContent = `${n} años`; $("#hzYrOut").textContent = `${n} años`;
     $("#hzPut").textContent = `Tú pones ${fmtR(last.put)}`;
     $("#hzGain").textContent = `▲ El tiempo añade +${fmtR(last.gain)}`;
-    $("#hzSplitPut").style.flex = last.put; $("#hzSplitGain").style.flex = Math.max(0.0001, last.gain);
-    $("#hzMid").textContent = hz.years >= 10 ? `Año ${Math.round(hz.years / 2)}` : "";
-    $("#hzEnd").textContent = `Año ${hz.years}`;
-    $("#hzSub").innerHTML = `Son ${daily.toLocaleString("es-ES", { maximumFractionDigits: 2 })} € al día. Y lo más sorprendente: <b>los últimos ${third} años generan el ${share} % de todo lo que ganas.</b> Por eso lo que cuenta es empezar pronto, aunque sea con poco.`;
+    $("#hzSub").innerHTML = `Son ${daily.toLocaleString("es-ES", { maximumFractionDigits: 2 })} € al día. Y lo más sorprendente: <b>los últimos ${third} años generan el ${share} % de todo lo que ganas.</b> Por eso importa empezar pronto, aunque sea con poco.`;
     const cta = $("#hzCta"); cta.dataset.v = hz.pm; cta.firstChild.textContent = `Empezar con ${fmtR(hz.pm)} al mes `;
-    $$("#hzCols .c").forEach((c, i) => {
-        const d = ser[i]; if (!d) return;
-        const [pe, ge] = [$(".p", c), $(".g", c)];
-        pe.style.transitionDelay = ge.style.transitionDelay = `${i * 18}ms`;
-        pe.style.height = `${d.put / max * 100}%`; ge.style.height = `${d.gain / max * 100}%`;
-        c.title = `Año ${d.y}: ${fmtR(d.v)} (tú ${fmtR(d.put)} + tiempo ${fmtR(d.gain)})`;
-    });
+    $("#hzChart").innerHTML = heroChart(ser);
+    if (animate) $(".hz-svg", root).classList.add("draw");
+    hzReadout(ser, n);
     heroCount($("#hzBig"), last.v);
     hz.dramatic = false;
 }
-function mountHero() { const r = $("#hz"); if (!r) return; hz.shown = null; void r.offsetHeight; paintHero(); }
+let hzResizeT;
+addEventListener("resize", () => {
+    clearTimeout(hzResizeT);
+    hzResizeT = setTimeout(() => { const c = $("#hzChart"); if (c && c.clientWidth && hz.geo && Math.abs(c.clientWidth - hz.geo.W) > 24) paintHero(); }, 150);
+});
+function mountHero() { const r = $("#hz"); if (!r) return; hz.shown = null; void r.offsetHeight; paintHero(true); }
 
 function viewResumen() {
     const t = today(), due = CARDS.filter(c => pulseState().due[c.id] !== undefined && pulseState().due[c.id] <= t).length;
@@ -1381,12 +1421,7 @@ document.addEventListener("submit", e => {
 document.addEventListener("input", e => {
     const t = e.target, k = t.dataset.input;
     if (k === "hzGuess") { $("#hzGuessOut").textContent = fmtR(+t.value); return; }
-    if (k === "hzRange") {
-        hz[t.dataset.key] = +t.value;
-        const cols = $("#hzCols"), n = cols.children.length;
-        if (n !== hz.years) cols.innerHTML = Array.from({ length: hz.years }, () => `<div class="c"><i class="p"></i><i class="g"></i></div>`).join("");
-        paintHero(); return;
-    }
+    if (k === "hzRange") { hz[t.dataset.key] = +t.value; paintHero(); return; }
     if (k === "pulseRange") { const c = pulse.cards[+t.dataset.i]; $(`#pv${t.dataset.i}`).textContent = c.fmt(+t.value); return; }
     if (k === "simRange") {
         sim[t.dataset.key] = +t.value;
@@ -1421,6 +1456,9 @@ function simPointer(e) {
     if (i !== sim.hover) { sim.hover = i; drawSim(); }
 }
 document.addEventListener("pointermove", simPointer);
+document.addEventListener("pointermove", hzPointer);
+document.addEventListener("pointerdown", hzPointer);
+document.addEventListener("pointerleave", e => { const v = e.target.classList?.contains("hz-svg") ? e.target : null; if (v) { v.classList.remove("hover"); hzReadout(heroSeries(), hz.years); } }, true);
 document.addEventListener("pointerdown", simPointer);
 document.addEventListener("pointerleave", e => { if (e.target.id === "simChart") { sim.hover = null; drawSim(); } }, true);
 
