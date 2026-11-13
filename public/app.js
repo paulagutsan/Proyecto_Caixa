@@ -253,7 +253,37 @@ function goalRow(g) {
 }
 /* Portada: el poder de empezar con poco. Igual para todo el mundo y calculada con una hipótesis del 5 % anual. */
 const HERO_RATE = 5;
-let hz = { pm: 50, years: 30, shown: null };
+let hz = { pm: 50, years: 30, shown: null, phase: null, guess: null, dramatic: false };
+const BET = { pm: 50, years: 30 };
+function hzPhase() {
+    if (!hz.phase) { let seen = false; try { seen = !!sessionStorage.getItem("hz_bet"); } catch { /* sin almacenamiento */ } hz.phase = seen ? "reveal" : "bet"; }
+    return hz.phase;
+}
+function betHTML() {
+    return `<div class="hz-bet">
+        <p class="hz-hello">Reto de 10 segundos</p>
+        <h1>Si ahorras <b>${fmtR(BET.pm)}</b> al mes durante <b>${BET.years} años</b>, ¿cuánto crees que tendrás?</h1>
+        <output class="hz-big" id="hzGuessOut" aria-live="polite">${fmtR(20000)}</output>
+        <input class="hz-guess" type="range" id="hzGuess" min="10000" max="200000" step="1000" value="20000" data-input="hzGuess" aria-label="Tu apuesta en euros">
+        <div class="hz-axis"><span>${fmtR(10000)}</span><span>${fmtR(200000)}</span></div>
+        <p class="hz-sub">Haz tu apuesta antes de ver la respuesta. Es dinero ficticio: cero riesgo, pero aprendes más si te la juegas.</p>
+        <div class="row"><button class="btn" data-act="hzBet">Lanzar mi apuesta ${ARROW}</button><button class="btn ghost" data-act="hzSkip">Ver la respuesta</button></div>
+    </div>`;
+}
+function hzVerdict() {
+    if (hz.guess == null) return "";
+    const real = fv(0, BET.pm, BET.years, HERO_RATE), put = BET.pm * 12 * BET.years, d = (hz.guess - real) / real * 100, a = Math.abs(Math.round(d));
+    const msg = a <= 10 ? "Casi clavado. Tu intuición financiera va bien."
+        : d < 0 ? `Te quedaste un ${a} % por debajo. Es lo habitual: pensamos en línea recta (${fmtR(put)} puestos) y el interés compuesto crece en curva.`
+        : `Te pasaste un ${a} % por arriba. Aun así, fíjate: el tiempo pone el ${Math.round((real - put) / real * 100)} % del total.`;
+    return `<div class="hz-verdict"><p class="hz-vs">Tu apuesta <b>${fmtR(hz.guess)}</b> · Resultado <b>${fmtR(real)}</b></p><p>${msg}</p>
+        <p class="hz-vl"><button class="link" data-act="hzAgain">Probar otra vez</button><a class="link" href="#/aprende">Aprender cómo funciona</a></p></div>`;
+}
+function hzReveal(dramatic) {
+    try { sessionStorage.setItem("hz_bet", "1"); } catch { /* sin almacenamiento */ }
+    Object.assign(hz, { phase: "reveal", pm: BET.pm, years: BET.years, dramatic });
+    lastRoute = null; render(false); window.scrollTo(0, 0);
+}
 function heroSeries() {
     const out = [];
     for (let y = 1; y <= hz.years; y++) { const v = fv(0, hz.pm, y, HERO_RATE), put = hz.pm * 12 * y; out.push({ y, v, put, gain: v - put }); }
@@ -261,11 +291,15 @@ function heroSeries() {
 }
 function heroHTML() {
     const ser = heroSeries();
-    return `<section class="hz hzw" id="hz" aria-label="El poder de empezar">
+    const betting = hzPhase() === "bet";
+    return `<section class="hz hzw${betting ? " betting" : ""}" id="hz" aria-label="El poder de empezar">
+        ${betting ? betHTML() : ""}
+        <div class="hz-reveal">
         <p class="hz-hello">El poder de empezar</p>
         <h1>Con solo <b id="hzPm"></b> al mes, en <b id="hzYr"></b> podrías tener</h1>
         <p class="hz-big" id="hzBig" aria-live="polite">0 €</p>
         <p class="hz-chg"><span class="put" id="hzPut"></span><span class="up" id="hzGain"></span></p>
+        ${hzVerdict()}
         <div class="hz-split" aria-hidden="true"><i class="s-put" id="hzSplitPut"></i><i class="s-gain" id="hzSplitGain"></i></div>
         <div class="hz-cols" id="hzCols" role="img" aria-label="Cada columna es un año: en azul lo que pones tú y en verde lo que añade el tiempo">${ser.map(() => `<div class="c"><i class="p"></i><i class="g"></i></div>`).join("")}</div>
         <div class="hz-axis"><span>Hoy</span><span id="hzMid"></span><span id="hzEnd"></span></div>
@@ -277,12 +311,13 @@ function heroHTML() {
         </div>
         <div class="row"><button class="btn" id="hzCta" data-act="newGoalFromBudget" data-v="${hz.pm}">Empezar ${ARROW}</button><a class="btn ghost" href="#/simulador">Ver escenarios</a></div>
         <p class="hz-note">Hipótesis de rentabilidad del ${HERO_RATE} % anual, sin comisiones ni impuestos. No es una previsión ni una garantía: invertir conlleva riesgo de pérdida.</p>
+        </div>
     </section>`;
 }
 function heroCount(el, to) {
     const from = hz.shown ?? 0; hz.shown = to;
     if (matchMedia("(prefers-reduced-motion: reduce)").matches || from === to) { el.textContent = fmtR(to); return; }
-    const t0 = performance.now(), dur = 900;
+    const t0 = performance.now(), dur = hz.dramatic ? 1900 : 900;
     el.textContent = fmtR(from);
     setTimeout(() => { if (hz.shown === to) el.textContent = fmtR(to); }, dur + 150); // por si el navegador pausa las animaciones
     const step = now => {
@@ -294,7 +329,7 @@ function heroCount(el, to) {
     requestAnimationFrame(step);
 }
 function paintHero() {
-    const root = $("#hz"); if (!root) return;
+    const root = $("#hz"); if (!root || root.classList.contains("betting")) return;
     const ser = heroSeries(), last = ser.at(-1), max = last.v;
     const third = Math.max(1, Math.round(hz.years / 3)), before = ser[hz.years - third - 1], gainLast = last.gain - (before ? before.gain : 0);
     const share = last.gain > 0 ? Math.round(gainLast / last.gain * 100) : 0, daily = hz.pm * 12 / 365;
@@ -315,6 +350,7 @@ function paintHero() {
         c.title = `Año ${d.y}: ${fmtR(d.v)} (tú ${fmtR(d.put)} + tiempo ${fmtR(d.gain)})`;
     });
     heroCount($("#hzBig"), last.v);
+    hz.dramatic = false;
 }
 function mountHero() { const r = $("#hz"); if (!r) return; hz.shown = null; void r.offsetHeight; paintHero(); }
 
@@ -1096,6 +1132,9 @@ const ACTIONS = {
     },
     quiz: () => profileQuiz(0, []),
     quizPick: el => profileQuiz(+el.dataset.step + 1, [...el.dataset.acc.split(",").filter(Boolean).map(Number), +el.dataset.v]),
+    hzBet: () => { hz.guess = +$("#hzGuess").value; hzReveal(true); },
+    hzSkip: () => { hz.guess = null; hzReveal(false); },
+    hzAgain: () => { hz.phase = "bet"; hz.guess = null; lastRoute = null; render(false); },
     newGoalFromBudget: el => openSheet(goalForm({ monthly: +el.dataset.v })),
 
     pulseAnswer: el => answerPulse(el),
@@ -1341,6 +1380,7 @@ document.addEventListener("submit", e => {
 });
 document.addEventListener("input", e => {
     const t = e.target, k = t.dataset.input;
+    if (k === "hzGuess") { $("#hzGuessOut").textContent = fmtR(+t.value); return; }
     if (k === "hzRange") {
         hz[t.dataset.key] = +t.value;
         const cols = $("#hzCols"), n = cols.children.length;

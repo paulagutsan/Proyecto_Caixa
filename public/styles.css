@@ -1306,3 +1306,18 @@ body.fly-open .top, :root:not([data-theme="dark"]) body.fly-open .top, :root[dat
 .hz-ctl output { font-size: 24px; font-weight: 600; color: var(--ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .hz-ctl input[type=range] { width: 100%; }
 @media (max-width: 640px) { .hz-ctl { grid-template-columns: 1fr; gap: 20px; } .hzw { padding-top: 32px; } }
+
+
+/* Reto previo: apostar antes de ver el resultado */
+.hz-bet, .hz-reveal { display: grid; justify-items: center; width: 100%; }
+.hzw.betting .hz-reveal, .hzw:not(.betting) .hz-bet { display: none; }
+.hz-bet h1 { font-size: clamp(24px, 3.4vw, 40px); max-width: 24ch; line-height: 1.18; }
+.hz-bet .hz-big { margin: 22px 0 14px; }
+.hz-guess { width: 100%; max-width: 620px; }
+.hz-bet .hz-axis { max-width: 620px; width: 100%; }
+.hz-bet .hz-sub { margin: 22px 0 26px; }
+.hz-verdict { max-width: 52ch; margin: 4px 0 30px; display: grid; gap: 8px; justify-items: center; font-size: 17px; line-height: 1.5; color: var(--ink2); animation: hzIn .8s cubic-bezier(.2, .8, .2, 1) 1.9s both; }
+.hz-vs { font-size: 15px; color: var(--ink2); }
+.hz-vs b { color: var(--ink); font-weight: 600; }
+.hz-vl { display: flex; gap: 20px; justify-content: center; margin-top: 4px; font-size: 14px; }
+@keyframes hzIn { from { opacity: 0; transform: translateY(10px); } }
