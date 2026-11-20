@@ -1,4 +1,10 @@
-# Horizonte · Reto CaixaBank Asset Management × Google
+# Horizonte
+
+> **Dos versiones publicadas en GitHub Pages**
+> - **Versión 2 (actual):** [paulagutsan.github.io/Proyecto_Caixa/v2](https://paulagutsan.github.io/Proyecto_Caixa/v2/) · carpeta `v2/`. Del primer euro a la primera casa: carnet de joven inversor con diploma, regalos de la familia, el primer año sin perder dinero, millas de casa y el Antídoto con Gemini. La raíz del sitio abre esta versión.
+> - **Versión 1:** [paulagutsan.github.io/Proyecto_Caixa/v1](https://paulagutsan.github.io/Proyecto_Caixa/v1/) · carpeta `v1/`, sin cambios en su código. Los enlaces antiguos a `/public/` redirigen aquí.
+> - El mapa de miedos de la v2 usa Supabase si se ejecuta una vez `supabase/schema-v2.sql`; si no, muestra datos de ejemplo.
+
 
 Web app para la Generación Z: ponle nombre a tu dinero, simula tu futuro y ahorra con tu círculo.
 
@@ -26,7 +32,7 @@ El acceso necesita un servicio con base de datos; GitHub Pages solo sirve archiv
 1. Crea una cuenta en [supabase.com](https://supabase.com) y un proyecto nuevo (región UE; guarda la contraseña de la base de datos).
 2. **Authentication → Sign In / Providers → Email**: desactiva **Confirm email** para que las personas entren al registrarse.
 3. **SQL Editor → New query**: pega el contenido de [`supabase/schema.sql`](supabase/schema.sql) y pulsa **Run**. Crea la tabla `perfiles` con seguridad por fila: cada persona solo lee y escribe lo suyo.
-4. **Project Settings → API** (o el botón **Connect**): copia la **Project URL** y la clave **anon public** (o *publishable*) y pégalas en [`public/config.js`](public/config.js).
+4. **Project Settings → API** (o el botón **Connect**): copia la **Project URL** y la clave **anon public** (o *publishable*) y pégalas en [`v1/config.js`](v1/config.js).
 5. Sube el cambio a GitHub. Esa clave es pública por diseño; **nunca** pegues la `service_role` ni una clave `secret`.
 6. **Parte social** (Círculos, liga de amigos, Draft Night online y los totales de «Tu voz»): en **SQL Editor → New query** pega [`supabase/schema-social.sql`](supabase/schema-social.sql) y pulsa **Run**. Hay que ejecutarlo después de `schema.sql` y es seguro repetirlo. Crea las tablas con seguridad por fila y las funciones SQL que usa la web; solo las personas con sesión pueden llamarlas. Sin este paso la cuenta funciona, pero Círculos, liga y Draft online avisan de que falta ejecutarlo.
 
@@ -70,7 +76,7 @@ Nota: en el plan gratuito, un proyecto sin actividad durante una semana se pausa
 ## Estructura
 
 - `server.js` API + estáticos (los datos viven en `data/`, ignorado por git)
-- `public/` front-end (`index.html`, `styles.css`, `app.js`, `games.js` y `arcade.js` con los minijuegos, la liga y el reloj, `social.js` con el cliente social de Supabase (alias, amigos, círculos, salas), `conecta.js` con Conecta, `cursos-data.js` con el contenido de los cursos, `cursos.js` con el reproductor y las gráficas, `coach-local.js` con las respuestas del asistente y `config.js` con la configuración pública de las cuentas)
+- `v1/` front-end de la versión 1 (`index.html`, `styles.css`, `app.js`, `games.js` y `arcade.js` con los minijuegos, la liga y el reloj, `social.js` con el cliente social de Supabase (alias, amigos, círculos, salas), `conecta.js` con Conecta, `cursos-data.js` con el contenido de los cursos, `cursos.js` con el reproductor y las gráficas, `coach-local.js` con las respuestas del asistente y `config.js` con la configuración pública de las cuentas)
 - `supabase/schema.sql` tabla y reglas de seguridad de las cuentas en la nube
 - `supabase/schema-social.sql` parte social: alias, amigos, puntuaciones, círculos, salas de Draft y votos de «Tu voz»
 

@@ -13,7 +13,7 @@ const path = require("path");
 const crypto = require("crypto");
 
 const PORT = Number(process.env.PORT) || 3000;
-const PUBLIC = path.join(__dirname, "public");
+const PUBLIC = path.join(__dirname, "v1");
 const DATA = path.join(__dirname, "data");
 const F_USERS = path.join(DATA, "users.json");
 const F_CIRCLES = path.join(DATA, "circles.json");
@@ -150,7 +150,7 @@ const COACH_SYSTEM = `Eres el asistente de Horizonte, una app de ahorro e invers
 Tono: profesional y cercano, propio de una gestora de activos; español de España; claro y preciso, sin emojis ni exclamaciones; explica cualquier término técnico. Máximo 120 palabras.
 Reglas: eres EDUCATIVO. No des asesoramiento de inversión personalizado, no recomiendes productos concretos ni prometas rentabilidades. Recuerda que la rentabilidad pasada no garantiza la futura y que invertir implica riesgo de pérdida. Si preguntan qué comprar, explica criterios (horizonte, riesgo, diversificación, costes) y sugiere hablar con un asesor. Usa los datos del usuario (metas, ahorro) para personalizar.`;
 
-const { localCoach } = require("./public/coach-local.js");
+const { localCoach } = require("./v1/coach-local.js");
 
 // Proveedores de IA en orden de preferencia; todos tienen opción gratuita:
 //   OPENROUTER_API_KEY  modelos «:free» de OpenRouter (clave gratuita en openrouter.ai)

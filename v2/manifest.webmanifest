@@ -1,0 +1,13 @@
+{
+  "name": "Horizonte · Del primer euro a la primera casa",
+  "short_name": "Horizonte",
+  "description": "El carnet de joven inversor de CaixaBank Asset Management. Prototipo.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "brand/horizonte-icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "brand/estrella.png", "sizes": "312x258", "type": "image/png", "purpose": "any" }
+  ]
+}
