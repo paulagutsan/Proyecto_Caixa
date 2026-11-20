@@ -4,36 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#ffffff">
-    <meta name="description" content="Horizonte v2: el carnet de joven inversor de CaixaBank Asset Management. Del primer euro a la primera casa. Prototipo del reto CaixaBank AM × Google.">
-    <title>Horizonte · Del primer euro a la primera casa</title>
+    <meta name="description" content="Horizonte, de CaixaBank Asset Management: el carnet de inversor para tu primer euro. Aprende, invierte con tu primer año protegido y construye tu primera casa desde los 15, con tu familia.">
+    <title>Horizonte · El carnet de inversor para tu primer euro</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="brand/horizonte-icono.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="brand/estrella.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Source+Serif+4:opsz,wght@8..60,400..600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1">
+    <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
-    <a class="skip" href="#view">Saltar al contenido</a>
-    <header class="top">
-        <div class="top-in">
-            <a class="brand" href="#/inicio" aria-label="Horizonte · Inicio">
-                <img class="brand-star" src="brand/horizonte-icono.svg" alt="" width="46" height="38">
-                <span class="brand-word" aria-hidden="true">Horizonte</span>
-            </a>
-            <nav class="nav" id="nav" aria-label="Secciones"></nav>
-            <div class="top-actions">
-                <a class="fam-btn" href="#/familia">Familia</a>
-                <a class="who" id="who" href="#/ajustes" aria-label="Tu perfil y ajustes">?</a>
-            </div>
-        </div>
-    </header>
-    <main id="view" tabindex="-1"></main>
+    <div id="app"></div>
+    <div id="sheet"></div>
     <div id="toasts" aria-live="polite"></div>
-    <script src="config.js"></script>
-    <script src="data.js?v=1"></script>
-    <script src="gemini.js?v=1"></script>
-    <script src="app.js?v=1"></script>
+    <script src="config.js?v=3"></script>
+    <script src="data.js?v=3"></script>
+    <script src="gemini.js?v=3"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>

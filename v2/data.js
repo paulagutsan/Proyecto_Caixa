@@ -1,7 +1,7 @@
 "use strict";
 /* Horizonte v2 · contenido y reglas
-   Del primer euro a la primera casa. Todo lo que aquí aparece es un prototipo: cifras de ejemplo,
-   rentabilidades simuladas y reglas que habría que validar con CaixaBank AM. No es asesoramiento. */
+   Del primer euro a la primera casa. Las rentabilidades de los fondos son estimaciones para calcular
+   valores orientativos; las reglas (premio, protección, millas) son la propuesta del equipo para CaixaBank AM. */
 
 const RULES = {
     prize: 20,                 // € que se ganan al aprobar el teórico
@@ -29,7 +29,6 @@ const MILES = {
     perPoint: 10000,     // 10.000 millas = 1 punto porcentual menos de diferencial (100 millas = 0,01)
     maxCut: 0.5,         // rebaja máxima: 0,50 puntos
 };
-const MORTGAGE = { amount: 150000, years: 25, rate: 3.0 };   // hipoteca de ejemplo
 
 /* Menú cerrado de CaixaBank AM (temas, no productos concretos) y rentabilidad anual SIMULADA */
 const FUNDS = {
@@ -67,25 +66,29 @@ const FEARS = [
       why: "Si la energía y el coche se encarecen cuando te saques el carnet de conducir, esta parte de tu dinero tiende a subir con ellos." },
 ];
 
-/* Ranking de ejemplo del «mapa de miedos de tu generación» (se sustituye por el real si existe en Supabase) */
-const FEAR_DEMO = { casa: 412, ia: 268, precios: 131, clima: 109, salud: 52, coche: 28 };
+/* Objetivo de vivienda por defecto (el joven lo ajusta en Casa) */
+const GOAL_DEFAULT = { price: 150000, age: 27 };
+const DOWN_PCT = 0.2;          // entrada habitual: 20 % del precio
+const MORTGAGE_YEARS = 25;
+const MORTGAGE_RATE = 3.0;     // tipo de referencia para calcular la rebaja
+const RANK_MIN = 100;          // el mapa de miedos se publica a partir de 100 respuestas
 
-/* Datos de ejemplo que CaixaBank ya tiene del joven (con permiso de sus padres) */
-const BANK_DEMO = {
-    paga: 20,                       // € a la semana
-    savingsAccount: 160,            // € parados en imaginTeens, al 0 %
-    houseDown: 30000,               // entrada de ejemplo: 20 % de un piso de 150.000 €
-    moves: [
-        { d: "Bocadillo en el insti", a: 2.4, cat: "Comida" },
-        { d: "Cine con amigos", a: 7.5, cat: "Ocio" },
-        { d: "Bizum a Álvaro", a: 5, cat: "Amigos" },
-        { d: "Camiseta", a: 19.95, cat: "Ropa" },
-        { d: "Refresco y patatas", a: 3.2, cat: "Comida" },
-        { d: "Recarga del bus", a: 10, cat: "Transporte" },
-        { d: "Videojuego (oferta)", a: 4.99, cat: "Ocio" },
-        { d: "Bocadillo en el insti", a: 2.4, cat: "Comida" },
-    ],
-};
+/* Página de bienvenida */
+const HOW = [
+    { t: "Sácate el teórico", p: `Cinco temas de tres minutos y un examen. Al aprobar, CaixaBank invierte ${RULES.prize} € a tu nombre.` },
+    { t: "Prácticas sin miedo", p: `Durante tu primer año, los primeros ${RULES.protectCap} € que inviertes no pueden perder valor.` },
+    { t: "Tu Antídoto", p: "Una parte de tu dinero invierte en lo que te preocupa de tu futuro. Si pasa, tu dinero gana." },
+    { t: "Millas de casa", p: "Cada mes de constancia rebaja el interés de tu futura hipoteca con CaixaBank." },
+];
+const FAQ = [
+    { q: "¿Desde qué edad puedo usar Horizonte?", a: "Desde los 14 años, con la autorización de tu madre, padre o tutor legal. Hasta los 18, la cuenta está a tu nombre y tu familia aprueba las decisiones importantes. A los 18 recibes tu carnet completo y la cuenta pasa a ser solo tuya." },
+    { q: "¿Puedo perder dinero?", a: `Invertir siempre tiene riesgo y el valor puede bajar. Por eso, durante tu primer año, los primeros ${RULES.protectCap} € que inviertes tú están protegidos: si al cumplir los 12 meses valen menos de lo que pusiste, CaixaBank pone la diferencia, siempre que no hayas vendido antes.` },
+    { q: "¿Qué es el Antídoto?", a: `En lugar de preguntarte cuánto riesgo quieres, te preguntamos qué te preocupa de tu futuro. El ${Math.round(RULES.base * 100)} % de tu dinero va a un fondo global diversificado y el ${Math.round(RULES.antidote * 100)} % a los temas que eliges, dentro de una selección cerrada de fondos de CaixaBank Asset Management. Reduce el golpe si lo que temes ocurre; no es una garantía.` },
+    { q: "¿Cómo funcionan las millas de casa?", a: "Las ganas al aprender, al aportar cada mes y con los regalos de tu familia (con un tope mensual). Se canjean como rebaja del diferencial de tu primera hipoteca con CaixaBank. No caducan y, si nunca compras casa, no pierdes nada." },
+    { q: "¿Qué hace Gemini con mis datos?", a: "Solo con el permiso de tu familia (y a partir de los 18, el tuyo), Gemini usa la información de tu cuenta para explicarte tu dinero con tus propios números. Nunca se usa para publicidad y puedes retirar el permiso cuando quieras." },
+    { q: "¿Cómo puede ayudar mi familia?", a: "Desde el área familiar pueden hacer regalos puntuales o aportaciones mensuales con un mensaje, aprobar tu Antídoto, decidir los permisos y ver tu progreso." },
+];
+const LEGAL = "Horizonte es un servicio de CaixaBank Asset Management, propuesto en el reto CaixaBank AM × Google. Invertir conlleva riesgos, incluida la pérdida del capital invertido. Los valores que se muestran son estimaciones con fines informativos y no garantizan rentabilidades futuras. La protección del primer año es una bonificación promocional sujeta a condiciones: tope de 500 € por persona, 12 meses y solo si no se vende antes. Las millas de casa son una rebaja sobre las condiciones vigentes en el momento de la firma y no obligan a contratar ningún producto (Ley 5/2019).";
 
 const SOURCES = {
     premio: { label: "Premio del teórico", own: true },
@@ -186,7 +189,7 @@ const EXAM = [
     ...LESSONS.flatMap(l => l.check),
     { q: "Necesitas el dinero para el viaje de fin de curso dentro de 6 meses. ¿Dónde tiene más sentido?", o: ["En bolsa, para que crezca más", "En un sitio estable y disponible", "En criptomonedas"], a: 1, why: "A corto plazo una caída podría coincidir justo con el momento en que lo necesitas." },
     { q: "Con 20 € al mes desde los 15 o 40 € al mes desde los 25, ¿quién suele llegar más lejos a los 50?", o: ["Siempre el de 40 €", "El que empieza a los 15 puede llegar a más", "Los dos igual"], a: 1, why: "Diez años más de interés compuesto pueden compensar aportar la mitad." },
-    { q: "¿Qué parte de tu dinero va al Antídoto?", o: ["Todo", "Una parte, por ejemplo el 25 %", "Nada, es solo un juego"], a: 1, why: "La base global (75 %) reparte el riesgo; el Antídoto es una parte." },
+    { q: "¿Qué parte de tu dinero va al Antídoto?", o: ["Todo", "Una parte: el 25 %", "Nada, es solo un juego"], a: 1, why: "La base global (75 %) reparte el riesgo; el Antídoto es una parte." },
     { q: "El Antídoto invierte en lo que te da miedo. ¿Qué garantiza?", o: ["Que nunca pierdas", "Nada: reduce el golpe, no es una garantía", "Que ganes el doble"], a: 1, why: "Si lo que temes pasa, esa parte tiende a subir, pero no hay garantías." },
     { q: "Las comisiones de un fondo…", o: ["No importan", "Se cobran cada año y se acumulan con el tiempo", "Solo se pagan al principio"], a: 1, why: "Un punto al año de diferencia puede suponer bastante menos dinero tras muchos años." },
 ];
