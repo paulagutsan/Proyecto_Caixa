@@ -1,17 +1,18 @@
 "use strict";
-/* Horizonte v2 · contenido y reglas
-   Del primer euro a la primera casa. Las rentabilidades de los fondos son estimaciones para calcular
-   valores orientativos; las reglas (premio, protección, millas) son la propuesta del equipo para CaixaBank AM. */
+/* Horizonte · contenido y reglas
+   Del primer euro a la primera casa: aprende, invierte, entiende, gana millas y compra tu casa.
+   Las rentabilidades de los fondos son estimaciones para calcular valores orientativos; las reglas
+   (primera inversión, primer año acompañado, millas) son la propuesta del equipo para CaixaBank AM. */
 
 const RULES = {
-    prize: 20,                 // € que se ganan al aprobar el teórico
+    prize: 20,                 // € invertidos a su nombre al superar Fundamentos
     protectCap: 500,           // € protegidos durante el primer año
     protectMonths: 12,
     base: 0.75,                // reparto Base + Antídoto
     antidote: 0.25,
     maxFears: 2,
     examSize: 10,
-    examMaxErrors: 2,          // como en el examen de conducir: se puede fallar poco
+    examMaxErrors: 2,          // prueba final: se puede fallar poco
     linkedinAge: 16,           // LinkedIn pide 16 años (a comprobar)
     adultAge: 18,
     houseAge: 27,
@@ -19,11 +20,13 @@ const RULES = {
 
 /* Millas de casa: se convierten en una rebaja del diferencial de una hipoteca con CaixaBank */
 const MILES = {
-    lesson: 10,          // cada tema del teórico
-    theory: 100,         // aprobar el teórico
+    lesson: 10,          // cada tema de Fundamentos
+    theory: 100,         // superar la prueba final
     firstOwn: 50,        // tu primer euro propio
     monthOwn: 10,        // cada mes en el que aportas tú
-    itv: 50,             // revisión anual del carnet
+    itv: 50,             // revisión anual
+    game: 5,             // un juego al día con datos reales
+    streak4: 20,         // cada 4 semanas seguidas con actividad
     giftPer5: 1,         // 1 milla por cada 5 € que te regalan…
     giftMonthCap: 20,    // …con un tope de 20 millas al mes, para que no se pueda «comprar» la rebaja
     perPoint: 10000,     // 10.000 millas = 1 punto porcentual menos de diferencial (100 millas = 0,01)
@@ -63,7 +66,7 @@ const FEARS = [
     { id: "salud", label: "La salud de mi familia", fund: "salud",
       why: "El gasto en salud crece con los años; invertir en el sector es una forma de estar del lado de quien encuentra soluciones." },
     { id: "coche", label: "No poder pagar el coche y la gasolina", fund: "movilidad",
-      why: "Si la energía y el coche se encarecen cuando te saques el carnet de conducir, esta parte de tu dinero tiende a subir con ellos." },
+      why: "Si la energía y el coche se encarecen cuando lo necesites, esta parte de tu dinero tiende a subir con ellos." },
 ];
 
 /* Objetivo de vivienda por defecto (el joven lo ajusta en Casa) */
@@ -73,25 +76,27 @@ const MORTGAGE_YEARS = 25;
 const MORTGAGE_RATE = 3.0;     // tipo de referencia para calcular la rebaja
 const RANK_MIN = 100;          // el mapa de miedos se publica a partir de 100 respuestas
 
-/* Página de bienvenida */
-const HOW = [
-    { t: "Sácate el teórico", p: `Cinco temas de tres minutos y un examen. Al aprobar, CaixaBank invierte ${RULES.prize} € a tu nombre.` },
-    { t: "Prácticas sin miedo", p: `Durante tu primer año, los primeros ${RULES.protectCap} € que inviertes no pueden perder valor.` },
-    { t: "Tu Antídoto", p: "Una parte de tu dinero invierte en lo que te preocupa de tu futuro. Si pasa, tu dinero gana." },
-    { t: "Millas de casa", p: "Cada mes de constancia rebaja el interés de tu futura hipoteca con CaixaBank." },
+/* El ciclo de Horizonte: cada paso alimenta al siguiente */
+const CYCLE = [
+    { id: "aprende", t: "Aprende", p: `Cinco temas de tres minutos y juegos con datos reales. Al superar Fundamentos, ${RULES.prize} € invertidos a tu nombre.`, ic: "book" },
+    { id: "invierte", t: "Invierte", p: `Desde 1 €, con tu familia detrás. Tu primer año, los primeros ${RULES.protectCap} € no pueden perder.`, ic: "chart" },
+    { id: "entiende", t: "Entiende", p: "Cada semana, qué ha pasado con tu dinero y por qué. Y tu Antídoto: invierte en lo que te preocupa.", ic: "spark" },
+    { id: "millas", t: "Gana millas", p: "Aprender, aportar y ser constante suma millas. Nunca por tener más dinero que nadie.", ic: "star" },
+    { id: "casa", t: "Tu casa", p: "Las millas rebajan el interés de tu primera hipoteca con CaixaBank.", ic: "house" },
 ];
 const FAQ = [
-    { q: "¿Desde qué edad puedo usar Horizonte?", a: "Desde los 14 años, con la autorización de tu madre, padre o tutor legal. Hasta los 18, la cuenta está a tu nombre y tu familia aprueba las decisiones importantes. A los 18 recibes tu carnet completo y la cuenta pasa a ser solo tuya." },
+    { q: "¿Desde qué edad puedo usar Horizonte?", a: "Desde los 14 años, con la autorización de tu madre, padre o tutor legal. Hasta los 18, la cuenta está a tu nombre y tu familia aprueba las decisiones importantes. A los 18 te conviertes en inversor certificado y la cuenta pasa a ser solo tuya." },
     { q: "¿Puedo perder dinero?", a: `Invertir siempre tiene riesgo y el valor puede bajar. Por eso, durante tu primer año, los primeros ${RULES.protectCap} € que inviertes tú están protegidos: si al cumplir los 12 meses valen menos de lo que pusiste, CaixaBank pone la diferencia, siempre que no hayas vendido antes.` },
+    { q: "¿Qué es el Certificado Horizonte?", a: `Una acreditación de CaixaBank Asset Management que demuestra que sabes lo esencial antes de invertir: interés compuesto, riesgo y plazo, diversificación y cómo evitar estafas. Al superar Fundamentos recibes ${RULES.prize} € invertidos y un certificado verificable que puedes añadir a LinkedIn a partir de los 16.` },
     { q: "¿Qué es el Antídoto?", a: `En lugar de preguntarte cuánto riesgo quieres, te preguntamos qué te preocupa de tu futuro. El ${Math.round(RULES.base * 100)} % de tu dinero va a un fondo global diversificado y el ${Math.round(RULES.antidote * 100)} % a los temas que eliges, dentro de una selección cerrada de fondos de CaixaBank Asset Management. Reduce el golpe si lo que temes ocurre; no es una garantía.` },
-    { q: "¿Cómo funcionan las millas de casa?", a: "Las ganas al aprender, al aportar cada mes y con los regalos de tu familia (con un tope mensual). Se canjean como rebaja del diferencial de tu primera hipoteca con CaixaBank. No caducan y, si nunca compras casa, no pierdes nada." },
+    { q: "¿Cómo funcionan las millas de casa?", a: "Las ganas al aprender, al jugar con datos reales, al aportar cada mes, al mantener tu racha y con los regalos de tu familia (con un tope mensual). Nunca por tener más dinero. Se canjean como rebaja del diferencial de tu primera hipoteca con CaixaBank, no caducan y, si nunca compras casa, no pierdes nada." },
     { q: "¿Qué hace Gemini con mis datos?", a: "Solo con el permiso de tu familia (y a partir de los 18, el tuyo), Gemini usa la información de tu cuenta para explicarte tu dinero con tus propios números. Nunca se usa para publicidad y puedes retirar el permiso cuando quieras." },
     { q: "¿Cómo puede ayudar mi familia?", a: "Desde el área familiar pueden hacer regalos puntuales o aportaciones mensuales con un mensaje, aprobar tu Antídoto, decidir los permisos y ver tu progreso." },
 ];
 const LEGAL = "Horizonte es un servicio de CaixaBank Asset Management, propuesto en el reto CaixaBank AM × Google. Invertir conlleva riesgos, incluida la pérdida del capital invertido. Los valores que se muestran son estimaciones con fines informativos y no garantizan rentabilidades futuras. La protección del primer año es una bonificación promocional sujeta a condiciones: tope de 500 € por persona, 12 meses y solo si no se vende antes. Las millas de casa son una rebaja sobre las condiciones vigentes en el momento de la firma y no obligan a contratar ningún producto (Ley 5/2019).";
 
 const SOURCES = {
-    premio: { label: "Premio del teórico", own: true },
+    premio: { label: "Primera inversión (Fundamentos)", own: true },
     paga: { label: "De tu paga", own: true },
     redondeo: { label: "Redondeo de compras", own: true },
     verano: { label: "Trabajo de verano", own: true },
@@ -100,7 +105,7 @@ const SOURCES = {
     mensual: { label: "Aportación de la familia", own: false },
 };
 
-/* ---------------------------------------------------------------- El teórico (5 temas) */
+/* ---------------------------------------------------------------- Fundamentos (5 temas) */
 const LESSONS = [
     { id: "invertir", title: "Ahorrar o invertir", sub: "Por qué empezar a los 15 es tu mayor ventaja", min: 3,
       cards: [
@@ -112,7 +117,7 @@ const LESSONS = [
             "Mueve los controles y mira qué pasa." ], viz: "compound" },
         { h: "El tiempo pesa más que la cantidad", p: [
             "Quien empieza a los 15 con 20 € al mes puede acabar con más que quien empieza a los 25 con el doble. No hace falta mucho dinero: hace falta tiempo.",
-            "Por eso tu carnet empieza ahora y no cuando tengas nómina." ] },
+            "Por eso Horizonte empieza ahora y no cuando tengas nómina." ] },
       ],
       check: [
         { q: "¿Qué es el interés compuesto?", o: ["Un interés que solo cobran los bancos", "Ganar también sobre lo que ya has ganado", "Un tipo de cuenta de ahorro"], a: 1, why: "Las ganancias se suman a lo que tienes y también empiezan a generar ganancias." },
@@ -166,16 +171,16 @@ const LESSONS = [
         { q: "Te escriben por Instagram: «Gana un 20 % al mes, garantizado». ¿Qué haces?", o: ["Pruebo con poco dinero", "Es una señal clara de estafa: no envío nada", "Se lo paso a mis amigos"], a: 1, why: "Rentabilidad alta garantizada y contacto no pedido son dos señales de estafa." },
         { q: "¿Dónde compruebas si una empresa de inversión está autorizada?", o: ["En sus redes sociales", "En la CNMV", "En los comentarios de YouTube"], a: 1, why: "La CNMV tiene los registros oficiales de entidades autorizadas." },
       ] },
-    { id: "carnet", title: "Cómo funciona tu carnet", sub: "Premio, año sin perder, millas de casa y Antídoto", min: 2,
+    { id: "horizonte", title: "Cómo funciona Horizonte", sub: "Primera inversión, primer año acompañado, millas y Antídoto", min: 2,
       cards: [
         { h: "Tu primer euro se gana", p: [
-            `Al aprobar este teórico, CaixaBank ingresa <b>${RULES.prize} €</b> invertidos a tu nombre. No es un regalo: te lo has ganado.`,
+            `Al superar Fundamentos, CaixaBank ingresa <b>${RULES.prize} €</b> invertidos a tu nombre. No es un regalo: te lo has ganado.`,
             "Después, el objetivo es que pongas tu <b>primer euro propio</b>: de tu paga, del redondeo de tus compras o de un trabajo de verano." ] },
-        { h: "Las prácticas, con doble pedal", p: [
+        { h: "Tu primer año, acompañado", p: [
             `Durante tus primeros 12 meses, los primeros <b>${RULES.protectCap} €</b> que inviertes tú no pueden perder. Si al cumplir el año valen menos, CaixaBank pone la diferencia.`,
             "Solo cuenta si no vendes antes de los 12 meses." ] },
         { h: "Millas de casa", p: [
-            "Cada tema que apruebas, cada mes que aportas y cada regalo de tu familia suman <b>millas de casa</b>.",
+            "Cada tema que completas, cada juego, cada mes que aportas y cada regalo de tu familia suman <b>millas de casa</b>.",
             "Años después se convierten en una rebaja del interés de tu primera hipoteca con CaixaBank. No caducan." ] },
       ],
       check: [
@@ -184,12 +189,59 @@ const LESSONS = [
       ] },
 ];
 
-/* Banco de preguntas del examen final */
+/* Banco de preguntas de la prueba final */
 const EXAM = [
     ...LESSONS.flatMap(l => l.check),
     { q: "Necesitas el dinero para el viaje de fin de curso dentro de 6 meses. ¿Dónde tiene más sentido?", o: ["En bolsa, para que crezca más", "En un sitio estable y disponible", "En criptomonedas"], a: 1, why: "A corto plazo una caída podría coincidir justo con el momento en que lo necesitas." },
     { q: "Con 20 € al mes desde los 15 o 40 € al mes desde los 25, ¿quién suele llegar más lejos a los 50?", o: ["Siempre el de 40 €", "El que empieza a los 15 puede llegar a más", "Los dos igual"], a: 1, why: "Diez años más de interés compuesto pueden compensar aportar la mitad." },
     { q: "¿Qué parte de tu dinero va al Antídoto?", o: ["Todo", "Una parte: el 25 %", "Nada, es solo un juego"], a: 1, why: "La base global (75 %) reparte el riesgo; el Antídoto es una parte." },
-    { q: "El Antídoto invierte en lo que te da miedo. ¿Qué garantiza?", o: ["Que nunca pierdas", "Nada: reduce el golpe, no es una garantía", "Que ganes el doble"], a: 1, why: "Si lo que temes pasa, esa parte tiende a subir, pero no hay garantías." },
+    { q: "El Antídoto invierte en lo que te preocupa. ¿Qué garantiza?", o: ["Que nunca pierdas", "Nada: reduce el golpe, no es una garantía", "Que ganes el doble"], a: 1, why: "Si lo que temes pasa, esa parte tiende a subir, pero no hay garantías." },
     { q: "Las comisiones de un fondo…", o: ["No importan", "Se cobran cada año y se acumulan con el tiempo", "Solo se pagan al principio"], a: 1, why: "Un punto al año de diferencia puede suponer bastante menos dinero tras muchos años." },
+];
+
+/* ---------------------------------------------------------------- Juegos con datos reales
+   Rentabilidades anuales aproximadas 2000-2024 (%, moneda local, ilustrativas) y un titular de cada año. */
+const MKT_FROM = 2000;
+const MKT = [
+    { k: "world", code: "MUN", name: "El mundo entero", sub: "MSCI World", color: "#007eae", r: [-13.2, -16.8, -19.9, 33.1, 14.7, 9.5, 20.1, 9.0, -40.7, 30.0, 11.8, -5.5, 15.8, 26.7, 4.9, -0.9, 7.5, 22.4, -8.7, 27.7, 15.9, 21.8, -18.1, 23.8, 18.7] },
+    { k: "usa", code: "USA", name: "Gigantes de EE. UU.", sub: "S&P 500", color: "#2f6fd6", r: [-9.1, -11.9, -22.1, 28.7, 10.9, 4.9, 15.8, 5.5, -37.0, 26.5, 15.1, 2.1, 16.0, 32.4, 13.7, 1.4, 12.0, 21.8, -4.4, 31.5, 18.4, 28.7, -18.1, 26.3, 25.0] },
+    { k: "tech", code: "TEC", name: "Tecnológicas", sub: "Nasdaq-100", color: "#8b5cf6", r: [-36.8, -32.6, -37.6, 49.1, 10.4, 1.5, 6.8, 18.7, -41.9, 53.5, 19.2, 2.7, 16.8, 35.0, 17.9, 8.4, 5.9, 31.5, -1.0, 38.0, 47.6, 26.6, -33.0, 53.8, 24.9] },
+    { k: "esp", code: "ESP", name: "España", sub: "IBEX 35", color: "#e0453a", r: [-21.7, -7.8, -28.1, 28.2, 17.4, 18.2, 31.8, 7.3, -39.4, 29.8, -17.4, -13.1, -4.7, 21.4, 3.7, -7.2, -2.0, 7.4, -15.0, 11.8, -15.5, 7.9, -5.6, 22.8, 14.8] },
+    { k: "eur", code: "EUR", name: "Europa", sub: "Euro Stoxx 50", color: "#3b82c4", r: [-2.7, -20.3, -37.3, 15.7, 6.9, 21.3, 15.1, 6.8, -44.4, 21.1, -5.8, -17.1, 13.8, 17.9, 1.2, 3.8, 0.7, 6.5, -14.3, 24.8, -5.1, 21.0, -11.7, 19.2, 8.3] },
+    { k: "jpn", code: "JPN", name: "Japón", sub: "Nikkei 225", color: "#d94f8c", r: [-27.2, -23.5, -18.6, 24.5, 7.6, 40.2, 6.9, -11.1, -42.1, 19.0, -3.0, -17.3, 22.9, 56.7, 7.1, 9.1, 0.4, 19.1, -12.1, 18.2, 16.0, 4.9, -9.4, 28.2, 19.2] },
+    { k: "emg", code: "EMG", name: "Emergentes", sub: "MSCI Emerging Markets", color: "#ff8300", r: [-30.6, -2.4, -6.0, 56.3, 25.9, 34.5, 32.6, 39.8, -53.2, 79.0, 19.2, -18.2, 18.6, -2.3, -1.8, -14.6, 11.6, 37.8, -14.2, 18.9, 18.7, -2.5, -20.0, 10.3, 7.5] },
+    { k: "bon", code: "BON", name: "Bonos", sub: "Bloomberg US Aggregate", color: "#7fb8d4", r: [11.6, 8.4, 10.3, 4.1, 4.3, 2.4, 4.3, 7.0, 5.2, 5.9, 6.5, 7.8, 4.2, -2.0, 6.0, 0.5, 2.6, 3.5, 0.0, 8.7, 7.5, -1.5, -13.0, 5.5, 1.3] },
+    { k: "oro", code: "ORO", name: "Oro", sub: "Precio del oro", color: "#c9a227", r: [-5.4, 0.8, 24.8, 19.1, 5.2, 18.2, 22.8, 31.4, 5.5, 24.0, 29.5, 10.1, 7.0, -28.0, -1.5, -10.4, 8.6, 13.1, -1.6, 18.3, 25.1, -3.6, -0.3, 13.1, 27.2] },
+    { k: "liq", code: "LIQ", name: "Colchón", sub: "Letras del Tesoro (liquidez)", color: "#8497a3", r: [5.8, 3.8, 1.6, 1.0, 1.4, 3.2, 4.8, 4.7, 1.5, 0.1, 0.1, 0.0, 0.1, 0.0, 0.0, 0.0, 0.3, 0.9, 1.9, 2.3, 0.6, 0.0, 1.5, 5.0, 5.2] },
+];
+const MKT_NEWS = [
+    "Las puntocom que valían miles de millones empiezan a desplomarse.",
+    "Atentados en Nueva York: la bolsa estadounidense cierra cuatro días.",
+    "Escándalos contables hunden a varias grandes empresas.",
+    "Los bancos centrales dejan los tipos en mínimos y vuelve el apetito por el riesgo.",
+    "Crecimiento global sólido; China acelera.",
+    "El precio de la vivienda marca máximos en medio mundo.",
+    "Las materias primas se disparan.",
+    "Primeros avisos en las hipotecas de alto riesgo en EE. UU.",
+    "Quiebra Lehman Brothers, un banco con 158 años de historia.",
+    "Rescates y estímulos masivos. Nadie se fía del rebote.",
+    "Grecia pide un rescate y se duda del futuro del euro.",
+    "Rebajan la nota de la deuda de EE. UU.; crisis de deuda en Europa.",
+    "El BCE promete hacer «lo que sea necesario» para salvar el euro.",
+    "La Reserva Federal anuncia que retirará estímulos.",
+    "El petróleo cae a la mitad en unos meses.",
+    "Devaluación sorpresa en China y un verano de sobresaltos.",
+    "Reino Unido vota salir de la Unión Europea.",
+    "Un año de calma inusual: la volatilidad toca mínimos.",
+    "Guerra comercial, subidas de tipos y un diciembre negro.",
+    "Los bancos centrales vuelven a bajar tipos.",
+    "Una pandemia paraliza el planeta.",
+    "Reapertura, euforia y acciones meme.",
+    "La inflación se dispara: subidas de tipos más rápidas en décadas.",
+    "La IA generativa entra en escena; caen varios bancos regionales.",
+    "Récords en bolsa impulsados por la tecnología."
+];
+const GAMES = [
+    { id: "titular", t: "El titular", p: "Un titular real de un año. ¿La bolsa mundial acabó ese año arriba o abajo?", rounds: 5 },
+    { id: "duelo", t: "¿Cuál rindió más?", p: "Dos inversiones, un año. Elige la que más subió (o la que menos cayó).", rounds: 5 },
 ];

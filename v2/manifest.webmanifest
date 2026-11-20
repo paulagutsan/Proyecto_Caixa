@@ -1,7 +1,7 @@
 {
   "name": "Horizonte · Del primer euro a la primera casa",
   "short_name": "Horizonte",
-  "description": "El carnet de inversor para tu primer euro. CaixaBank Asset Management.",
+  "description": "Del primer euro a tu primera casa. CaixaBank Asset Management.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",

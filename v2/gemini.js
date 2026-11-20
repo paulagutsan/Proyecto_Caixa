@@ -1,5 +1,5 @@
 "use strict";
-/* Horizonte v2 · asistente Gemini
+/* Horizonte · asistente Gemini
    Responde con los datos de la cuenta del joven (aportaciones, reparto, protección, millas y objetivo de casa).
    Si en config.js se define HZ2_CONFIG.geminiEndpoint (un servicio propio que llame a Gemini en Google Cloud),
    se usa ese servicio; si no responde, se usan estas respuestas calculadas en el navegador. */
@@ -54,10 +54,10 @@ function localGemini(question, c) {
                 `${G_EUR(sug)} a la semana hasta los ${c.goalAge} podrían convertirse en unos ${G_EUR(v)} con una rentabilidad estimada del 5 % anual, y cada mes que aportas suma 10 millas de casa.`;
         }
         used.push("tu paga", "tus aportaciones");
-    } else if (/carnet|diploma|linkedin|te[oó]rico|examen|itv/.test(q)) {
-        a = c.diploma ? `Tienes tu carnet de joven inversor desde el ${c.diploma}. La próxima revisión anual es antes del ${c.itvDue}. ${c.age >= 16 ? "Puedes añadirlo a LinkedIn desde Carnet." : "Podrás añadirlo a LinkedIn a partir de los 16."}`
-                      : `Llevas ${c.lessonsDone} de ${c.lessonsTotal} temas. Al aprobar el examen, CaixaBank invierte ${G_EUR(c.prize)} a tu nombre.`;
-        used.push("tu carnet");
+    } else if (/certificad|fundamentos|diploma|linkedin|prueba|revisi[oó]n|racha|juego/.test(q)) {
+        a = c.diploma ? `Tienes tu Certificado Horizonte desde el ${c.diploma}. La próxima revisión anual es antes del ${c.itvDue}. ${c.age >= 16 ? "Puedes añadirlo a LinkedIn desde Aprende." : "Podrás añadirlo a LinkedIn a partir de los 16."} Llevas una racha de ${c.streak} semanas: cada 4 suman 20 millas.`
+                      : `Llevas ${c.lessonsDone} de ${c.lessonsTotal} temas de Fundamentos. Al superar la prueba final, CaixaBank invierte ${G_EUR(c.prize)} a tu nombre. Un juego al día también suma millas.`;
+        used.push("tu certificado", "tu racha");
     } else {
         a = `Tienes ${G_EUR(c.value)} invertidos y ${c.miles.toLocaleString("es-ES")} millas de casa` + (c.fears.length ? `, y tu Antídoto cubre ${c.fears.map(f => f.label.toLowerCase()).join(" y ")}` : "") +
             ". Puedo ayudarte con tu objetivo de casa, tu Antídoto, qué pasa si la bolsa baja, tus millas o cuánto apartar de tu paga.";

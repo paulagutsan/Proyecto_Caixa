@@ -1,7 +1,8 @@
 "use strict";
-/* Horizonte v2 · Del primer euro a la primera casa
+/* Horizonte · Del primer euro a la primera casa
    Aplicación web sin servidor: el estado se guarda en este navegador (localStorage).
-   Dos áreas: la del joven (carnet, dinero, Antídoto, casa, familia) y la familiar (resumen, regalos y permisos). */
+   Un ciclo: aprende → invierte → entiende → gana millas → tu casa.
+   Dos áreas: la del joven (inicio, aprende, dinero, Antídoto, casa, familia) y la familiar (resumen, regalos y permisos). */
 
 const KEY = "hz2_v2";
 const $ = (s, r = document) => r.querySelector(s);
@@ -44,13 +45,19 @@ const P = {
     send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
     switch: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
+    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5A2.5 2.5 0 0 1 4 20.5z"/>',
+    star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+    flame: '<path d="M12 21c4 0 6.5-2.6 6.5-6.2 0-3.9-3.2-6.2-4.1-9.8-1.8 1.6-2.4 3.6-2.4 5.3-1.3-.8-2-2.1-2.2-3.4C7.8 8.6 5.5 11 5.5 14.8 5.5 18.4 8 21 12 21z"/>',
+    target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
+    play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l5.5-3.5z"/>',
+    news: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M7 8.5h10M7 12h10M7 15.5h6"/>',
 };
 const ic = (name, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[name] || ICONS[name] || ""}</svg>`;
 
 /* ------------------------------------------------------------------ estado */
 const blank = () => ({ v: 2, role: null, teen: null, family: null, familyAuth: false, paga: 0, weekly: 0, roundup: false,
     lessons: {}, exam: null, diploma: null, itv: [], money: [], schedules: [], fears: [], antidoteApproved: false,
-    geminiOk: false, voted: false, chat: [], goal: { ...GOAL_DEFAULT } });
+    geminiOk: false, voted: false, chat: [], goal: { ...GOAL_DEFAULT }, games: {}, metas: [] });
 let S;
 try { S = { ...blank(), ...(JSON.parse(localStorage.getItem(KEY)) || {}) }; } catch (e) { S = blank(); }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } };
@@ -108,13 +115,15 @@ function miles() {
     const items = [];
     const title = id => LESSONS.find(l => l.id === id)?.title || id;
     Object.entries(S.lessons).forEach(([id, d]) => items.push({ n: MILES.lesson, date: d, label: `Tema «${title(id)}»` }));
-    if (S.exam?.passed) items.push({ n: MILES.theory, date: S.exam.date, label: "Teórico aprobado" });
+    if (S.exam?.passed) items.push({ n: MILES.theory, date: S.exam.date, label: "Fundamentos superados" });
     const own = S.money.filter(isOwnReal).sort((a, b) => a.date.localeCompare(b.date));
     if (own.length) items.push({ n: MILES.firstOwn, date: own[0].date, label: "Tu primer euro propio" });
     const last = (list, ym) => list.filter(c => c.date.startsWith(ym)).map(c => c.date).sort().pop();
     const monthName = ym => T(ym + "-15").toLocaleDateString("es-ES", { month: "long", year: "numeric" });
     [...new Set(own.map(c => c.date.slice(0, 7)))].forEach(ym => items.push({ n: MILES.monthOwn, date: last(own, ym), label: `Aportación propia · ${monthName(ym)}` }));
-    S.itv.forEach(d => items.push({ n: MILES.itv, date: d, label: "Revisión anual del carnet" }));
+    S.itv.forEach(d => items.push({ n: MILES.itv, date: d, label: "Revisión anual" }));
+    Object.entries(S.games).forEach(([d, g]) => items.push({ n: MILES.game, date: d, label: `Juego «${GAMES.find(x => x.id === g.id)?.t || ""}»` }));
+    streak().bonus.forEach(b => items.push(b));
     const gifts = S.money.filter(isGift), byM = {};
     gifts.forEach(c => { const ym = c.date.slice(0, 7); byM[ym] = (byM[ym] || 0) + c.amount; });
     Object.entries(byM).forEach(([ym, sum]) => {
@@ -127,8 +136,27 @@ function miles() {
 }
 function milesPerYear() {
     const giftM = Math.min(MILES.giftMonthCap, Math.floor(S.schedules.reduce((a, x) => a + x.amount, 0) / 5));
-    return ((S.weekly > 0 || S.roundup) ? MILES.monthOwn * 12 : 0) + giftM * 12 + (S.diploma ? MILES.itv : 0);
+    return ((S.weekly > 0 || S.roundup) ? MILES.monthOwn * 12 + 13 * MILES.streak4 : 0) + giftM * 12 + (S.diploma ? MILES.itv : 0);
 }
+/* Racha: semanas seguidas con algo hecho (un tema, un juego, una aportación tuya o la revisión anual) */
+const weekOf = d => { const x = T(d); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return iso(x); };
+const shiftDays = (d, n) => { const x = T(d); x.setDate(x.getDate() + n); return iso(x); };
+function streak() {
+    const days = [...Object.values(S.lessons), ...S.money.filter(isOwnReal).map(c => c.date), ...Object.keys(S.games), ...S.itv];
+    const weeks = new Set(days.map(weekOf)), sorted = [...weeks].sort(), bonus = [];
+    let run = 0, prev = null;
+    sorted.forEach(w => {
+        run = prev && shiftDays(prev, 7) === w ? run + 1 : 1; prev = w;
+        if (run % 4 === 0) bonus.push({ n: MILES.streak4, date: shiftDays(w, 6) > iso(new Date()) ? iso(new Date()) : shiftDays(w, 6), label: `Racha de ${run} semanas` });
+    });
+    let w = weekOf(new Date()); const thisWeek = weeks.has(w);
+    if (!thisWeek) w = shiftDays(w, -7);
+    let current = 0; while (weeks.has(w)) { current++; w = shiftDays(w, -7); }
+    return { current, thisWeek, bonus };
+}
+/* Etapas del Certificado Horizonte */
+const STAGES = ["Fundamentos", "Primer año acompañado", "Inversor certificado"];
+const stageOf = () => !S.exam?.passed ? 0 : ageOf() >= RULES.adultAge ? 2 : 1;
 const lastItv = () => S.itv.length ? S.itv[S.itv.length - 1] : S.diploma?.date;
 
 function geminiContext() {
@@ -141,7 +169,7 @@ function geminiContext() {
         antidoteActive: m.al.active, baseAmount: m.value * (m.al.fears.length ? RULES.base : 1), antidoteAmount: m.al.fears.length ? m.value * RULES.antidote : 0,
         protectBase: m.protect?.base || 0, protectEnd: m.protect ? fmtD(m.protect.end) : "", protectRoom: m.protect?.room ?? RULES.protectCap, protectCap: RULES.protectCap,
         paga: S.paga, weekly: S.weekly, diploma: S.diploma ? fmtD(S.diploma.date) : null, itvDue: S.diploma ? fmtD(iso(addMonths(lastItv(), 12))) : null,
-        lessonsDone: Object.keys(S.lessons).length, lessonsTotal: LESSONS.length, prize: RULES.prize,
+        lessonsDone: Object.keys(S.lessons).length, lessonsTotal: LESSONS.length, prize: RULES.prize, streak: streak().current,
     };
 }
 
@@ -188,66 +216,141 @@ const toggle = (act, on, label) => `<label class="switch"><input type="checkbox"
 const legal = () => `<footer class="legal">${ic("info")}<p>${LEGAL}</p></footer>`;
 const brand = (href, h = 38) => `<a class="brand" href="${href}" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-icono.svg" alt="" width="${Math.round(h * 1.21)}" height="${h}"><span class="brand-word">Horizonte</span></a>`;
 
-function carnetVisual(big = false, sample = false) {
-    const age = ageOf(), passed = !sample && S.exam?.passed, full = passed && age >= RULES.adultAge;
-    const status = sample ? "En prácticas" : full ? "Carnet completo" : passed ? "En prácticas" : "Teórico pendiente";
+function credVisual(big = false, sample = false) {
+    const st = sample ? 1 : stageOf();
     const name = sample ? "Tu nombre" : `${S.teen?.name || ""} ${S.teen?.surname || ""}`.trim();
-    return `<div class="carnet ${big ? "big" : ""} ${passed || sample ? "" : "pending"}">
-      <div class="carnet-top"><span>Carnet de joven inversor</span><span class="plate ${full ? "full" : ""}">${full ? "18" : "L"}</span></div>
-      <div class="carnet-chip"></div>
-      <div class="carnet-name">${esc(name)}</div>
-      <div class="carnet-bottom"><div><small>Estado</small><b>${status}</b></div><div><small>Código</small><b>${!sample && S.diploma ? esc(S.diploma.id) : "HZ-····-····"}</b></div>
-        <img src="brand/horizonte-icono.svg" alt="" width="40" height="33"></div>
+    const code = !sample && S.diploma ? esc(S.diploma.id) : "HZ-····-····";
+    return `<div class="cred ${big ? "big" : ""} st${st}">
+      <div class="cred-top"><span>CaixaBank Asset Management</span><img src="brand/horizonte-icono.svg" alt="" width="34" height="28"></div>
+      <div class="cred-mid"><small>Certificado</small><b>Horizonte</b></div>
+      <div class="cred-name">${esc(name)}</div>
+      <div class="cred-stages" aria-label="Etapa: ${STAGES[st]}">${STAGES.map((x, i) => `<i class="${i < st ? "done" : i === st ? "on" : ""}"></i>`).join("")}</div>
+      <div class="cred-bottom"><div><small>Etapa</small><b>${STAGES[st]}</b></div><div><small>Código</small><b>${code}</b></div></div>
     </div>`;
 }
 
 /* ------------------------------------------------------------------ página de bienvenida */
 function vLanding() {
+    const lpYear = 8, lpNews = MKT_NEWS[lpYear];
     return `<div class="lp">
     <header class="lp-nav"><div class="lp-in">${brand("#/")}
-      <nav class="lp-links" aria-label="Secciones"><a href="#como">Cómo funciona</a><a href="#familias">Familias</a><a href="#seguridad">Seguridad</a><a href="#preguntas">Preguntas</a></nav>
+      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#familias">Familias</a><a href="#preguntas">Preguntas</a></nav>
       ${lnk("Crear cuenta", "#/alta/joven", "primary sm")}</div></header>
-    <section class="lp-hero"><div class="lp-in lp-hero-in">
-      <div class="lp-copy">
-        <p class="kicker">CaixaBank Asset Management</p>
-        <h1>El carnet de inversor para tu primer euro.</h1>
-        <p class="lp-lead">Aprende a invertir, empieza con tus primeros euros protegidos durante un año y construye tu primera casa desde los 15. Con tu familia detrás.</p>
-        <div class="lp-cta">${lnk("Soy joven", "#/alta/joven", "primary lg")}${lnk("Soy madre, padre o familiar", "#/alta/familia", "lg")}</div>
-        <ul class="lp-trust"><li>${ic("shield")}Primer año protegido</li><li>${ic("family")}Con el control de tu familia</li><li>${ic("chart")}Gestión de CaixaBank AM</li></ul>
+
+    <section class="hz-hero"><div class="lp-in hz-hero-in">
+      <div class="hz-copy">
+        <p class="hz-kicker"><span></span>CaixaBank Asset Management</p>
+        <h1>Del primer euro<br>a tu <em>primera casa</em>.</h1>
+        <p class="hz-lead">Aprende lo esencial, invierte desde los 15 sin miedo a perder el primer año y convierte cada paso en una hipoteca más barata. Con tu familia detrás.</p>
+        <div class="lp-cta">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "gold lg")}${lnk("Soy madre, padre o familiar", "#/alta/familia", "lg light")}</div>
+        <dl class="hz-proof"><div><dt>${RULES.prize} €</dt><dd>invertidos a tu nombre al superar Fundamentos</dd></div><div><dt>${RULES.protectCap} €</dt><dd>que no pueden perder durante tu primer año</dd></div><div><dt>−${pts(MILES.maxCut)}</dt><dd>puntos de interés en tu primera hipoteca</dd></div></dl>
       </div>
-      <div class="lp-visual">${carnetVisual(true, true)}
-        <div class="lp-float f1"><span>${ic("check")}</span><div><b>Teórico aprobado</b><small>${RULES.prize} € invertidos a tu nombre</small></div></div>
-        <div class="lp-float f2"><span>${ic("house")}</span><div><b>Millas de casa</b><small>Rebajan tu futura hipoteca</small></div></div>
+      <div class="hz-visual">
+        ${credVisual(true, true)}
+        <div class="hz-chip c1"><span>${ic("spark")}</span><div><b>Tu dinero hoy</b><small>Qué ha pasado esta semana, explicado con tus números</small></div></div>
+        <div class="hz-chip c2"><span>${ic("house")}</span><div><b>Millas de casa</b><small>Cada paso abarata tu hipoteca</small></div></div>
+      </div>
+    </div><div class="hz-horizon" aria-hidden="true"></div></section>
+
+    <section class="lp-sec" id="ciclo"><div class="lp-in">
+      <p class="kicker">Cómo funciona</p><h2 class="serif">Un solo ciclo. Cada paso alimenta el siguiente.</h2>
+      <ol class="cycle">${CYCLE.map((c, i) => `<li class="${c.id}"><span class="cy-n">${String(i + 1).padStart(2, "0")}</span><span class="cy-ic">${ic(c.ic)}</span><h3>${c.t}</h3><p>${c.p}</p></li>`).join("")}</ol>
+      <p class="cycle-foot">${ic("switch")}Cada año, una revisión: lo aprendido, tus preocupaciones y tu Antídoto, al día. Y el ciclo vuelve a empezar.</p>
+    </div></section>
+
+    <section class="lp-sec alt" id="aprende"><div class="lp-in lp-split">
+      <div><p class="kicker">Aprende</p><h2 class="serif">Nadie conduce sin aprender antes. Con el dinero, a los 15, nadie te enseña.</h2>
+        <p class="lp-lead"><b>Fundamentos</b>: cinco temas de tres minutos, juegos con 25 años de datos reales de mercado y una prueba final. Al superarla, CaixaBank invierte ${RULES.prize} € a tu nombre y recibes el <b>Certificado Horizonte</b>, verificable y listo para LinkedIn.</p></div>
+      <div class="lp-game" data-lpgame data-y="${lpYear}">
+        <div class="lg-top"><span>${ic("news")}El titular</span><small>Juego con datos reales</small></div>
+        <blockquote>«${esc(lpNews)}»</blockquote>
+        <p>¿La bolsa mundial acabó ese año arriba o abajo?</p>
+        <div class="lg-opts"><button class="btn" data-act="lpGame" data-v="1">Arriba</button><button class="btn" data-act="lpGame" data-v="0">Abajo</button></div>
+        <div class="lg-out" data-o="lg" hidden></div>
       </div>
     </div></section>
-    <section class="lp-sec" id="como"><div class="lp-in">
-      <p class="kicker">Cómo funciona</p><h2>Del primer euro a la primera casa, en cuatro pasos.</h2>
-      <div class="lp-steps">${HOW.map((h, i) => `<div><span>${i + 1}</span><h3>${h.t}</h3><p>${h.p}</p></div>`).join("")}</div>
+
+    <section class="lp-sec" id="primer-ano"><div class="lp-in lp-split">
+      <div class="big-num"><span>${RULES.protectCap} €</span><p>Tu primer año, los primeros ${RULES.protectCap} € que inviertes no pueden perder valor. Si a los ${RULES.protectMonths} meses valen menos de lo que pusiste, CaixaBank pone la diferencia.</p></div>
+      <div class="lp-sim" data-lpsim>
+        <label>Si la bolsa cayera en tu primer año <output data-o="d"></output><input type="range" min="-40" max="20" step="5" value="-20" data-i="d"></label>
+        <div class="ls-row"><span>Tus ${RULES.protectCap} € valdrían</span><b data-o="val"></b></div>
+        <div class="ls-row hi"><span>CaixaBank pondría</span><b data-o="pay"></b></div>
+        <div class="ls-row"><span>Tú recuperas</span><b data-o="you"></b></div>
+        <p class="note">Bonificación promocional con tope de ${RULES.protectCap} € y ${RULES.protectMonths} meses, si no vendes antes.</p>
+      </div>
     </div></section>
+
+    <section class="hz-dark" id="antidoto"><div class="lp-in">
+      <p class="kicker gold">El Antídoto</p><h2 class="serif">Invierte en lo que te preocupa.</h2>
+      <p class="lp-lead">No te preguntamos cuánto riesgo quieres. Te preguntamos qué te quita el sueño de tu futuro. Una parte de tu dinero invierte justo ahí: si ocurre, esa parte gana.</p>
+      <div class="lp-fears">${FEARS.map((f, i) => `<button class="lf ${i === 0 ? "on" : ""}" data-act="lpFear" data-id="${f.id}"><span>${ic(f.id)}</span>${f.label}</button>`).join("")}</div>
+      <div class="lf-out" data-o="lf"><b>${FUNDS[FEARS[0].fund].name}</b><p>${FEARS[0].why}</p></div>
+      <p class="hz-small">${Math.round(RULES.base * 100)} % en un fondo global diversificado y ${Math.round(RULES.antidote * 100)} % en tu Antídoto, dentro de una selección cerrada de fondos de CaixaBank AM. Reduce el golpe; no es una garantía. Gemini te lo explica con tus propios números.</p>
+    </div></section>
+
+    <section class="lp-sec" id="casa"><div class="lp-in lp-split">
+      <div><p class="kicker gold-ink">Millas de casa</p><h2 class="serif">Tu constancia vale una casa.</h2>
+        <p class="lp-lead">Aprender, jugar, aportar cada mes y mantener tu racha suma millas. Nunca por tener más dinero que nadie. Se canjean como rebaja del interés de tu primera hipoteca con CaixaBank y no caducan.</p></div>
+      <div class="lp-sim gold" data-lpmiles>
+        <label>Años de constancia hasta tu hipoteca <output data-o="y"></output><input type="range" min="2" max="15" step="1" value="10" data-i="y"></label>
+        <div class="ls-row"><span>Millas de casa</span><b data-o="mi"></b></div>
+        <div class="ls-row hi"><span>Rebaja del diferencial</span><b data-o="cut"></b></div>
+        <div class="ls-row"><span>Intereses que te ahorras</span><b data-o="save"></b></div>
+        <p class="note">Estimación con una hipoteca de ${eur(GOAL_DEFAULT.price * (1 - DOWN_PCT))} a ${MORTGAGE_YEARS} años, aportando cada mes y con la revisión anual. Rebaja máxima: ${pts(MILES.maxCut)} puntos.</p>
+      </div>
+    </div></section>
+
     <section class="lp-sec alt" id="familias"><div class="lp-in lp-split">
-      <div><p class="kicker">Para familias</p><h2>Regala futuro, no solo dinero.</h2>
-        <p class="lp-lead">Desde el área familiar puedes hacer regalos con un mensaje o una aportación cada mes, aprobar sus decisiones hasta los 18 y ver cómo aprende y progresa.</p>
+      <div><p class="kicker">Para familias</p><h2 class="serif">Regala futuro, no solo dinero.</h2>
+        <p class="lp-lead">Regalos con un mensaje o una aportación cada mes, sus decisiones aprobadas por ti hasta los 18 y su progreso, siempre a la vista.</p>
         ${lnk("Crear cuenta familiar", "#/alta/familia", "primary lg")}</div>
-      <ul class="lp-checks"><li><span>${ic("gift")}</span><div><b>Regalos con mensaje</b><small>Puntuales o mensuales: cumpleaños, Navidad o cuando quieras.</small></div></li>
+      <ul class="lp-checks"><li><span>${ic("gift")}</span><div><b>Regalos con mensaje</b><small>Cumpleaños, Navidad o cuando quieras. También cada mes.</small></div></li>
         <li><span>${ic("key")}</span><div><b>Tú apruebas</b><small>El Antídoto y el uso de sus datos necesitan tu permiso hasta los 18.</small></div></li>
         <li><span>${ic("house")}</span><div><b>Suman a su casa</b><small>Tus regalos generan millas de casa, con un tope mensual.</small></div></li></ul>
     </div></section>
+
     <section class="lp-sec" id="seguridad"><div class="lp-in">
-      <p class="kicker">Seguridad</p><h2>Confianza desde el primer día.</h2>
+      <p class="kicker">Seguridad</p><h2 class="serif">Confianza desde el primer día.</h2>
       <div class="lp-grid">
-        <div><span>${ic("chart")}</span><h3>Gestión profesional</h3><p>Tu dinero se invierte en una selección cerrada de fondos de CaixaBank Asset Management, la mayor gestora de España.</p></div>
-        <div><span>${ic("shield")}</span><h3>Primer año protegido</h3><p>Los primeros ${RULES.protectCap} € que inviertes no pueden perder valor en 12 meses, si no vendes antes.</p></div>
+        <div><span>${ic("chart")}</span><h3>Gestión profesional</h3><p>Una selección cerrada de fondos de CaixaBank Asset Management, la mayor gestora de fondos de España.</p></div>
+        <div><span>${ic("shield")}</span><h3>Primer año acompañado</h3><p>Los primeros ${RULES.protectCap} € que inviertes no pueden perder valor en ${RULES.protectMonths} meses, si no vendes antes.</p></div>
         <div><span>${ic("lock")}</span><h3>Tus datos, con permiso</h3><p>Gemini solo usa tu información con la autorización de tu familia, y nunca para publicidad.</p></div>
         <div><span>${ic("family")}</span><h3>A tu nombre</h3><p>La cuenta es tuya desde el principio. Hasta los 18, tu familia aprueba las decisiones importantes.</p></div>
       </div>
     </div></section>
+
     <section class="lp-sec alt" id="preguntas"><div class="lp-in lp-narrow">
-      <p class="kicker">Preguntas frecuentes</p><h2>Lo que más nos preguntan.</h2>
+      <p class="kicker">Preguntas frecuentes</p><h2 class="serif">Lo que más nos preguntan.</h2>
       <div class="faq">${FAQ.map(f => `<details><summary>${f.q}${ic("plus")}</summary><p>${f.a}</p></details>`).join("")}</div>
     </div></section>
-    <section class="lp-final"><div class="lp-in"><h2>Tu primer euro empieza hoy.</h2><p class="lp-lead">Crea tu cuenta en dos minutos.</p><div class="lp-cta center">${lnk("Soy joven", "#/alta/joven", "primary lg")}${lnk("Soy familiar", "#/alta/familia", "lg light")}</div></div></section>
+
+    <section class="hz-final"><div class="lp-in"><h2 class="serif">Tu primer euro empieza hoy.</h2><p class="hz-lead">Crea tu cuenta en dos minutos. Tu familia, en otros dos.</p><div class="lp-cta center">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "gold lg")}${lnk("Soy familia", "#/alta/familia", "lg light")}</div></div><div class="hz-horizon" aria-hidden="true"></div></section>
     <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}</div>
     </div>`;
+}
+function bindLanding() {
+    const sim = $("[data-lpsim]");
+    if (sim) {
+        const upd = () => {
+            const d = +$('[data-i="d"]', sim).value, val = RULES.protectCap * (1 + d / 100), pay = Math.max(0, RULES.protectCap - val);
+            $('[data-o="d"]', sim).textContent = `${d > 0 ? "+" : d < 0 ? "−" : ""}${Math.abs(d)} %`;
+            $('[data-o="val"]', sim).textContent = eur(val); $('[data-o="pay"]', sim).textContent = eur(pay); $('[data-o="you"]', sim).textContent = eur(val + pay);
+        };
+        $('[data-i="d"]', sim).addEventListener("input", upd); upd();
+    }
+    const mi = $("[data-lpmiles]");
+    if (mi) {
+        const P0 = GOAL_DEFAULT.price * (1 - DOWN_PCT);
+        const upd = () => {
+            const y = +$('[data-i="y"]', mi).value;
+            const m = MILES.lesson * LESSONS.length + MILES.theory + MILES.firstOwn + y * (MILES.monthOwn * 12 + MILES.itv + 13 * MILES.streak4), c = cutOf(m);
+            const sv = (payment(P0, MORTGAGE_RATE, MORTGAGE_YEARS) - payment(P0, MORTGAGE_RATE - c, MORTGAGE_YEARS)) * MORTGAGE_YEARS * 12;
+            $('[data-o="y"]', mi).textContent = `${y} años`; $('[data-o="mi"]', mi).textContent = num(m);
+            $('[data-o="cut"]', mi).textContent = `−${pts(c)} puntos`; $('[data-o="save"]', mi).textContent = eur(sv);
+        };
+        $('[data-i="y"]', mi).addEventListener("input", upd); upd();
+    }
 }
 
 /* ------------------------------------------------------------------ alta */
@@ -308,32 +411,80 @@ function moveRow(c) {
     const label = SOURCES[c.src].label + (c.from ? ` · ${esc(c.from)}` : "");
     return `<div class="row"><span class="mv-ic ${isGift(c) ? "gift" : "own"}">${ic(isGift(c) ? "gift" : c.src === "premio" ? "card" : "plus")}</span><div><b>${label}</b><span>${fmtD(c.date)}${c.msg ? ` · «${esc(c.msg)}»` : ""}</span></div><b class="amt">+${eur(c.amount, c.amount % 1 !== 0)}</b></div>`;
 }
+/* Tu dinero hoy: resumen de la semana. En esta demo, los movimientos de los fondos se simulan
+   de forma reproducible para cada semana; en producción vendrían de CaixaBank AM. */
+const VOL = { global: 15, tecnologia: 25, inmobiliario: 18, energia: 22, inflacion: 7, salud: 14, movilidad: 20 };
+function weekMoves(wk = weekOf(new Date())) {
+    let h = 0; for (const ch of wk) h = (h * 31 + ch.charCodeAt(0)) | 0;
+    const rnd = () => { h = (h + 0x6D2B79F5) | 0; let t = Math.imul(h ^ (h >>> 15), 1 | h); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const market = Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(2 * Math.PI * rnd());
+    const out = {};
+    Object.keys(FUNDS).forEach(k => {
+        const own = Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(2 * Math.PI * rnd());
+        out[k] = FUNDS[k].r / 52 + VOL[k] / Math.sqrt(52) * (0.6 * market + 0.8 * own) / 1.0;
+    });
+    return out;
+}
+function weekSummary() {
+    const m = money(), mv = weekMoves(), parts = m.parts.map(p => ({ ...p, ret: mv[p.fund], chg: p.amount * mv[p.fund] / 100 }));
+    const chg = parts.reduce((a, p) => a + p.chg, 0), retPct = m.value ? chg / m.value * 100 : mv.global;
+    const top = [...parts].sort((a, b) => Math.abs(b.ret) - Math.abs(a.ret))[0];
+    const sgn = v => `${v >= 0 ? "+" : "−"}${pct(Math.abs(v), 1)}`;
+    const lines = [];
+    if (m.value > 0) {
+        lines.push(`Esta semana tu dinero ${chg >= 0 ? "ha subido" : "ha bajado"} <b>${eur(Math.abs(chg), true)}</b> (${sgn(retPct)}).`);
+        if (parts.length > 1) lines.push(`Lo que más se ha movido: <b>${FUNDS[top.fund].name.toLowerCase()}</b> (${sgn(top.ret)})${top.fear ? `, tu Antídoto para «${esc(top.fear.label.toLowerCase())}»` : ""}.`);
+    } else lines.push(`El fondo global de Horizonte ${mv.global >= 0 ? "ha subido" : "ha bajado"} un ${pct(Math.abs(mv.global), 1)} esta semana. Cuando inviertas, verás aquí qué ha pasado con tu dinero y por qué.`);
+    lines.push(Math.abs(retPct) >= 1.5
+        ? (retPct < 0 ? "Una semana mala no dice nada de un plazo de diez años. Vender ahora convertiría la caída en pérdida." : "Una semana buena tampoco cambia el plan: lo que cuenta es la constancia.")
+        : "Una semana tranquila. Lo que cuenta es el plazo y la constancia.");
+    if (m.protect?.active && retPct < 0) lines.push(`Además, tus ${eur(m.protect.base)} siguen protegidos ${m.protect.daysLeft} días más.`);
+    return { lines, parts, mv, chg, retPct };
+}
+function weekCard(cls = "c-12") {
+    const w = weekSummary(), can = S.geminiOk || isAdult();
+    return card(`${cardH(`<span class="gem">${ic("spark")}Tu dinero hoy</span>`, `Semana del ${fmtD(weekOf(new Date()))}`, can ? btn("Pregúntale a Gemini", "goAsk", "sm") : "")}
+      <div class="week">${w.lines.map(l => `<p>${l}</p>`).join("")}</div>
+      <div class="week-funds">${(w.parts.length ? w.parts : [{ fund: "global" }]).map(p => `<div>${sw(p.fund)}<span>${FUNDS[p.fund].name}</span><b class="${w.mv[p.fund] >= 0 ? "up" : "down"}">${w.mv[p.fund] >= 0 ? "+" : "−"}${pct(Math.abs(w.mv[p.fund]), 1)}</b></div>`).join("")}</div>
+      <p class="note">Movimientos simulados en esta versión de demostración.</p>`, cls);
+}
+
 function vInicio() {
-    const m = money(), mi = miles(), age = ageOf();
+    const m = money(), mi = miles(), age = ageOf(), st = streak(), stage = stageOf();
+    const steps = [
+        ["aprende", "Aprende", S.exam?.passed, S.exam?.passed ? "Certificado" : `${Object.keys(S.lessons).length} de ${LESSONS.length} temas`, "#/aprende"],
+        ["invierte", "Invierte", !!m.firstOwn, m.firstOwn ? eur(m.value, true) : "Tu primer euro", "#/dinero"],
+        ["entiende", "Entiende", S.fears.length > 0, S.fears.length ? (m.al.active ? "Antídoto activo" : "Antídoto pendiente") : "Elige tu Antídoto", "#/antidoto"],
+        ["millas", "Gana millas", st.current >= 4, `${num(mi.total)} millas`, "#/casa"],
+        ["casa", "Tu casa", false, `−${pts(mi.cut)} puntos`, "#/casa"],
+    ];
+    const cur = steps.findIndex(x => !x[2]);
     const tasks = [
-        [!!S.exam?.passed, "Aprueba el teórico", `Cinco temas y un examen. Premio: ${RULES.prize} € invertidos.`, "#/carnet"],
+        [!!S.exam?.passed, "Supera Fundamentos", `Cinco temas y una prueba. Primera inversión: ${RULES.prize} € a tu nombre.`, "#/aprende"],
         [!!m.firstOwn, "Pon tu primer euro", "Con 1 € basta. Es el paso que te convierte en inversor.", "#/dinero"],
         [S.fears.length > 0, "Elige tu Antídoto", "Dinos qué te preocupa de tu futuro.", "#/antidoto"],
         [S.weekly > 0 || S.roundup, "Automatiza tu ahorro", "Una cantidad semanal o el redondeo de tus compras.", "#/dinero"],
         [!!S.family || m.gifts > 0, "Invita a tu familia", "Pueden regalarte dinero para tu casa.", "#/familia"],
     ];
     const done = tasks.filter(t => t[0]).length;
-    const headline = !S.exam?.passed ? "Empieza por el teórico y gana tu primer euro invertido."
-        : !m.firstOwn ? "Tienes el carnet en prácticas. Ahora, tu primer euro propio."
-        : age >= RULES.adultAge ? "Tienes el carnet completo. La cuenta es tuya."
-        : m.protect?.active ? `Estás en prácticas. Tu protección del primer año termina en ${m.protect.daysLeft} días.`
-        : "Sigue sumando millas hasta tu carnet completo.";
+    const headline = !S.exam?.passed ? "Empieza por Fundamentos y gana tu primera inversión."
+        : !m.firstOwn ? "Fundamentos superados. Ahora, tu primer euro propio."
+        : age >= RULES.adultAge ? "Eres inversor certificado. La cuenta es tuya."
+        : m.protect?.active ? `Primer año acompañado: tu protección termina en ${m.protect.daysLeft} días.`
+        : "Sigue sumando millas: cada semana cuenta.";
     const recent = [...S.money].reverse().slice(0, 5);
     return `${pageH(`Hola, ${esc(teenName())}`, headline)}
     <div class="grid">
-      ${card(`<div class="hero-carnet">${carnetVisual()}<div class="hc-copy">
-          <span class="kicker">Tu carnet</span><h2>${S.exam?.passed ? (age >= RULES.adultAge ? "Carnet completo" : "Carnet en prácticas") : "Teórico pendiente"}</h2>
-          <p>${S.exam?.passed ? `Aprobado el ${fmtD(S.exam.date)}. ${age >= RULES.adultAge ? "Ya tienes el control total de tu cuenta." : `Carnet completo a los ${RULES.adultAge}.`}` : `${Object.keys(S.lessons).length} de ${LESSONS.length} temas completados.`}</p>
-          ${lnk(S.exam?.passed ? "Ver mi carnet" : Object.keys(S.lessons).length ? "Continuar el teórico" : "Empezar el teórico", "#/carnet", "primary")}</div></div>`, "c-8")}
-      ${card(`${stat("Valor estimado", eur(m.value, true), m.invested ? `${eur(m.invested, true)} aportados` : "Aún no has invertido")}${btn(`${ic("plus")}Aportar`, "openContribute", "block")}`, "c-4 stat-card")}
-      ${card(`${stat("Protegido el primer año", eur(m.protect?.base || 0), `de ${RULES.protectCap} € · ${m.protect?.active ? `${m.protect.daysLeft} días restantes` : m.protect ? "periodo terminado" : "empieza con tu primera aportación"}`)}${bar(m.protect?.base || 0, RULES.protectCap, "blue")}`, "c-4")}
-      ${card(`${stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos menos de diferencial`)}${bar(mi.cut, MILES.maxCut, "gold")}`, "c-4")}
-      ${card(`${stat("Antídoto", m.al.active ? "Activo" : m.al.pending ? "Pendiente" : "Sin elegir", m.al.fears.length ? m.al.fears.map(f => esc(f.label)).join(" · ") : "Invierte en lo que te preocupa")}${m.al.fears.length ? stack(m.al.planned) : ""}`, "c-4")}
+      ${card(`<ol class="loop">${steps.map(([id, t, ok, sub, h], i) => `<li class="${ok ? "done" : i === cur ? "on" : ""} ${id}"><a href="${h}"><span class="lp-dot">${ok ? ic("check") : i + 1}</span><b>${t}</b><small>${sub}</small></a></li>`).join("")}</ol>`, "c-12 loop-card")}
+      ${card(`<div class="hero-cred">${credVisual()}<div class="hc-copy">
+          <span class="kicker">Certificado Horizonte</span><h2>${STAGES[stage]}</h2>
+          <p>${S.exam?.passed ? `Superado el ${fmtD(S.exam.date)}. ${age >= RULES.adultAge ? "Tienes el control total de tu cuenta." : `Inversor certificado a los ${RULES.adultAge}.`}` : `${Object.keys(S.lessons).length} de ${LESSONS.length} temas completados.`}</p>
+          ${lnk(S.exam?.passed ? "Ver mi certificado" : Object.keys(S.lessons).length ? "Continuar" : "Empezar Fundamentos", "#/aprende", "primary")}</div></div>`, "c-7")}
+      ${weekCard("c-5")}
+      ${card(`${stat("Valor estimado", eur(m.value, true), m.invested ? `${eur(m.invested, true)} aportados` : "Aún no has invertido")}${btn(`${ic("plus")}Aportar`, "openContribute", "block")}`, "c-3 stat-card")}
+      ${card(`${stat("Protegido el primer año", eur(m.protect?.base || 0), `de ${RULES.protectCap} € · ${m.protect?.active ? `${m.protect.daysLeft} días restantes` : m.protect ? "periodo terminado" : "empieza con tu primera aportación"}`)}${bar(m.protect?.base || 0, RULES.protectCap, "blue")}`, "c-3")}
+      ${card(`${stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos menos de diferencial`)}${bar(mi.cut, MILES.maxCut, "gold")}`, "c-3")}
+      ${card(`${stat("Racha", `${st.current} ${st.current === 1 ? "semana" : "semanas"}`, st.thisWeek ? "Esta semana ya cuenta" : "Haz algo esta semana para no perderla")}<div class="streak">${Array.from({ length: 4 }, (_, i) => `<i class="${i < st.current % 4 || (st.current && st.current % 4 === 0) ? "on" : ""}"></i>`).join("")}<small>+${MILES.streak4} millas cada 4</small></div>`, "c-3")}
       ${done < tasks.length ? card(`${cardH("Primeros pasos", `${done} de ${tasks.length} completados`)}${bar(done, tasks.length, "blue")}
         <div class="rows">${tasks.map(([ok, t, d, h]) => `<a class="row ${ok ? "ok" : ""}" href="${h}"><span class="tick">${ok ? ic("check") : ""}</span><div><b>${t}</b><span>${d}</span></div>${ic("chev", "chev")}</a>`).join("")}</div>`, "c-6") : ""}
       ${card(`${cardH("Actividad reciente", "", recent.length ? lnk("Ver todo", "#/dinero", "ghost sm") : "")}
@@ -341,66 +492,103 @@ function vInicio() {
     </div>`;
 }
 
-/* ---------------- Carnet */
+/* ---------------- Aprende: Fundamentos, juegos y Certificado Horizonte */
 function diplomaData() {
     return { n: `${S.teen.name} ${S.teen.surname || ""}`.trim(), i: S.diploma.id, f: S.diploma.date, s: `${S.exam.score}/${S.exam.total}`, v: iso(addMonths(lastItv(), 12)) };
 }
 const verifyUrl = d => `${location.origin}${location.pathname}#/verificar?d=${encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(d)))))}`;
 function diplomaSVG(d) {
     const t = s => esc(s);
-    return `<svg class="diploma" viewBox="0 0 1200 840" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diploma del carnet de joven inversor de ${t(d.n)}">
-      <rect width="1200" height="840" fill="#ffffff"/><rect width="1200" height="14" fill="#007eae"/>
-      <text x="96" y="128" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#007eae" letter-spacing="3">CAIXABANK ASSET MANAGEMENT</text>
-      <text x="96" y="226" font-family="'Source Serif 4', Georgia, serif" font-size="66" fill="#111418">Carnet de joven inversor</text>
-      <text x="96" y="276" font-family="Inter, Arial, sans-serif" font-size="22" fill="#5f6b7a">Teórico · Nivel 1</text>
-      <text x="96" y="380" font-family="Inter, Arial, sans-serif" font-size="22" fill="#5f6b7a">Otorgado a</text>
-      <text x="96" y="452" font-family="'Source Serif 4', Georgia, serif" font-size="56" font-weight="600" fill="#111418">${t(d.n)}</text>
-      <text x="96" y="520" font-family="Inter, Arial, sans-serif" font-size="22" fill="#2b313a">por superar el teórico del carnet de joven inversor (interés compuesto, riesgo y plazo,</text>
-      <text x="96" y="554" font-family="Inter, Arial, sans-serif" font-size="22" fill="#2b313a">diversificación, fraudes y apuestas) con un resultado de ${t(d.s)}.</text>
+    return `<svg class="diploma" viewBox="0 0 1200 840" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Certificado Horizonte de ${t(d.n)}">
+      <rect width="1200" height="840" fill="#ffffff"/><rect width="1200" height="840" fill="none" stroke="#0b1d29" stroke-width="28"/><rect x="34" y="34" width="1132" height="772" fill="none" stroke="#c99a2e" stroke-width="1.5"/>
+      <text x="96" y="132" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#007eae" letter-spacing="3.5">CAIXABANK ASSET MANAGEMENT</text>
+      <text x="96" y="232" font-family="'Source Serif 4', Georgia, serif" font-size="70" fill="#0b1d29">Certificado Horizonte</text>
+      <text x="96" y="282" font-family="Inter, Arial, sans-serif" font-size="22" fill="#5f6b7a">Fundamentos de inversión</text>
+      <text x="96" y="386" font-family="Inter, Arial, sans-serif" font-size="21" fill="#5f6b7a">Otorgado a</text>
+      <text x="96" y="458" font-family="'Source Serif 4', Georgia, serif" font-size="58" font-weight="600" fill="#0b1d29">${t(d.n)}</text>
+      <text x="96" y="526" font-family="Inter, Arial, sans-serif" font-size="21" fill="#2b313a">por superar Fundamentos de inversión (interés compuesto, riesgo y plazo, diversificación,</text>
+      <text x="96" y="560" font-family="Inter, Arial, sans-serif" font-size="21" fill="#2b313a">fraudes y apuestas) con un resultado de ${t(d.s)}.</text>
       <line x1="96" y1="664" x2="1104" y2="664" stroke="#e3e7ec" stroke-width="2"/>
-      <text x="96" y="710" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#8a94a3" letter-spacing="1.5">EMISIÓN</text>
+      <text x="96" y="710" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#8a94a3" letter-spacing="1.5">EMISIÓN</text>
       <text x="96" y="742" font-family="Inter, Arial, sans-serif" font-size="21" fill="#111418">${t(fmtD(d.f))}</text>
-      <text x="420" y="710" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#8a94a3" letter-spacing="1.5">VÁLIDO HASTA</text>
+      <text x="420" y="710" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#8a94a3" letter-spacing="1.5">PRÓXIMA REVISIÓN</text>
       <text x="420" y="742" font-family="Inter, Arial, sans-serif" font-size="21" fill="#111418">${t(fmtD(d.v))}</text>
-      <text x="744" y="710" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#8a94a3" letter-spacing="1.5">CÓDIGO DE VERIFICACIÓN</text>
+      <text x="744" y="710" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#8a94a3" letter-spacing="1.5">CÓDIGO DE VERIFICACIÓN</text>
       <text x="744" y="742" font-family="Inter, Arial, sans-serif" font-size="21" fill="#111418">${t(d.i)}</text>
-      <circle cx="1030" cy="180" r="72" fill="#007eae"/><circle cx="1030" cy="180" r="60" fill="none" stroke="#ffffff" stroke-opacity=".6" stroke-width="1.5"/>
-      <text x="1030" y="176" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff" letter-spacing="1.5">HORIZONTE</text>
-      <text x="1030" y="200" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" fill="#ffffff" letter-spacing="1">${t(String(T(d.f).getFullYear()))}</text>
+      <circle cx="1030" cy="186" r="74" fill="#0b1d29"/><circle cx="1030" cy="186" r="62" fill="none" stroke="#c99a2e" stroke-width="1.5"/>
+      <text x="1030" y="182" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff" letter-spacing="2">HORIZONTE</text>
+      <text x="1030" y="206" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" fill="#e8c77a" letter-spacing="1">${t(String(T(d.f).getFullYear()))}</text>
     </svg>`;
 }
 function linkedinUrl(d) {
     const f = T(d.f), v = T(d.v);
-    return "https://www.linkedin.com/profile/add?" + new URLSearchParams({ startTask: "CERTIFICATION_NAME", name: "Carnet de joven inversor", organizationName: "CaixaBank Asset Management",
+    return "https://www.linkedin.com/profile/add?" + new URLSearchParams({ startTask: "CERTIFICATION_NAME", name: "Certificado Horizonte · Fundamentos de inversión", organizationName: "CaixaBank Asset Management",
         issueYear: f.getFullYear(), issueMonth: f.getMonth() + 1, expirationYear: v.getFullYear(), expirationMonth: v.getMonth() + 1, certUrl: verifyUrl(d), certId: d.i }).toString();
 }
-function vCarnet() {
-    const done = Object.keys(S.lessons).length, all = done === LESSONS.length, age = ageOf(), m = money(), passed = S.exam?.passed;
-    const phases = [
-        ["Teórico", passed ? `Aprobado con ${S.exam.score}/${S.exam.total}` : `${done} de ${LESSONS.length} temas`, passed ? "done" : "on", "1"],
-        ["Prácticas", passed ? (m.protect?.active ? `${m.protect.daysLeft} días de protección` : m.protect ? "Primer año completado" : "Empiezan con tu primera aportación") : "Tu primer año protegido", passed ? (m.protect && !m.protect.active ? "done" : "on") : "", "L"],
-        ["Carnet completo", age >= RULES.adultAge ? "La cuenta es solo tuya" : `A los ${RULES.adultAge} años`, passed && age >= RULES.adultAge ? "done" : "", "18"],
+function vAprende() {
+    const done = Object.keys(S.lessons).length, all = done === LESSONS.length, age = ageOf(), m = money(), passed = S.exam?.passed, st = stageOf();
+    const stages = [
+        [STAGES[0], passed ? `Superado con ${S.exam.score}/${S.exam.total}` : `${done} de ${LESSONS.length} temas`],
+        [STAGES[1], passed ? (m.protect?.active ? `${m.protect.daysLeft} días de protección` : m.protect ? "Primer año completado" : "Empieza con tu primera aportación") : `Tus primeros ${RULES.protectCap} € protegidos`],
+        [STAGES[2], age >= RULES.adultAge ? "La cuenta es solo tuya" : `A los ${RULES.adultAge} años`],
     ];
+    const today = iso(new Date()), played = S.games[today];
     let dip = "";
     if (passed && S.diploma) {
-        const d = diplomaData(), itvOpen = (T(d.v) - Date.now()) / 864e5 < 31;
-        dip = card(`${cardH("Diploma", "Descárgalo, compártelo o añádelo a tu perfil profesional.")}
+        const d = diplomaData(), revOpen = (T(d.v) - Date.now()) / 864e5 < 31;
+        dip = card(`${cardH("Tu certificado", "Descárgalo, compártelo o añádelo a tu perfil profesional.")}
           <div class="dip-wrap">${diplomaSVG(d)}</div>
           <div class="actions">${btn(`${ic("download")}Descargar`, "dlDiploma", "primary")}
             ${age >= RULES.linkedinAge ? `<a class="btn" href="${esc(linkedinUrl(d))}" target="_blank" rel="noopener">Añadir a LinkedIn</a>` : `<button class="btn" disabled>LinkedIn a partir de los ${RULES.linkedinAge}</button>`}
-            ${btn(`${ic("link")}Copiar enlace de verificación`, "copyVerify")}</div>`, "c-12")
-          + card(`${cardH("Revisión anual", `Como la ITV: cada año repasas lo aprendido y actualizas tu Antídoto. Próxima revisión antes del ${fmtD(d.v)}.`, btn("Hacer la revisión", "itv", itvOpen ? "primary" : ""))}
-            <p class="note">${S.itv.length ? `Última revisión: ${fmtD(lastItv())}. ` : ""}Cada revisión suma ${MILES.itv} millas de casa.</p>`, "c-12");
+            ${btn(`${ic("link")}Copiar enlace de verificación`, "copyVerify")}</div>`, "c-8")
+          + card(`${cardH("Revisión anual", `Cada año repasas lo esencial y pones al día tus preocupaciones y tu Antídoto. Próxima antes del ${fmtD(d.v)}.`)}
+            <p class="note">${S.itv.length ? `Última revisión: ${fmtD(lastItv())}. ` : ""}Cada revisión suma ${MILES.itv} millas de casa.</p><div class="actions">${btn("Hacer la revisión", "itv", revOpen ? "primary" : "")}</div>`, "c-4");
     }
-    return `${pageH("Carnet", "Como el carnet de conducir: teórico, prácticas y carnet completo a los 18.")}
+    return `${pageH("Aprende", "Lo esencial para invertir con criterio. Cada paso suma millas de casa.")}
     <div class="grid">
-      ${card(`<div class="carnet-hero">${carnetVisual(true)}<ol class="phases">${phases.map(([t, s, st, n]) => `<li class="${st}"><span class="${n === "L" ? "l" : ""}">${st === "done" ? ic("check") : n}</span><div><b>${t}</b><small>${s}</small></div></li>`).join("")}</ol></div>`, "c-12")}
-      ${dip}
-      ${card(`${cardH("Teórico", `Cinco temas de unos tres minutos. Cada tema suma ${MILES.lesson} millas de casa.`, `<span class="count">${done}/${LESSONS.length}</span>`)}
+      ${card(`<div class="cred-hero">${credVisual(true)}<ol class="stages">${stages.map(([t, sub], i) => `<li class="${i < st ? "done" : i === st ? "on" : ""}"><span>${i < st ? ic("check") : i + 1}</span><div><b>${t}</b><small>${sub}</small></div></li>`).join("")}</ol></div>`, "c-12")}
+      ${card(`${cardH("Fundamentos", `Cinco temas de unos tres minutos. Cada tema suma ${MILES.lesson} millas de casa.`, `<span class="count">${done}/${LESSONS.length}</span>`)}
         <div class="rows">${LESSONS.map((l, i) => `<a class="row ${S.lessons[l.id] ? "ok" : ""}" href="#/tema/${l.id}/0"><span class="tick num">${S.lessons[l.id] ? ic("check") : i + 1}</span><div><b>${l.title}</b><span>${l.sub} · ${l.min} min</span></div>${ic("chev", "chev")}</a>`).join("")}</div>
-        <div class="exam"><span class="mv-ic own">${ic("card")}</span><div><b>Examen final</b><span>${passed ? `Aprobado el ${fmtD(S.exam.date)}.` : all ? `${RULES.examSize} preguntas; puedes fallar ${RULES.examMaxErrors}. Al aprobar, CaixaBank invierte ${RULES.prize} € a tu nombre.` : `Disponible al completar los ${LESSONS.length} temas.`}</span></div>
-          ${all || passed ? lnk(passed ? "Repetir" : "Empezar examen", "#/examen", passed ? "" : "primary") : `<button class="btn" disabled>Empezar examen</button>`}</div>`, "c-12")}
+        <div class="exam"><span class="mv-ic own">${ic("star")}</span><div><b>Prueba final</b><span>${passed ? `Superada el ${fmtD(S.exam.date)}.` : all ? `${RULES.examSize} preguntas; puedes fallar ${RULES.examMaxErrors}. Al superarla, CaixaBank invierte ${RULES.prize} € a tu nombre.` : `Disponible al completar los ${LESSONS.length} temas.`}</span></div>
+          ${all || passed ? lnk(passed ? "Repetir" : "Empezar", "#/prueba", passed ? "" : "primary") : `<button class="btn" disabled>Empezar</button>`}</div>`, "c-7")}
+      ${card(`${cardH("Juegos con datos reales", `25 años de mercados, en partidas de un minuto. Una al día suma ${MILES.game} millas.`, played ? badge(`${ic("check")}Hoy: ${played.score}/${GAMES.find(g => g.id === played.id)?.rounds}`, "ok") : "")}
+        <div class="games">${GAMES.map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div>
+        <p class="note">Datos anuales aproximados entre ${MKT_FROM} y ${MKT_FROM + MKT[0].r.length - 1}. Rentabilidades pasadas no garantizan las futuras.</p>`, "c-5")}
+      ${dip}
     </div>`;
+}
+
+/* ---------------- Juegos */
+let gameState = null;
+function newGame(id) {
+    const ys = [...Array(MKT[0].r.length).keys()].sort(() => Math.random() - 0.5).slice(0, 5), world = MKT.find(x => x.k === "world");
+    const sg = v => `${v >= 0 ? "+" : "−"}${pct(Math.abs(v), 1)}`;
+    const qs = ys.map(y => {
+        const year = MKT_FROM + y;
+        if (id === "titular") {
+            const up = world.r[y] >= 0;
+            return { kick: "El titular", q: `«${MKT_NEWS[y]}»`, sub: "¿La bolsa mundial acabó ese año arriba o abajo?", o: ["Arriba", "Abajo"], a: up ? 0 : 1,
+                why: `Fue ${year}. El índice mundial MSCI World acabó el año en ${sg(world.r[y])}.` };
+        }
+        const pool = [...MKT].sort(() => Math.random() - 0.5), a = pool[0], b = pool.find(x => x.k !== a.k && Math.abs(x.r[y] - a.r[y]) > 2) || pool[1];
+        return { kick: `¿Cuál rindió más? · ${year}`, q: `En ${year}, ¿qué fue mejor?`, sub: "", o: [`${a.name} (${a.sub})`, `${b.name} (${b.sub})`], a: a.r[y] >= b.r[y] ? 0 : 1,
+            why: `${a.name}: ${sg(a.r[y])}. ${b.name}: ${sg(b.r[y])}. Aquel año: ${MKT_NEWS[y].charAt(0).toLowerCase() + MKT_NEWS[y].slice(1)}` };
+    });
+    gameState = { id, qs, i: 0, score: 0, ans: null, over: false };
+}
+function vJuego(id) {
+    const g = GAMES.find(x => x.id === id); if (!g) return null;
+    if (!gameState || gameState.id !== id) newGame(id);
+    const e = gameState;
+    if (e.over) {
+        return focus("#/aprende", 0, 0, `<div class="center"><div class="result ok">${ic("star")}</div>
+          <h1>${e.score} de ${e.qs.length}</h1>
+          <p>${e.score >= 4 ? "Tienes buen olfato. Pero recuerda: nadie acierta siempre, por eso se diversifica." : e.score >= 2 ? "Ni tan mal. Acertar el mercado año a año es casi imposible, por eso cuenta el plazo." : "Si cuesta acertar con el resultado delante, imagina sin él. Por eso se invierte a largo plazo."}${e.miles ? ` <b>+${e.miles} millas de casa.</b>` : ""}</p>
+          <div class="focus-nav center">${btn("Otra partida", "gameAgain", "primary lg", `data-id="${id}"`)}${lnk("Volver", "#/aprende", "lg")}</div></div>`);
+    }
+    const q = e.qs[e.i];
+    return focus("#/aprende", e.i + 1, e.qs.length, `<span class="kicker">${q.kick} · ${e.score} aciertos</span><h1 class="${id === "titular" ? "serif-q" : ""}">${esc(q.q)}</h1>${q.sub ? `<p class="lead-q">${q.sub}</p>` : ""}${opts(q, e.ans, "gameAns")}
+      ${e.ans !== null ? `${why(e.ans === q.a, q.why)}<div class="focus-nav"><span></span>${btn(e.i === e.qs.length - 1 ? "Ver resultado" : `Siguiente${ic("arrow")}`, "gameNext", "primary")}</div>` : ""}`);
 }
 
 let lessonState = null;
@@ -422,7 +610,7 @@ function vTema(id, step) {
           ${ans !== undefined ? why(ans === q.a, q.why) : ""}
           <div class="focus-nav">${lnk("Anterior", `#/tema/${id}/${step - 1}`)}${ans !== undefined ? (last ? btn("Terminar tema", "lessonDone", "primary", `data-id="${id}"`) : lnk(`Siguiente${ic("arrow")}`, `#/tema/${id}/${step + 1}`, "primary")) : ""}</div>`;
     }
-    return focus("#/carnet", step + 1, total, body);
+    return focus("#/aprende", step + 1, total, body);
 }
 const opts = (q, ans, act, data = "") => `<div class="opts">${q.o.map((o, i) => `<button class="opt ${ans !== undefined && ans !== null ? (i === q.a ? "right" : i === ans ? "wrong" : "") : ""}" data-act="${act}" ${data} data-i="${i}" ${ans !== undefined && ans !== null ? "disabled" : ""}><span>${String.fromCharCode(65 + i)}</span>${o}</button>`).join("")}</div>`;
 const why = (ok, txt) => `<div class="why ${ok ? "ok" : "ko"}">${ic(ok ? "check" : "info")}<div><b>${ok ? "Correcto" : "No es correcto"}</b><p>${txt}</p></div></div>`;
@@ -462,13 +650,13 @@ function vExamen() {
     const e = examState;
     if (e.over) {
         const ok = e.errors <= RULES.examMaxErrors;
-        return focus("#/carnet", 0, 0, `<div class="center"><div class="result ${ok ? "ok" : "ko"}">${ic(ok ? "check" : "close")}</div>
-          <h1>${ok ? "Has aprobado" : "Esta vez no ha sido"}</h1>
-          <p>${ok ? `${RULES.examSize - e.errors} de ${RULES.examSize} respuestas correctas. Ya tienes tu carnet en prácticas, ${RULES.prize} € invertidos a tu nombre y ${MILES.theory} millas de casa.` : `Has fallado ${e.errors} preguntas y el máximo es ${RULES.examMaxErrors}. Repasa los temas y vuelve a intentarlo cuando quieras.`}</p>
-          <div class="focus-nav center">${ok ? lnk("Ver mi carnet", "#/carnet", "primary lg") : btn("Repetir examen", "examRetry", "primary lg")}</div></div>`);
+        return focus("#/aprende", 0, 0, `<div class="center"><div class="result ${ok ? "ok" : "ko"}">${ic(ok ? "check" : "close")}</div>
+          <h1>${ok ? "Fundamentos superados" : "Esta vez no ha sido"}</h1>
+          <p>${ok ? `${RULES.examSize - e.errors} de ${RULES.examSize} respuestas correctas. Ya tienes tu Certificado Horizonte, ${RULES.prize} € invertidos a tu nombre y ${MILES.theory} millas de casa. Empieza tu primer año acompañado.` : `Has fallado ${e.errors} preguntas y el máximo es ${RULES.examMaxErrors}. Repasa los temas y vuelve a intentarlo cuando quieras.`}</p>
+          <div class="focus-nav center">${ok ? lnk("Ver mi certificado", "#/aprende", "primary lg") : btn("Repetir la prueba", "examRetry", "primary lg")}</div></div>`);
     }
     const q = e.qs[e.i];
-    return focus("#/carnet", e.i + 1, RULES.examSize, `<span class="kicker">Examen final · ${e.errors} de ${RULES.examMaxErrors} fallos permitidos</span><h1>${q.q}</h1>${opts(q, e.ans, "examAns")}
+    return focus("#/aprende", e.i + 1, RULES.examSize, `<span class="kicker">Prueba final · ${e.errors} de ${RULES.examMaxErrors} fallos permitidos</span><h1>${q.q}</h1>${opts(q, e.ans, "examAns")}
       ${e.ans !== null ? `${why(e.ans === q.a, q.why)}<div class="focus-nav"><span></span>${btn(e.i === RULES.examSize - 1 || e.errors > RULES.examMaxErrors ? "Ver resultado" : `Siguiente${ic("arrow")}`, "examNext", "primary")}</div>` : ""}`);
 }
 
@@ -476,20 +664,20 @@ function vVerificar(params) {
     let d = null;
     try { d = JSON.parse(decodeURIComponent(escape(atob(params.get("d") || "")))); } catch (e) { d = null; }
     return `<div class="auth"><header class="auth-top">${brand("#/", 32)}</header>
-      <main class="verify">${d && d.n ? `${badge(`${ic("check")}Diploma verificado`, "ok")}<h1>${esc(d.n)}</h1>
-        <p class="sub">Carnet de joven inversor · emitido el ${fmtD(d.f)} · válido hasta el ${fmtD(d.v)} · código ${esc(d.i)}</p><div class="dip-wrap">${diplomaSVG(d)}</div>`
-        : `<h1>Enlace no válido</h1><p class="sub">No hemos podido leer este diploma.</p>`}</main></div>`;
+      <main class="verify">${d && d.n ? `${badge(`${ic("check")}Certificado verificado`, "ok")}<h1>${esc(d.n)}</h1>
+        <p class="sub">Certificado Horizonte · Fundamentos de inversión · emitido el ${fmtD(d.f)} · próxima revisión antes del ${fmtD(d.v)} · código ${esc(d.i)}</p><div class="dip-wrap">${diplomaSVG(d)}</div>`
+        : `<h1>Enlace no válido</h1><p class="sub">No hemos podido leer este certificado.</p>`}</main></div>`;
 }
 
 /* ---------------- Dinero */
 function vDinero() {
     const m = money(), gain = m.value - m.invested, p = m.protect, moves = [...S.money].reverse();
-    return `${pageH("Dinero", "Tu cuenta, tus aportaciones y tu protección del primer año.", btn(`${ic("plus")}Aportar`, "openContribute", "primary"))}
+    return `${pageH("Dinero", "Tu cuenta, tus metas y tu primer año acompañado.", btn(`${ic("plus")}Aportar`, "openContribute", "primary"))}
     <div class="grid">
       ${card(`<div class="value-head">${stat("Valor estimado", eur(m.value, true))}<div class="vh-side"><div><span>Aportado</span><b>${eur(m.invested, true)}</b></div><div><span>Rendimiento estimado</span><b class="${gain >= 0 ? "up" : "down"}">${gain >= 0 ? "+" : "−"}${eur(Math.abs(gain), true)}</b></div><div><span>Aportado por ti</span><b>${eur(m.ownReal, true)}</b></div><div><span>De tu familia</span><b>${eur(m.gifts, true)}</b></div>${m.prizes ? `<div><span>Premios</span><b>${eur(m.prizes, true)}</b></div>` : ""}</div></div>`, "c-12")}
-      ${card(`${cardH("Protección del primer año", `Los primeros ${RULES.protectCap} € que inviertes tú no pueden perder valor en ${RULES.protectMonths} meses. Si al cumplirse valen menos, CaixaBank pone la diferencia.`)}
+      ${card(`${cardH("Primer año acompañado", `Los primeros ${RULES.protectCap} € que inviertes tú no pueden perder valor en ${RULES.protectMonths} meses. Si al cumplirse valen menos, CaixaBank pone la diferencia.`)}
         <div class="protect"><div class="pr-num"><b>${eur(p?.base || 0)}</b><span>de ${RULES.protectCap} € protegidos</span></div>${bar(p?.base || 0, RULES.protectCap, "blue")}
-        <p class="note">${p ? (p.active ? `Del ${fmtD(p.start)} al ${fmtD(p.end)} · ${p.daysLeft} días restantes · ${eur(p.room)} de margen` : `Tu periodo de protección terminó el ${fmtD(p.end)}.`) : "Empieza con tu primera aportación o con el premio del teórico."}</p></div>
+        <p class="note">${p ? (p.active ? `Del ${fmtD(p.start)} al ${fmtD(p.end)} · ${p.daysLeft} días restantes · ${eur(p.room)} de margen` : `Tu periodo de protección terminó el ${fmtD(p.end)}.`) : "Empieza con tu primera aportación o con tu primera inversión al superar Fundamentos."}</p></div>
         <div class="sim" data-sim><label>Si el mercado cayera <output data-o="d"></output><input type="range" min="-40" max="10" step="5" value="-20" data-i="d"></label><p data-o="out"></p></div>
         <details class="terms"><summary>Condiciones${ic("plus")}</summary><ul><li>Tope de ${RULES.protectCap} € por persona y límite por campaña.</li><li>Aplica a la cartera base y al Antídoto, siempre en fondos de perfil moderado.</li><li>Solo cubre si no vendes antes de los ${RULES.protectMonths} meses.</li><li>Es una bonificación promocional de CaixaBank, no un producto garantizado.</li></ul></details>`, "c-7")}
       ${card(`${cardH("Ahorro automático", "Lo que se aparta solo, sin que tengas que acordarte.")}
@@ -498,17 +686,34 @@ function vDinero() {
             <select data-act="weekly" aria-label="Euros a la semana">${[0, 1, 2, 3, 5, 10, 15, 20].map(v => `<option value="${v}" ${S.weekly === v ? "selected" : ""}>${v ? `${v} €` : "No"}</option>`).join("")}</select></div>
           <div class="row"><span class="mv-ic own">${ic("spark")}</span><div><b>Redondeo de compras</b><span>Cada compra con tu tarjeta se redondea al euro y la diferencia se invierte.</span></div>${toggle("roundup", S.roundup, "Redondeo de compras")}</div>
         </div>${S.paga && !S.weekly ? `<p class="note">Te sugerimos apartar ${eur(Math.max(1, Math.round(S.paga * 0.15)))} a la semana: un 15 % de tu paga.</p>` : ""}`, "c-5")}
+      ${metasCard()}
       ${card(`${cardH("Reparto", m.al.active ? `Cartera base ${pct(RULES.base * 100)} y Antídoto ${pct(RULES.antidote * 100)}.` : m.al.pending ? "Tu Antídoto espera la aprobación de tu familia. Mientras, todo está en la cartera base." : "Todo en la cartera base. Elige tu Antídoto para invertir una parte en lo que te preocupa.", m.al.active ? "" : lnk(S.fears.length ? "Ver Antídoto" : "Elegir Antídoto", "#/antidoto", "sm"))}
         ${stack(m.parts)}<div class="rows">${m.parts.map(pp => `<div class="row">${sw(pp.fund)}<div><b>${FUNDS[pp.fund].name}</b><span>${pp.fear ? "Antídoto · " + esc(pp.fear.label) : FUNDS[pp.fund].sub}</span></div><b class="amt">${eur(pp.amount, true)}</b></div>`).join("")}</div>`, "c-12")}
       ${card(`${cardH("Movimientos")}${moves.length ? `<div class="rows">${moves.slice(0, 20).map(moveRow).join("")}</div>` : empty("plus", "Aún no hay movimientos", "Tu primera aportación aparecerá aquí.", btn("Hacer mi primera aportación", "openContribute", "primary"))}`, "c-12")}
     </div>`;
+}
+function metaSaved(id) { return S.money.filter(c => c.meta === id).reduce((a, c) => a + c.amount, 0); }
+function metasCard() {
+    const m = money(), small = S.metas.reduce((a, x) => a + metaSaved(x.id), 0), house = Math.max(0, m.value - small), down = S.goal.price * DOWN_PCT;
+    const rows = [`<div class="row tall"><span class="mv-ic gold">${ic("house")}</span><div><b>Tu casa · entrada</b><span>${eur(house, true)} de ${eur(down)}</span>${bar(house, down, "gold")}</div>${lnk("Ajustar", "#/casa", "sm")}</div>`,
+        ...S.metas.map(x => { const sv = metaSaved(x.id); return `<div class="row tall"><span class="mv-ic own">${ic("target")}</span><div><b>${esc(x.name)}</b><span>${eur(sv, true)} de ${eur(x.target)}${sv >= x.target ? " · conseguida" : ""}</span>${bar(sv, x.target, "blue")}</div>${btn("Quitar", "delMeta", "sm ghost", `data-id="${x.id}"`)}</div>`; })];
+    return card(`${cardH("Tus metas", "La principal es tu casa. Añade otras más cercanas y elige a cuál va cada aportación.", S.metas.length < 3 ? btn(`${ic("plus")}Nueva meta`, "openMeta", "sm") : "")}
+      <div class="rows">${rows.join("")}</div>
+      <p class="note">Si vas a necesitar el dinero en menos de tres años, lo prudente es no depender de la bolsa: lo verás en el tema «Las caídas pasan».</p>`, "c-12");
+}
+function metaSheet() {
+    sheet("Nueva meta", `<form data-form="meta" class="form">
+      <label class="field"><span>¿Para qué ahorras?</span><input name="name" required maxlength="40" placeholder="Por ejemplo, el carné de conducir"></label>
+      <label class="field"><span>¿Cuánto necesitas? (€)</span><input name="target" type="number" min="10" max="50000" step="1" required inputmode="numeric"></label>
+      <button class="btn primary lg block">Crear meta</button></form>`);
 }
 function contributeSheet() {
     const p = money().protect;
     sheet("Aportar", `<form data-form="contribute" class="form">
       <div class="amount-in"><input name="amount" type="number" min="1" max="3000" step="0.01" inputmode="decimal" required placeholder="0" aria-label="Importe en euros"><span>€</span></div>
       <div class="chips">${[1, 5, 10, 20, 50].map(v => `<button type="button" class="chip" data-act="setAmount" data-v="${v}">${v} €</button>`).join("")}</div>
-      <label class="field"><span>Origen del dinero</span><select name="src"><option value="paga">Mi paga</option><option value="verano">Un trabajo de verano</option><option value="otro">Otro ingreso</option></select></label>
+      <div class="form two"><label class="field"><span>Origen del dinero</span><select name="src"><option value="paga">Mi paga</option><option value="verano">Un trabajo de verano</option><option value="otro">Otro ingreso</option></select></label>
+      <label class="field"><span>Para</span><select name="meta"><option value="">Tu casa</option>${S.metas.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></label></div>
       <p class="note">${!p || p.active ? `Hasta ${RULES.protectCap} € de lo que aportas quedan protegidos durante tu primer año.` : "Tu periodo de protección ha terminado."}</p>
       <button class="btn primary lg block">Confirmar aportación</button></form>`);
 }
@@ -553,7 +758,8 @@ function vAntidoto() {
     const wpct = w => pct(w * 100, (w * 100) % 1 ? 1 : 0);
     return `${pageH("Antídoto", "No te preguntamos cuánto riesgo quieres, sino qué te preocupa de tu futuro. Una parte de tu dinero invierte justo en eso: si ocurre, tu dinero gana.")}
     <div class="grid">
-      ${card(`${cardH("¿Qué te preocupa?", `Elige hasta ${RULES.maxFears}. Lo revisas cada año en la revisión de tu carnet.`, `<span class="count">${S.fears.length}/${RULES.maxFears}</span>`)}
+      ${weekCard("c-12")}
+      ${card(`${cardH("¿Qué te preocupa?", `Elige hasta ${RULES.maxFears}. Lo pones al día en tu revisión anual.`, `<span class="count">${S.fears.length}/${RULES.maxFears}</span>`)}
         <div class="fears">${FEARS.map(f => `<button class="fear ${S.fears.includes(f.id) ? "on" : ""}" data-act="fear" data-id="${f.id}" aria-pressed="${S.fears.includes(f.id)}"><span class="fi">${ic(f.id)}</span><b>${f.label}</b><small>${FUNDS[f.fund].name}</small><span class="fcheck">${ic("check")}</span></button>`).join("")}</div>`, "c-12")}
       ${al.fears.length ? card(`${cardH("Tu reparto", "Dentro de una selección cerrada de fondos de CaixaBank Asset Management.", badge(al.active ? "Activo" : "Pendiente de aprobación", al.active ? "ok" : "warn"))}
         ${stack(al.planned)}<div class="rows">${al.planned.map(p => `<div class="row tall">${sw(p.fund)}<div><b>${FUNDS[p.fund].name} · ${wpct(p.w)}</b><span>${p.fear ? p.fear.why : "La base reparte tu dinero entre miles de empresas para que ninguna preocupación lo decida todo."}</span></div></div>`).join("")}</div>
@@ -575,11 +781,13 @@ function vAntidoto() {
 function vCasa() {
     const m = money(), mi = miles(), age = ageOf(), minAge = Math.max(age + 2, 20);
     const rules = [
-        ["Cada tema del teórico", `+${MILES.lesson}`, `${Object.keys(S.lessons).length} de ${LESSONS.length}`],
-        ["Aprobar el teórico", `+${MILES.theory}`, S.exam?.passed ? "Conseguido" : ""],
+        ["Cada tema de Fundamentos", `+${MILES.lesson}`, `${Object.keys(S.lessons).length} de ${LESSONS.length}`],
+        ["Superar Fundamentos", `+${MILES.theory}`, S.exam?.passed ? "Conseguido" : ""],
+        ["Un juego al día", `+${MILES.game}`, Object.keys(S.games).length ? `${Object.keys(S.games).length} días jugados` : "Datos reales de 25 años"],
+        ["Cada 4 semanas de racha", `+${MILES.streak4}`, `Racha actual: ${streak().current} semanas`],
         ["Tu primer euro propio", `+${MILES.firstOwn}`, m.firstOwn ? "Conseguido" : ""],
         ["Cada mes que aportas", `+${MILES.monthOwn}`, S.weekly || S.roundup ? "Ahorro automático activo" : ""],
-        ["Revisión anual del carnet", `+${MILES.itv}`, S.itv.length ? `${S.itv.length} completada${S.itv.length > 1 ? "s" : ""}` : ""],
+        ["Revisión anual", `+${MILES.itv}`, S.itv.length ? `${S.itv.length} completada${S.itv.length > 1 ? "s" : ""}` : ""],
         ["Regalos de tu familia", `+${MILES.giftPer5} cada 5 €`, `Máximo ${MILES.giftMonthCap} al mes`],
     ];
     return `${pageH("Casa", "Tus millas de casa se convierten en una rebaja del interés de tu primera hipoteca con CaixaBank.")}
@@ -599,7 +807,7 @@ function vCasa() {
       ${card(`${cardH("Cómo se ganan")}<div class="rows">${rules.map(([t, n, s]) => `<div class="row"><div><b>${t}</b>${s ? `<span>${s}</span>` : ""}</div><b class="amt gold">${n}</b></div>`).join("")}</div>
         <p class="note">100 millas equivalen a 0,01 puntos menos de diferencial, hasta un máximo de ${pts(MILES.maxCut)} puntos.</p>`, "c-6")}
       ${card(`${cardH("Condiciones")}<ul class="plain"><li>Se canjean en tu primera hipoteca con CaixaBank.</li><li>No caducan. Si no compras vivienda, no pierdes nada: tu dinero sigue siendo tuyo.</li><li>Son una rebaja sobre las condiciones vigentes al firmar, nunca un precio cerrado ni una obligación de contratar otros productos (Ley 5/2019).</li><li>Los regalos tienen un tope mensual de millas.</li></ul>`, "c-6")}
-      ${card(`${cardH("Historial de millas")}${mi.items.length ? `<div class="rows">${mi.items.slice(0, 15).map(i => `<div class="row"><div><b>${esc(i.label)}</b><span>${fmtD(i.date)}</span></div><b class="amt gold">+${i.n}</b></div>`).join("")}</div>` : empty("house", "Aún no tienes millas", "Empieza por el teórico: cada tema suma.", lnk("Ir al teórico", "#/carnet", "primary"))}`, "c-12")}
+      ${card(`${cardH("Historial de millas")}${mi.items.length ? `<div class="rows">${mi.items.slice(0, 15).map(i => `<div class="row"><div><b>${esc(i.label)}</b><span>${fmtD(i.date)}</span></div><b class="amt gold">+${i.n}</b></div>`).join("")}</div>` : empty("house", "Aún no tienes millas", "Empieza por Fundamentos: cada tema suma.", lnk("Ir a Aprende", "#/aprende", "primary"))}`, "c-12")}
     </div>`;
 }
 function bindProj() {
@@ -621,7 +829,7 @@ function bindProj() {
 /* ---------------- Familia (vista del joven) */
 function vFamiliaJoven() {
     const al = allocation(), gifts = S.money.filter(isGift).reverse(), ok = S.geminiOk || isAdult();
-    const invite = `Me he sacado el carnet de joven inversor en Horizonte. Desde el área familiar puedes ayudarme con mi primera casa: ${location.origin}${location.pathname}#/alta/familia`;
+    const invite = `Estoy aprendiendo a invertir en Horizonte, de CaixaBank. Desde el área familiar puedes ayudarme con mi primera casa: ${location.origin}${location.pathname}#/alta/familia`;
     return `${pageH("Familia", "Tu familia puede regalarte dinero para tu futuro, aprobar tus decisiones y ver tu progreso.")}
     <div class="grid">
       ${card(`${cardH("Tu familia en Horizonte")}${S.family ? `<div class="rows"><div class="row"><span class="avatar">${esc(S.family.name.slice(0, 1).toUpperCase())}</span><div><b>${esc(S.family.name)}</b><span>${esc(S.family.relation)}${S.familyAuth ? " · Ha autorizado tu cuenta" : ""}</span></div></div></div>` : empty("family", "Aún no hay nadie de tu familia", "Invítales para que puedan ayudarte.")}
@@ -638,8 +846,8 @@ function vFResumen() {
     const m = money(), mi = miles(), n = esc(teenName());
     return `${pageH(`Hola, ${esc(S.family?.name || "")}`, `Así avanza ${n} en Horizonte.`, lnk(`${ic("gift")}Hacer un regalo`, "#/f/regalar", "primary"))}
     <div class="grid">
-      ${card(`<div class="hero-carnet">${carnetVisual()}<div class="hc-copy"><span class="kicker">Su carnet</span><h2>${S.exam?.passed ? "Teórico aprobado" : "Aprendiendo"}</h2>
-        <p>${S.exam?.passed ? `Aprobó el teórico el ${fmtD(S.exam.date)} con ${S.exam.score}/${S.exam.total}.` : `Lleva ${Object.keys(S.lessons).length} de ${LESSONS.length} temas.`} ${m.firstOwn ? `Puso su primer euro propio el ${fmtD(m.firstOwn.date)}.` : "Aún no ha puesto su primer euro propio."}</p></div></div>`, "c-8")}
+      ${card(`<div class="hero-cred">${credVisual()}<div class="hc-copy"><span class="kicker">Su Certificado Horizonte</span><h2>${STAGES[stageOf()]}</h2>
+        <p>${S.exam?.passed ? `Superó Fundamentos el ${fmtD(S.exam.date)} con ${S.exam.score}/${S.exam.total}.` : `Lleva ${Object.keys(S.lessons).length} de ${LESSONS.length} temas de Fundamentos.`} ${m.firstOwn ? `Puso su primer euro propio el ${fmtD(m.firstOwn.date)}.` : "Aún no ha puesto su primer euro propio."}</p></div></div>`, "c-8")}
       ${card(stat("Valor estimado", eur(m.value, true), `${eur(m.gifts, true)} aportados por la familia`), "c-4 stat-card")}
       ${card(stat(`Aportado por ${n}`, eur(Math.max(0, m.ownReal), true), "De su paga y sus ingresos"), "c-4")}
       ${card(stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos menos de diferencial`), "c-4")}
@@ -699,7 +907,7 @@ function vAjustes() {
 }
 
 /* ------------------------------------------------------------------ estructura y rutas */
-const NAV_T = [["inicio", "Inicio", "home"], ["carnet", "Carnet", "card"], ["dinero", "Dinero", "chart"], ["antidoto", "Antídoto", "shield"], ["casa", "Casa", "house"]];
+const NAV_T = [["inicio", "Inicio", "home"], ["aprende", "Aprende", "book"], ["dinero", "Dinero", "chart"], ["antidoto", "Antídoto", "spark"], ["casa", "Casa", "house"]];
 const NAV_T2 = [["familia", "Familia", "family"], ["ajustes", "Ajustes", "settings"]];
 const NAV_F = [["f/resumen", "Resumen", "home"], ["f/regalar", "Regalos", "gift"], ["f/permisos", "Permisos", "key"]];
 const NAV_F2 = [["ajustes", "Ajustes", "settings"]];
@@ -725,27 +933,29 @@ function render() {
     const parts = path.split("/").filter(Boolean), params = new URLSearchParams(qs || "");
     const r = parts[0] || "";
     if (r !== "tema") lessonState = null;
-    if (r !== "examen") examState = null;
+    if (r !== "prueba") examState = null;
     if (r !== "alta") alta = null;
+    if (r !== "juego") gameState = null;
     let html, view = "app";
     if (r === "verificar") { html = vVerificar(params); view = "public"; }
     else if (!S.role) { html = r === "alta" ? vAlta(parts[1] === "familia" ? "familia" : "joven") : vLanding(); view = "public"; }
-    else if (r === "tema" && S.role === "teen") { html = vTema(parts[1], parts[2]); view = "focus"; if (!html) { location.hash = "#/carnet"; return; } }
-    else if (r === "examen" && S.role === "teen") { html = vExamen(); view = "focus"; }
+    else if (r === "tema" && S.role === "teen") { html = vTema(parts[1], parts[2]); view = "focus"; if (!html) { location.hash = "#/aprende"; return; } }
+    else if (r === "juego" && S.role === "teen") { html = vJuego(parts[1]); view = "focus"; if (!html) { location.hash = "#/aprende"; return; } }
+    else if (r === "prueba" && S.role === "teen") { html = vExamen(); view = "focus"; }
     else {
         let route, content;
         if (S.role === "family") {
             route = r === "f" && ["resumen", "regalar", "permisos"].includes(parts[1]) ? "f/" + parts[1] : r === "ajustes" ? "ajustes" : "f/resumen";
             content = { "f/resumen": vFResumen, "f/regalar": vFRegalar, "f/permisos": vFPermisos, ajustes: vAjustes }[route]();
         } else {
-            route = ["inicio", "carnet", "dinero", "antidoto", "casa", "familia", "ajustes"].includes(r) ? r : "inicio";
-            content = { inicio: vInicio, carnet: vCarnet, dinero: vDinero, antidoto: vAntidoto, casa: vCasa, familia: vFamiliaJoven, ajustes: vAjustes }[route]();
+            route = r === "carnet" ? "aprende" : ["inicio", "aprende", "dinero", "antidoto", "casa", "familia", "ajustes"].includes(r) ? r : "inicio";
+            content = { inicio: vInicio, aprende: vAprende, dinero: vDinero, antidoto: vAntidoto, casa: vCasa, familia: vFamiliaJoven, ajustes: vAjustes }[route]();
         }
         html = shell(route, content);
     }
     document.body.dataset.view = view;
     $("#app").innerHTML = html;
-    bindViz(); bindSim(); bindProj();
+    bindViz(); bindSim(); bindProj(); bindLanding();
     if (r === "antidoto" && !ranking) loadRanking().then(() => { if (location.hash.startsWith("#/antidoto")) rerender(); });
     const chat = $("#chat"); if (chat) chat.scrollTop = chat.scrollHeight;
 }
@@ -768,7 +978,28 @@ document.addEventListener("click", async e => {
     else if (act === "altaBack") { alta.step = alta.role === "joven" && alta.step === 2 && ageOf(alta.data.birth) >= RULES.adultAge ? 0 : alta.step - 1; render(); }
     else if (act === "altaSkip") finishTeen();
     else if (act === "lessonAns") { lessonState.answers[+b.dataset.q] = +b.dataset.i; rerender(); }
-    else if (act === "lessonDone") { const id = b.dataset.id; if (!S.lessons[id]) { S.lessons[id] = iso(new Date()); save(); toast(`Tema completado · +${MILES.lesson} millas de casa`); } location.hash = "#/carnet"; }
+    else if (act === "lessonDone") { const id = b.dataset.id; if (!S.lessons[id]) { S.lessons[id] = iso(new Date()); save(); toast(`Tema completado · +${MILES.lesson} millas de casa`); } location.hash = "#/aprende"; }
+    else if (act === "gameAns") { const q = gameState.qs[gameState.i], i = +b.dataset.i; gameState.ans = i; if (i === q.a) gameState.score++; rerender(); }
+    else if (act === "gameNext") {
+        const g = gameState;
+        if (g.i === g.qs.length - 1) {
+            g.over = true; const t = iso(new Date());
+            if (!S.games[t]) { const before = miles().total; S.games[t] = { id: g.id, score: g.score }; save(); g.miles = miles().total - before; }
+            else if (g.score > S.games[t].score) { S.games[t] = { id: g.id, score: g.score }; save(); }
+        } else { g.i++; g.ans = null; }
+        render(); scrollTo(0, 0);
+    }
+    else if (act === "gameAgain") { newGame(b.dataset.id); render(); }
+    else if (act === "lpFear") { const f = FEARS.find(x => x.id === b.dataset.id); $$(".lf").forEach(x => x.classList.toggle("on", x === b)); $('[data-o="lf"]').innerHTML = `<b>${FUNDS[f.fund].name}</b><p>${f.why}</p>`; }
+    else if (act === "lpGame") {
+        const box = b.closest("[data-lpgame]"), y = +box.dataset.y, r = MKT.find(x => x.k === "world").r[y], ok = (+b.dataset.v === 1) === (r >= 0);
+        $$(".lg-opts .btn", box).forEach(x => { x.disabled = true; x.classList.toggle("right", (+x.dataset.v === 1) === (r >= 0)); });
+        const out = $('[data-o="lg"]', box); out.hidden = false;
+        out.innerHTML = `<b>${ok ? "Correcto." : "No."}</b> Fue ${MKT_FROM + y}: la bolsa mundial acabó en ${r >= 0 ? "+" : "−"}${pct(Math.abs(r), 1)}. Y al año siguiente, ${MKT.find(x => x.k === "world").r[y + 1] >= 0 ? "+" : "−"}${pct(Math.abs(MKT.find(x => x.k === "world").r[y + 1]), 1)}. Por eso cuenta el plazo.`;
+    }
+    else if (act === "openMeta") metaSheet();
+    else if (act === "delMeta") { S.metas = S.metas.filter(x => x.id !== b.dataset.id); S.money.forEach(c => { if (c.meta === b.dataset.id) delete c.meta; }); save(); rerender(); }
+    else if (act === "goAsk") { location.hash = "#/antidoto"; setTimeout(() => $('.ask input')?.focus(), 80); }
     else if (act === "examAns") { const q = examState.qs[examState.i], i = +b.dataset.i; examState.ans = i; if (i !== q.a) examState.errors++; rerender(); }
     else if (act === "examNext") {
         const x = examState;
@@ -786,7 +1017,7 @@ document.addEventListener("click", async e => {
     else if (act === "examRetry") { examState = null; render(); }
     else if (act === "dlDiploma") downloadDiploma();
     else if (act === "copyVerify") { const u = verifyUrl(diplomaData()); try { await navigator.clipboard.writeText(u); toast("Enlace de verificación copiado"); } catch (err) { prompt("Copia el enlace:", u); } }
-    else if (act === "itv") { const t = iso(new Date()); if (S.itv.includes(t)) return toast("Ya has hecho la revisión hoy"); S.itv.push(t); save(); toast(`Revisión completada · +${MILES.itv} millas de casa`); rerender(); }
+    else if (act === "itv") { const t = iso(new Date()); if (S.itv.includes(t)) return toast("Ya has hecho la revisión hoy"); S.itv.push(t); save(); toast(`Revisión anual completada · +${MILES.itv} millas de casa`); location.hash = "#/antidoto"; }
     else if (act === "openContribute") contributeSheet();
     else if (act === "setAmount") { const i = $('#sheet input[name="amount"]'); i.value = b.dataset.v; i.focus(); }
     else if (act === "fear") {
@@ -834,7 +1065,10 @@ document.addEventListener("submit", e => {
     } else if (k === "contribute") {
         const amount = Math.round(+d.amount * 100) / 100;
         if (!(amount > 0)) return;
-        closeSheet(); addMoney({ amount, src: d.src }); rerender();
+        closeSheet(); addMoney({ amount, src: d.src, ...(d.meta ? { meta: d.meta } : {}) }); rerender();
+    } else if (k === "meta") {
+        const target = Math.round(+d.target); if (!(target > 0)) return;
+        S.metas.push({ id: "m" + Date.now().toString(36), name: d.name.trim(), target }); save(); closeSheet(); toast("Meta creada"); rerender();
     } else if (k === "gift") {
         const amount = Math.round(+d.amount * 100) / 100;
         if (!(amount > 0)) return;
@@ -861,13 +1095,13 @@ function downloadDiploma() {
     img.onload = () => {
         const c = document.createElement("canvas"); c.width = 2400; c.height = 1680;
         c.getContext("2d").drawImage(img, 0, 0, 2400, 1680); URL.revokeObjectURL(url);
-        c.toBlob(bl => { const a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = "carnet-joven-inversor.png"; a.click(); });
+        c.toBlob(bl => { const a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = "certificado-horizonte.png"; a.click(); });
     };
     img.src = url;
 }
 
 window.addEventListener("hashchange", () => {
-    if (/^#(como|familias|seguridad|preguntas)$/.test(location.hash)) return;
+    if (/^#(ciclo|aprende|primer-ano|antidoto|casa|familias|seguridad|preguntas)$/.test(location.hash)) return;
     closeSheet(); render(); scrollTo(0, 0);
 });
 render();
