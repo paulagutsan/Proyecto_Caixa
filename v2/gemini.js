@@ -139,7 +139,7 @@ function localGemini(question, c) {
         }
         case "cost": {
             const yearly = c.value * COST.fee / 100;
-            return R("Lo que cuesta", `Usar Horizonte es gratis: sin cuotas ni comisión de apertura. Lo único que se paga es la comisión de gestión de los fondos de CaixaBank Asset Management; como referencia, ${feeTxt} % al año. El documento de datos fundamentales de cada fondo detalla su coste exacto.`,
+            return R("Lo que cuesta", `Horizonte no cobra cuotas ni comisión de apertura, pero invertir tiene un coste: la comisión de gestión de los fondos de CaixaBank Asset Management; como referencia, ${feeTxt} % al año. El documento de datos fundamentales de cada fondo detalla su coste exacto.`,
                 [["Cuotas y apertura", "0 €"], ["Comisión de referencia", `${feeTxt} % al año`], ["Con tu dinero de hoy", c.value > 0 ? `≈ ${G_EUR(yearly)} al año` : "Aún nada"]],
                 [{ label: "Ver costes en euros", href: "#/dinero", primary: true }], ["tu dinero invertido"]);
         }

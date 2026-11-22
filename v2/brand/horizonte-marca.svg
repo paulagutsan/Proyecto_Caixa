@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Horizonte">
+  <defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0097cf"/><stop offset="1" stop-color="#005478"/></linearGradient></defs>
+  <rect width="48" height="48" rx="12" fill="url(#hg)"/>
+  <g stroke="#fff" stroke-width="2.4" stroke-linecap="round">
+    <line x1="13" y1="27" x2="13" y2="38" opacity=".9"/>
+    <line x1="24" y1="19" x2="24" y2="34" opacity=".9"/>
+    <line x1="35" y1="9" x2="35" y2="29" stroke="#f7b500"/>
+  </g>
+  <rect x="10" y="30" width="6" height="5.5" rx="1.5" fill="#fff"/>
+  <rect x="21" y="22" width="6" height="8.5" rx="1.5" fill="#fff"/>
+  <rect x="32" y="12" width="6" height="12" rx="1.5" fill="#f7b500"/>
+  <line x1="8" y1="42" x2="40" y2="42" stroke="#fff" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/>
+</svg>

@@ -32,8 +32,8 @@ img { max-width: 100%; }
 
 /* ---------------------------------------------------------------- marca */
 .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; flex: none; }
-.brand-star { height: 34px; width: auto; display: block; }
-.brand-word { font-family: "Source Serif 4", Georgia, serif; font-optical-sizing: auto; font-size: 24px; font-weight: 300; letter-spacing: .004em; line-height: 1; padding-bottom: 4px; border-bottom: 1px solid currentColor; }
+.brand-star { height: 34px; width: auto; display: block; border-radius: 9px; }
+.brand-word { font-family: "Space Grotesk", Inter, sans-serif; font-size: 18px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; line-height: 1; }
 
 /* ---------------------------------------------------------------- botones y controles */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background .15s, border-color .15s, box-shadow .15s, transform .08s; }
@@ -362,12 +362,12 @@ body[data-view="app"] #toasts { left: calc(50% + var(--side) / 2); }
 .kicker.gold { color: var(--sun); } .kicker.gold-ink { color: var(--amber); }
 .lp-nav { transition: background .2s; }
 .lp-nav .lp-in { height: 72px; }
-.lp-nav .brand-word { font-size: 23px; }
+.lp-nav .brand-word { font-size: 18px; }
 
 /* portada */
 .hz-hero { position: relative; overflow: hidden; padding: 28px 0 36px; min-height: calc(100vh - 72px); display: flex; align-items: center;
     background: radial-gradient(900px 520px at 90% 0%, rgba(0, 126, 174, .16), transparent 62%), radial-gradient(640px 380px at 0% 100%, rgba(247, 181, 0, .12), transparent 62%), linear-gradient(180deg, #eef7fc 0%, #ffffff 92%); }
-.hz-hero::before { content: ""; position: absolute; right: -150px; top: -90px; width: 720px; height: 600px; background: url("brand/horizonte-icono.svg") no-repeat center / contain; opacity: .07; pointer-events: none; }
+.hz-hero::before { content: ""; position: absolute; right: -150px; top: -90px; width: 720px; height: 600px; background: url("brand/horizonte-velas.svg") no-repeat center / contain; opacity: .07; pointer-events: none; }
 .hz-hero-in { position: relative; z-index: 2; width: 100%; display: grid; grid-template-columns: .98fr 1.02fr; gap: 48px; align-items: center; }
 .hz-kicker { display: inline-flex; align-items: center; gap: 9px; padding: 6px 14px 6px 9px; margin-bottom: 22px; border-radius: 999px; background: #fff; border: 1px solid var(--blue-100); color: var(--blue-700); font-size: 12.5px; font-weight: 600; letter-spacing: .02em; box-shadow: var(--shadow-1); }
 .hz-kicker img { height: 18px; width: auto; display: block; }
@@ -473,7 +473,7 @@ body[data-view="app"] #toasts { left: calc(50% + var(--side) / 2); }
 .hz-small { margin-top: 26px; font-size: 14px; color: rgba(255, 255, 255, .62); max-width: 760px; line-height: 1.6; }
 .hz-final { position: relative; overflow: hidden; padding: 112px 0; text-align: center; color: #fff;
     background: radial-gradient(800px 380px at 85% 0%, rgba(255, 255, 255, .16), transparent 62%), radial-gradient(600px 300px at 10% 100%, rgba(247, 181, 0, .22), transparent 62%), linear-gradient(135deg, #008cc2, #00678f 60%, #005070); }
-.hz-final::before { content: ""; position: absolute; left: 50%; top: -120px; width: 620px; height: 520px; transform: translateX(-50%); background: url("brand/horizonte-icono.svg") no-repeat center / contain; opacity: .08; filter: brightness(0) invert(1); pointer-events: none; }
+.hz-final::before { content: ""; position: absolute; left: 50%; top: -120px; width: 620px; height: 520px; transform: translateX(-50%); background: url("brand/horizonte-velas.svg") no-repeat center / contain; opacity: .1; filter: brightness(0) invert(1); pointer-events: none; }
 .hz-final .lp-in { position: relative; }
 .hz-final h2 { font-size: clamp(38px, 5.6vw, 68px); line-height: 1.04; margin: 0 auto; }
 .hz-final .hz-lead { margin: 20px auto 0; color: rgba(255, 255, 255, .86); }
@@ -580,7 +580,7 @@ body[data-view="app"] #toasts { left: calc(50% + var(--side) / 2); }
     .side { display: none; }
     .main { margin-left: 0; padding-bottom: calc(var(--tab) + env(safe-area-inset-bottom)); }
     .topbar { display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 20; height: 58px; padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
-    .topbar .brand { flex: 1; } .topbar .brand-star { height: 28px; } .topbar .brand-word { font-size: 22px; }
+    .topbar .brand { flex: 1; } .topbar .brand-star { height: 28px; } .topbar .brand-word { font-size: 15px; }
     .topbar .area { margin: 0; }
     .topbar .avatar { width: 34px; height: 34px; font-size: 14px; }
     .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; height: calc(var(--tab) + env(safe-area-inset-bottom)); padding: 6px 6px env(safe-area-inset-bottom); background: rgba(255, 255, 255, .97); border-top: 1px solid var(--line); }

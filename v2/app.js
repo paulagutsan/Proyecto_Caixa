@@ -215,7 +215,7 @@ const stack = parts => `<div class="stack">${parts.map(p => `<i class="f-${p.fun
 const sw = fund => `<span class="sw f-${fund}"></span>`;
 const toggle = (act, on, label) => `<label class="switch"><input type="checkbox" data-act="${act}" ${on ? "checked" : ""} aria-label="${esc(label)}"><i></i></label>`;
 const legal = () => `<footer class="legal">${ic("info")}<p>${LEGAL}</p></footer>`;
-const brand = (href, h = 38) => `<a class="brand" href="${href}" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-icono.svg" alt="" width="${Math.round(h * 1.21)}" height="${h}"><span class="brand-word">Horizonte</span></a>`;
+const brand = (href, h = 38) => `<a class="brand" href="${href}" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-marca.svg" alt="" width="${h}" height="${h}"><span class="brand-word">Horizonte</span></a>`;
 
 function credVisual(big = false, sample = false) {
     const st = sample ? 1 : stageOf();
@@ -242,9 +242,9 @@ function vLanding() {
       <div class="hz-copy">
         <p class="hz-kicker"><img src="brand/horizonte-icono.svg" alt="" width="22" height="18">CaixaBank Asset Management</p>
         <h1>Del primer euro<br>a tu <em>primera casa</em></h1>
-        <p class="hz-lead">Aprende lo esencial, invierte desde los 15 con tu primer año acompañado y convierte cada paso en una hipoteca más barata. Con tu familia detrás.</p>
+        <p class="hz-lead">Formación financiera, inversión acompañada durante el primer año y ventajas en tu primera hipoteca con CaixaBank. Un camino pensado para jóvenes y sus familias.</p>
         <div class="lp-cta">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "primary lg")}${lnk("Soy familia", "#/alta/familia", "lg")}</div>
-        <ul class="hz-trust"><li>${ic("check")}Gratis, sin cuotas</li><li>${ic("family")}Desde los 15, con tu familia</li><li>${ic("shield")}Primer año acompañado</li></ul>
+        <ul class="hz-trust"><li>${ic("check")}Sin cuotas ni comisión de apertura</li><li>${ic("family")}Desde los 15, con tu familia</li><li>${ic("shield")}Primer año acompañado</li></ul>
       </div>
       <div class="hz-visual">
         <div class="hz-chart" data-hero>
@@ -337,31 +337,34 @@ function vLanding() {
 }
 /* Portada: lo que aportas y el interés acumulado, con el diploma al empezar y la casa al final */
 function heroPlot(m, N) {
-    const W = 560, H = 292, ml = 12, mr = 16, mt = 82, mb = 32;
-    const val = t => fv(m, t), put = t => m * 12 * t, yMax = val(N) * 1.04;
+    const W = 560, H = 300, ml = 12, mr = 16, mt = 84, mb = 32, S = 4;
+    const val = t => fv(m, t), put = t => m * 12 * t, yMax = val(N) * 1.05;
     const X = t => ml + (W - ml - mr) * t / N, Y = v => H - mb - (H - mt - mb) * v / yMax;
-    const P = f => Array.from({ length: N + 1 }, (_, t) => [X(t), Y(f(t))]);
+    const P = f => Array.from({ length: N * S + 1 }, (_, k) => [X(k / S), Y(f(k / S))]);
     const L = a => a.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
     const tot = P(val), con = P(put), y0 = Y(0), xs = X(0), xe = X(N), ye = Y(val(N));
-    const midT = N * 0.7, yMid = (Y(val(midT)) + Y(put(midT))) / 2, thick = Y(put(midT)) - Y(val(midT));
-    const grid = [.25, .5, .75, 1].map(k => `<line x1="${ml}" x2="${W - mr}" y1="${Y(yMax / 1.04 * k).toFixed(1)}" y2="${Y(yMax / 1.04 * k).toFixed(1)}" stroke="#e6edf2" stroke-width="1"/>`).join("");
+    const midT = N * 0.68, yMid = (Y(val(midT)) + Y(put(midT))) / 2, thick = Y(put(midT)) - Y(val(midT));
+    const grid = [.25, .5, .75, 1].map(k => { const y = Y(yMax / 1.05 * k).toFixed(1); return `<line x1="${ml}" x2="${W - mr}" y1="${y}" y2="${y}" stroke="#e6edf2" stroke-width="1"/>`; }).join("");
     const ticks = [0, 3, 6, 9, 12].filter(t => t <= N).map(t => `<text x="${X(t).toFixed(1)}" y="${H - 9}" text-anchor="${t === 0 ? "start" : t === N ? "end" : "middle"}" font-size="13" fill="#6b7580">${15 + t} años</text>`).join("");
+    const halo = 'paint-order="stroke" stroke="#fff" stroke-width="4" stroke-linejoin="round"';
     return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfica de los 15 a los ${15 + N} años: lo que aportas y el interés acumulado">
-      <defs><linearGradient id="hgi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b500" stop-opacity=".95"/><stop offset="1" stop-color="#ee7b1f" stop-opacity=".78"/></linearGradient>
-        <linearGradient id="hgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007eae" stop-opacity=".24"/><stop offset="1" stop-color="#007eae" stop-opacity=".07"/></linearGradient></defs>
+      <defs><linearGradient id="hgi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b500" stop-opacity=".95"/><stop offset="1" stop-color="#ee7b1f" stop-opacity=".8"/></linearGradient>
+        <linearGradient id="hgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007eae" stop-opacity=".24"/><stop offset="1" stop-color="#007eae" stop-opacity=".06"/></linearGradient></defs>
       ${grid}<line x1="${ml}" x2="${W - mr}" y1="${y0}" y2="${y0}" stroke="#cfd8e0" stroke-width="1.2"/>
       <polygon points="${L(con)} ${xe.toFixed(1)},${y0.toFixed(1)} ${xs.toFixed(1)},${y0.toFixed(1)}" fill="url(#hgc)"/>
       <polygon points="${L(tot)} ${L([...con].reverse())}" fill="url(#hgi)"/>
-      <polyline points="${L(tot)}" fill="none" stroke="#007eae" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
-      ${thick > 24 ? `<text x="${X(midT).toFixed(1)}" y="${(yMid + 4).toFixed(1)}" text-anchor="middle" font-size="13.5" font-weight="700" fill="#4a2e00">Interés acumulado</text>` : ""}
-      <line x1="${xs + 22}" y1="58" x2="${xs + 22}" y2="${y0}" stroke="#007eae" stroke-width="1.3" stroke-dasharray="3 4" opacity=".6"/><circle cx="${xs + 22}" cy="${y0}" r="4.5" fill="#fff" stroke="#007eae" stroke-width="2"/>
-      <g transform="translate(${xs} 4)"><rect width="176" height="56" rx="12" fill="#fff" stroke="#cfe3ee"/>
-        <text x="14" y="25" font-size="15" font-weight="700" fill="#0f1419">Tu diploma</text><text x="14" y="43" font-size="12.5" fill="#6b7580">Certificado Horizonte</text>
-        <circle cx="146" cy="28" r="13" fill="#f7b500"/><text x="146" y="33.5" text-anchor="middle" font-size="15" fill="#6b4300">★</text></g>
-      <line x1="${xe}" y1="58" x2="${xe}" y2="${ye.toFixed(1)}" stroke="#005b82" stroke-width="1.3" stroke-dasharray="3 4" opacity=".65"/><circle cx="${xe}" cy="${ye.toFixed(1)}" r="5.5" fill="#007eae" stroke="#fff" stroke-width="2.5"/>
-      <g transform="translate(${xe - 176} 4)"><rect width="176" height="56" rx="12" fill="#fff" stroke="#cfe3ee"/>
-        <g transform="translate(14 13) scale(.98)"><path d="M0 14 L15 1 L30 14 M5 11 V27 H25 V11 M12 27 V19 H18 V27" fill="none" stroke="#005b82" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></g>
-        <text x="58" y="25" font-size="15" font-weight="700" fill="#0f1419">Tu primera casa</text><text x="58" y="43" font-size="12.5" fill="#6b7580">A los ${15 + N} años</text></g>
+      <polyline points="${L(tot)}" fill="none" stroke="#007eae" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>
+      ${thick > 26 ? `<text x="${X(midT).toFixed(1)}" y="${(yMid + 5).toFixed(1)}" text-anchor="middle" font-size="14" font-weight="700" fill="#4a2e00">Interés acumulado</text>` : ""}
+      <line x1="${xs + 24}" y1="62" x2="${xs + 24}" y2="${y0}" stroke="#007eae" stroke-width="1.3" stroke-dasharray="3 4" opacity=".6"/><circle cx="${xs + 24}" cy="${y0}" r="4.5" fill="#fff" stroke="#007eae" stroke-width="2"/>
+      <g transform="translate(${xs} 4)"><rect width="206" height="58" rx="12" fill="#fff" stroke="#cfe3ee"/>
+        <g transform="translate(14 12)"><rect width="26" height="34" rx="3.5" fill="#eaf4f9" stroke="#007eae" stroke-width="1.7"/><line x1="6" y1="9" x2="20" y2="9" stroke="#007eae" stroke-width="1.7" stroke-linecap="round"/><line x1="6" y1="15" x2="17" y2="15" stroke="#8fc0d8" stroke-width="1.7" stroke-linecap="round"/><circle cx="19" cy="26" r="6" fill="#f7b500"/><text x="19" y="30" text-anchor="middle" font-size="9" fill="#6b4300">★</text></g>
+        <text x="54" y="26" font-size="15" font-weight="700" fill="#0f1419">Tu diploma</text><text x="54" y="44" font-size="12.5" fill="#6b7580">Certificado Horizonte</text></g>
+      <line x1="${xe}" y1="62" x2="${xe}" y2="${ye.toFixed(1)}" stroke="#005b82" stroke-width="1.3" stroke-dasharray="3 4" opacity=".65"/>
+      <circle cx="${xe}" cy="${ye.toFixed(1)}" r="6" fill="#007eae" stroke="#fff" stroke-width="2.5"/>
+      <text x="${(xe - 12).toFixed(1)}" y="${(ye + 22).toFixed(1)}" text-anchor="end" font-size="15" font-weight="700" fill="#005b82" ${halo}>${eur(val(N))}</text>
+      <g transform="translate(${xe - 206} 4)"><rect width="206" height="58" rx="12" fill="#fff" stroke="#cfe3ee"/>
+        <g transform="translate(14 14) scale(1.02)"><path d="M0 14 L15 1 L30 14 M5 11 V27 H25 V11 M12 27 V19 H18 V27" fill="none" stroke="#005b82" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></g>
+        <text x="60" y="26" font-size="15" font-weight="700" fill="#0f1419">Tu primera casa</text><text x="60" y="44" font-size="12.5" fill="#6b7580">A los ${15 + N} años</text></g>
       ${ticks}</svg>`;
 }
 function bindLanding() {
@@ -754,7 +757,7 @@ function metasCard() {
 /* Lo que cuesta, en euros: transparencia total antes de que nadie pregunte */
 function costCard() {
     const m = money(), yearly = m.value * COST.fee / 100;
-    return card(`${cardH("Lo que cuesta, en euros", "Usar Horizonte es gratis: sin cuotas ni comisión de apertura. Lo único que se paga es la comisión de gestión de los fondos de CaixaBank Asset Management.")}
+    return card(`${cardH("Lo que cuesta, en euros", "Horizonte no cobra cuotas ni comisión de apertura. Lo que sí tiene coste es la comisión de gestión de los fondos de CaixaBank Asset Management.")}
       <div class="split">${stat("Comisión de referencia", `${pct(COST.fee, 1)} al año`, `${eur(COST.fee, true)} por cada 100 € invertidos`)}${stat("Con tu dinero de hoy", m.value > 0 ? `≈ ${eur(yearly, true)} al año` : "Aún nada", m.value > 0 ? "Estimación sobre tu valor actual" : "Se verá cuando inviertas")}</div>
       <p class="note">Es una referencia: el documento de datos fundamentales de cada fondo detalla su coste exacto. Un punto de comisión de diferencia, mantenido durante años, supone bastante menos dinero.</p>`, "c-12");
 }

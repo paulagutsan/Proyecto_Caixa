@@ -7,7 +7,7 @@
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "icons": [
-    { "src": "brand/horizonte-icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "brand/estrella.png", "sizes": "312x258", "type": "image/png", "purpose": "any" }
+    { "src": "brand/horizonte-marca.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "brand/horizonte-marca.png", "sizes": "192x192", "type": "image/png", "purpose": "any" }
   ]
 }
