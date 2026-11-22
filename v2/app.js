@@ -215,7 +215,7 @@ const stack = parts => `<div class="stack">${parts.map(p => `<i class="f-${p.fun
 const sw = fund => `<span class="sw f-${fund}"></span>`;
 const toggle = (act, on, label) => `<label class="switch"><input type="checkbox" data-act="${act}" ${on ? "checked" : ""} aria-label="${esc(label)}"><i></i></label>`;
 const legal = () => `<footer class="legal">${ic("info")}<p>${LEGAL}</p></footer>`;
-const brand = (href, h = 38) => `<a class="brand" href="${href}" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-marca.svg" alt="" width="${h}" height="${h}"><span class="brand-text"><span class="brand-word">Horizonte</span><small class="brand-sub">CaixaBank Asset Management</small></span></a>`;
+const brand = (href, h = 38) => `<a class="brand" href="${href}" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-logo.png" alt="" width="${Math.round(h * 1.46)}" height="${h}"><span class="brand-text"><span class="brand-word">Horizonte</span><small class="brand-sub">CaixaBank Asset Management</small></span></a>`;
 
 function credVisual(big = false, sample = false) {
     const st = sample ? 1 : stageOf();
