@@ -247,15 +247,14 @@ function vLanding() {
         <ul class="hz-trust"><li>${ic("check")}Gratis, sin cuotas</li><li>${ic("family")}Desde los 15, con tu familia</li><li>${ic("shield")}Primer año acompañado</li></ul>
       </div>
       <div class="hz-visual">
-        <div class="hz-card" data-hero>
-          <div class="hc-top"><b>Calcula tu camino</b><small>Ejemplo orientativo</small></div>
-          <label>Ahorras cada mes<output data-o="m"></output><input type="range" min="5" max="100" step="5" value="30" data-i="m" aria-label="Euros que ahorras cada mes"></label>
-          <div class="hc-ring"><svg viewBox="0 0 112 112" aria-hidden="true"><circle class="rg-bg" cx="56" cy="56" r="47"></circle><circle class="rg-fg" cx="56" cy="56" r="47" data-o="rg"></circle></svg><p><b data-o="pc"></b>de la entrada de tu casa a los ${GOAL_DEFAULT.age} años</p></div>
-          <div class="hc-rows"><div><span>Reúnes a los ${GOAL_DEFAULT.age}</span><b data-o="v"></b></div><div><span>Rebaja en tu hipoteca</span><b data-o="cut"></b></div><div><span>Intereses que te ahorras</span><b data-o="save"></b></div></div>
-          <p class="note">Empezando a los 15, con una rentabilidad estimada del 5 % anual y constancia. No es una promesa de rentabilidad.</p>
+        <div class="hz-chart" data-hero>
+          <div class="hch-top"><div><b>Tu dinero crece contigo</b><small>Ahorro mensual, de los 15 a los ${GOAL_DEFAULT.age}</small></div>
+            <div class="hch-chips" role="group" aria-label="Cuánto ahorras al mes">${[10, 25, 50, 100].map(v => `<button type="button" class="${v === 25 ? "on" : ""}" data-hero-amt="${v}">${v} €</button>`).join("")}</div></div>
+          <div class="hch-plot" data-o="plot"></div>
+          <ul class="hch-legend"><li><i class="l1"></i>Lo que aportas<b data-o="c"></b></li><li><i class="l2"></i>Interés acumulado<b data-o="i"></b></li></ul>
+          <div class="hch-foot"><div><span>A los ${GOAL_DEFAULT.age} reúnes</span><b data-o="v"></b></div><div><span>Rebaja en tu hipoteca</span><b data-o="cut"></b></div></div>
+          <p class="note">Rentabilidad estimada del 5 % anual y constancia. No es una promesa de rentabilidad.</p>
         </div>
-        <div class="hz-badge b1"><span>${ic("shield")}</span>${RULES.protectCap} € protegidos el primer año</div>
-        <div class="hz-badge b2"><span>${ic("star")}</span>${RULES.prize} € de premio al aprobar</div>
       </div>
     </div></section>
 
@@ -321,7 +320,7 @@ function vLanding() {
 
     <section class="lp-sec" id="valores"><div class="lp-in">
       <p class="kicker">Nuestros valores</p><h2 class="serif">Los valores de CaixaBank, llevados a tu primer euro.</h2>
-      <p class="lp-lead">CaixaBank se guía por tres valores: calidad, confianza y compromiso social. En Horizonte los unimos a los nuestros para que se noten en lo que haces cada semana.</p>
+      <p class="lp-lead">El propósito de CaixaBank es estar cerca de las personas para todo lo que importa, y se apoya en tres valores: calidad, confianza y compromiso social. En Horizonte los unimos a los nuestros para que se noten en lo que haces cada semana.</p>
       <div class="vals-key"><span class="cb">Valor de CaixaBank</span><span class="hz">Valor de Horizonte</span></div>
       <div class="vals">${VALUES.map(v => `<article><div class="val-pair">${v.cb ? `<span class="cb">${v.cb}</span><i>+</i>` : ""}<span class="hz">${v.hz}</span></div><h3>${v.t}</h3><p>${v.p}</p></article>`).join("")}</div>
       <p class="note vals-src">Valores de CaixaBank según su <a href="https://www.caixabank.com/informacioncorporativa/misionvisionyvalores_es.html" target="_blank" rel="noopener">web corporativa</a>. Gemini solo usa tu información con la autorización de tu familia y nunca para publicidad.</p>
@@ -336,20 +335,49 @@ function vLanding() {
     <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}</div>
     </div>`;
 }
+/* Portada: lo que aportas y el interés acumulado, con el diploma al empezar y la casa al final */
+function heroPlot(m, N) {
+    const W = 560, H = 292, ml = 12, mr = 16, mt = 82, mb = 32;
+    const val = t => fv(m, t), put = t => m * 12 * t, yMax = val(N) * 1.04;
+    const X = t => ml + (W - ml - mr) * t / N, Y = v => H - mb - (H - mt - mb) * v / yMax;
+    const P = f => Array.from({ length: N + 1 }, (_, t) => [X(t), Y(f(t))]);
+    const L = a => a.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+    const tot = P(val), con = P(put), y0 = Y(0), xs = X(0), xe = X(N), ye = Y(val(N));
+    const midT = N * 0.7, yMid = (Y(val(midT)) + Y(put(midT))) / 2, thick = Y(put(midT)) - Y(val(midT));
+    const grid = [.25, .5, .75, 1].map(k => `<line x1="${ml}" x2="${W - mr}" y1="${Y(yMax / 1.04 * k).toFixed(1)}" y2="${Y(yMax / 1.04 * k).toFixed(1)}" stroke="#e6edf2" stroke-width="1"/>`).join("");
+    const ticks = [0, 3, 6, 9, 12].filter(t => t <= N).map(t => `<text x="${X(t).toFixed(1)}" y="${H - 9}" text-anchor="${t === 0 ? "start" : t === N ? "end" : "middle"}" font-size="13" fill="#6b7580">${15 + t} años</text>`).join("");
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfica de los 15 a los ${15 + N} años: lo que aportas y el interés acumulado">
+      <defs><linearGradient id="hgi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b500" stop-opacity=".95"/><stop offset="1" stop-color="#ee7b1f" stop-opacity=".78"/></linearGradient>
+        <linearGradient id="hgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007eae" stop-opacity=".24"/><stop offset="1" stop-color="#007eae" stop-opacity=".07"/></linearGradient></defs>
+      ${grid}<line x1="${ml}" x2="${W - mr}" y1="${y0}" y2="${y0}" stroke="#cfd8e0" stroke-width="1.2"/>
+      <polygon points="${L(con)} ${xe.toFixed(1)},${y0.toFixed(1)} ${xs.toFixed(1)},${y0.toFixed(1)}" fill="url(#hgc)"/>
+      <polygon points="${L(tot)} ${L([...con].reverse())}" fill="url(#hgi)"/>
+      <polyline points="${L(tot)}" fill="none" stroke="#007eae" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+      ${thick > 24 ? `<text x="${X(midT).toFixed(1)}" y="${(yMid + 4).toFixed(1)}" text-anchor="middle" font-size="13.5" font-weight="700" fill="#4a2e00">Interés acumulado</text>` : ""}
+      <line x1="${xs + 22}" y1="58" x2="${xs + 22}" y2="${y0}" stroke="#007eae" stroke-width="1.3" stroke-dasharray="3 4" opacity=".6"/><circle cx="${xs + 22}" cy="${y0}" r="4.5" fill="#fff" stroke="#007eae" stroke-width="2"/>
+      <g transform="translate(${xs} 4)"><rect width="176" height="56" rx="12" fill="#fff" stroke="#cfe3ee"/>
+        <text x="14" y="25" font-size="15" font-weight="700" fill="#0f1419">Tu diploma</text><text x="14" y="43" font-size="12.5" fill="#6b7580">Certificado Horizonte</text>
+        <circle cx="146" cy="28" r="13" fill="#f7b500"/><text x="146" y="33.5" text-anchor="middle" font-size="15" fill="#6b4300">★</text></g>
+      <line x1="${xe}" y1="58" x2="${xe}" y2="${ye.toFixed(1)}" stroke="#005b82" stroke-width="1.3" stroke-dasharray="3 4" opacity=".65"/><circle cx="${xe}" cy="${ye.toFixed(1)}" r="5.5" fill="#007eae" stroke="#fff" stroke-width="2.5"/>
+      <g transform="translate(${xe - 176} 4)"><rect width="176" height="56" rx="12" fill="#fff" stroke="#cfe3ee"/>
+        <g transform="translate(14 13) scale(.98)"><path d="M0 14 L15 1 L30 14 M5 11 V27 H25 V11 M12 27 V19 H18 V27" fill="none" stroke="#005b82" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></g>
+        <text x="58" y="25" font-size="15" font-weight="700" fill="#0f1419">Tu primera casa</text><text x="58" y="43" font-size="12.5" fill="#6b7580">A los ${15 + N} años</text></g>
+      ${ticks}</svg>`;
+}
 function bindLanding() {
     const hero = $("[data-hero]");
     if (hero) {
-        const down = GOAL_DEFAULT.price * DOWN_PCT, yrs = GOAL_DEFAULT.age - 15, P0 = GOAL_DEFAULT.price * (1 - DOWN_PCT), C = 2 * Math.PI * 47;
+        const yrs = GOAL_DEFAULT.age - 15;
         const ml = MILES.lesson * LESSONS.length + MILES.theory + MILES.firstOwn + yrs * (MILES.monthOwn * 12 + MILES.itv + 13 * MILES.streak4), cut = cutOf(ml);
-        const sv = (payment(P0, MORTGAGE_RATE, MORTGAGE_YEARS) - payment(P0, MORTGAGE_RATE - cut, MORTGAGE_YEARS)) * MORTGAGE_YEARS * 12;
-        const rg = $('[data-o="rg"]', hero); rg.style.strokeDasharray = C;
-        const upd = () => {
-            const m = +$('[data-i="m"]', hero).value, v = fv(m, yrs), p = Math.min(100, v / down * 100);
-            $('[data-o="m"]', hero).textContent = `${m} € al mes`; $('[data-o="v"]', hero).textContent = eur(v);
-            $('[data-o="pc"]', hero).textContent = `${Math.round(p)} %`; rg.style.strokeDashoffset = C * (1 - p / 100);
-            $('[data-o="cut"]', hero).textContent = `−${pts(cut)} puntos`; $('[data-o="save"]', hero).textContent = eur(sv);
+        const show = m => {
+            const total = fv(m, yrs), put = m * 12 * yrs;
+            $('[data-o="plot"]', hero).innerHTML = heroPlot(m, yrs);
+            $('[data-o="c"]', hero).textContent = eur(put); $('[data-o="i"]', hero).textContent = eur(total - put);
+            $('[data-o="v"]', hero).textContent = eur(total); $('[data-o="cut"]', hero).textContent = `−${pts(cut)} puntos`;
+            $$("[data-hero-amt]", hero).forEach(b => b.classList.toggle("on", +b.dataset.heroAmt === m));
         };
-        $('[data-i="m"]', hero).addEventListener("input", upd); upd();
+        $$("[data-hero-amt]", hero).forEach(b => b.addEventListener("click", () => show(+b.dataset.heroAmt)));
+        show(25);
     }
     const sim = $("[data-lpsim]");
     if (sim) {
