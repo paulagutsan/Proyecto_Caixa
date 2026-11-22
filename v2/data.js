@@ -55,7 +55,7 @@ const VALUES = [
     { cb: "Confianza", hz: "Cercanía", t: "Confianza que se comparte",
       p: `Tu familia aprueba las decisiones importantes hasta los ${RULES.adultAge}, tus datos solo se usan con permiso y tus primeros ${RULES.protectCap} € no pueden perder valor en ${RULES.protectMonths} meses, si no vendes antes.` },
     { cb: "Compromiso social", hz: "Constancia", t: "Un futuro que no depende de tu cartera",
-      p: "Aprender a invertir desde los 15, con las mismas reglas para todos: las millas premian tu constancia, nunca cuánto dinero tengas." },
+      p: "Aprender a invertir con las mismas reglas para todos: las millas premian tu constancia, nunca cuánto dinero tengas." },
     { cb: "", hz: "Futuro", t: "Mirar lejos",
       p: "Cada paso de hoy suma para tu primera casa. Pensamos a diez años, no a la semana que viene." },
 ];
@@ -105,14 +105,14 @@ const RANK_MIN = 100;          // el mapa de miedos se publica a partir de 100 r
 
 /* El ciclo de Horizonte: cada paso alimenta al siguiente */
 const CYCLE = [
-    { id: "aprende", t: "Aprende", p: `Cinco temas de tres minutos y juegos con datos reales. Al superar Fundamentos, ${RULES.prize} € invertidos a tu nombre.`, ic: "book" },
+    { id: "aprende", t: "Aprende", p: "Un curso elaborado para aprender todo lo necesario sobre invertir, desde lo más básico. Al superarlo, recibes un diploma que acredita tu nivel.", ic: "book" },
     { id: "invierte", t: "Invierte", p: `Desde 1 €, con tu familia detrás. Tu primer año, los primeros ${RULES.protectCap} € no pueden perder.`, ic: "chart" },
     { id: "entiende", t: "Entiende", p: "Cada semana, qué ha pasado con tu dinero y por qué. Y tu Antídoto: invierte en lo que te preocupa.", ic: "spark" },
     { id: "millas", t: "Gana millas", p: "Aprender, aportar y ser constante suma millas. Nunca por tener más dinero que nadie.", ic: "star" },
     { id: "casa", t: "Tu casa", p: "Las millas rebajan el interés de tu primera hipoteca con CaixaBank.", ic: "house" },
 ];
 const FAQ = [
-    { q: "¿Desde qué edad puedo usar Horizonte?", a: "Desde los 14 años, con la autorización de tu madre, padre o tutor legal. Hasta los 18, la cuenta está a tu nombre y tu familia aprueba las decisiones importantes. A los 18 te conviertes en inversor certificado y la cuenta pasa a ser solo tuya." },
+    { q: "¿Hay una edad para empezar?", a: "Aprender no tiene edad: puedes probar los juegos y recorrer la web cuando quieras. Para abrir una cuenta e invertir, una persona menor de edad necesita la autorización de su madre, padre o tutor legal. Hasta los 18, la cuenta está a su nombre y su familia aprueba las decisiones importantes; a los 18 pasa a ser solo suya." },
     { q: "¿Puedo perder dinero?", a: `Invertir siempre tiene riesgo y el valor puede bajar. Por eso, durante tu primer año, los primeros ${RULES.protectCap} € que inviertes tú están protegidos: si al cumplir los 12 meses valen menos de lo que pusiste, CaixaBank pone la diferencia, siempre que no hayas vendido antes.` },
     { q: "¿Qué es el Certificado Horizonte?", a: `Una acreditación de CaixaBank Asset Management que demuestra que sabes lo esencial antes de invertir: interés compuesto, riesgo y plazo, diversificación y cómo evitar estafas. Al superar Fundamentos recibes ${RULES.prize} € invertidos y un certificado verificable que puedes añadir a LinkedIn a partir de los 16.` },
     { q: "¿Qué es el Antídoto?", a: `En lugar de preguntarte cuánto riesgo quieres, te preguntamos qué te preocupa de tu futuro. El ${Math.round(RULES.base * 100)} % de tu dinero va a un fondo global diversificado y el ${Math.round(RULES.antidote * 100)} % a los temas que eliges, dentro de una selección cerrada de fondos de CaixaBank Asset Management. Reduce el golpe si lo que temes ocurre; no es una garantía.` },
@@ -135,7 +135,7 @@ const SOURCES = {
 
 /* ---------------------------------------------------------------- Fundamentos (5 temas) */
 const LESSONS = [
-    { id: "invertir", title: "Ahorrar o invertir", sub: "Por qué empezar a los 15 es tu mayor ventaja", min: 3,
+    { id: "invertir", title: "Ahorrar o invertir", sub: "Por qué empezar pronto es tu mayor ventaja", min: 3,
       cards: [
         { h: "Guardar no es lo mismo que poner a trabajar", p: [
             "<b>Ahorrar</b> es apartar dinero para más adelante. Sabes cuánto tendrás, pero apenas crece.",
@@ -144,7 +144,7 @@ const LESSONS = [
             "Cuando inviertes, ganas sobre lo que pones… y también sobre lo que ya has ganado. Es una bola de nieve.",
             "Mueve los controles y mira qué pasa." ], viz: "compound" },
         { h: "El tiempo pesa más que la cantidad", p: [
-            "Quien empieza a los 15 con 20 € al mes puede acabar con más que quien empieza a los 25 con el doble. No hace falta mucho dinero: hace falta tiempo.",
+            "Quien empieza pronto con 20 € al mes puede acabar con más que quien empieza diez años después con el doble. No hace falta mucho dinero: hace falta tiempo.",
             "Por eso Horizonte empieza ahora y no cuando tengas nómina." ] },
       ],
       check: [
@@ -221,7 +221,7 @@ const LESSONS = [
 const EXAM = [
     ...LESSONS.flatMap(l => l.check),
     { q: "Necesitas el dinero para el viaje de fin de curso dentro de 6 meses. ¿Dónde tiene más sentido?", o: ["En bolsa, para que crezca más", "En un sitio estable y disponible", "En criptomonedas"], a: 1, why: "A corto plazo una caída podría coincidir justo con el momento en que lo necesitas." },
-    { q: "Con 20 € al mes desde los 15 o 40 € al mes desde los 25, ¿quién suele llegar más lejos a los 50?", o: ["Siempre el de 40 €", "El que empieza a los 15 puede llegar a más", "Los dos igual"], a: 1, why: "Diez años más de interés compuesto pueden compensar aportar la mitad." },
+    { q: "Una persona ahorra 20 € al mes desde hoy y otra empieza dentro de diez años con 40 € al mes. Pasado el tiempo, ¿quién suele llegar más lejos?", o: ["Siempre la que ahorra 40 €", "La que empieza antes puede llegar a más", "Las dos igual"], a: 1, why: "Diez años más de interés compuesto pueden compensar aportar la mitad." },
     { q: "¿Qué parte de tu dinero va al Antídoto?", o: ["Todo", "Una parte: el 25 %", "Nada, es solo un juego"], a: 1, why: "La base global (75 %) reparte el riesgo; el Antídoto es una parte." },
     { q: "El Antídoto invierte en lo que te preocupa. ¿Qué garantiza?", o: ["Que nunca pierdas", "Nada: reduce el golpe, no es una garantía", "Que ganes el doble"], a: 1, why: "Si lo que temes pasa, esa parte tiende a subir, pero no hay garantías." },
     { q: "Las comisiones de un fondo…", o: ["No importan", "Se cobran cada año y se acumulan con el tiempo", "Solo se pagan al principio"], a: 1, why: "Un punto al año de diferencia puede suponer bastante menos dinero tras muchos años." },

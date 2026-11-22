@@ -215,7 +215,7 @@ const stack = parts => `<div class="stack">${parts.map(p => `<i class="f-${p.fun
 const sw = fund => `<span class="sw f-${fund}"></span>`;
 const toggle = (act, on, label) => `<label class="switch"><input type="checkbox" data-act="${act}" ${on ? "checked" : ""} aria-label="${esc(label)}"><i></i></label>`;
 const legal = () => `<footer class="legal">${ic("info")}<p>${LEGAL}</p></footer>`;
-const brand = (href, h = 38) => `<a class="brand" href="${href}" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-marca.svg" alt="" width="${h}" height="${h}"><span class="brand-word">Horizonte</span></a>`;
+const brand = (href, h = 38) => `<a class="brand" href="${href}" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-marca.svg" alt="" width="${h}" height="${h}"><span class="brand-text"><span class="brand-word">Horizonte</span><small class="brand-sub">CaixaBank Asset Management</small></span></a>`;
 
 function credVisual(big = false, sample = false) {
     const st = sample ? 1 : stageOf();
@@ -240,19 +240,18 @@ function vLanding() {
 
     <section class="hz-hero"><div class="lp-in hz-hero-in">
       <div class="hz-copy">
-        <p class="hz-kicker"><img src="brand/horizonte-icono.svg" alt="" width="22" height="18">CaixaBank Asset Management</p>
         <h1>Del primer euro<br>a tu <em>primera casa</em></h1>
         <p class="hz-lead">Formación financiera, inversión acompañada durante el primer año y ventajas en tu primera hipoteca con CaixaBank. Un camino pensado para jóvenes y sus familias.</p>
         <div class="lp-cta">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "primary lg")}${lnk("Soy familia", "#/alta/familia", "lg")}</div>
-        <ul class="hz-trust"><li>${ic("check")}Sin cuotas ni comisión de apertura</li><li>${ic("family")}Desde los 15, con tu familia</li><li>${ic("shield")}Primer año acompañado</li></ul>
+        <ul class="hz-trust"><li>${ic("check")}Sin cuotas ni comisión de apertura</li><li>${ic("family")}Con el apoyo de tu familia</li><li>${ic("shield")}Primer año acompañado</li></ul>
       </div>
       <div class="hz-visual">
         <div class="hz-chart" data-hero>
-          <div class="hch-top"><div><b>Tu dinero crece contigo</b><small>Ahorro mensual, de los 15 a los ${GOAL_DEFAULT.age}</small></div>
+          <div class="hch-top"><div><b>Tu dinero crece contigo</b><small>Ahorro mensual durante ${GOAL_DEFAULT.age - 15} años</small></div>
             <div class="hch-chips" role="group" aria-label="Cuánto ahorras al mes">${[10, 25, 50, 100].map(v => `<button type="button" class="${v === 25 ? "on" : ""}" data-hero-amt="${v}">${v} €</button>`).join("")}</div></div>
           <div class="hch-plot" data-o="plot"></div>
           <ul class="hch-legend"><li><i class="l1"></i>Lo que aportas<b data-o="c"></b></li><li><i class="l2"></i>Interés acumulado<b data-o="i"></b></li></ul>
-          <div class="hch-foot"><div><span>A los ${GOAL_DEFAULT.age} reúnes</span><b data-o="v"></b></div><div><span>Rebaja en tu hipoteca</span><b data-o="cut"></b></div></div>
+          <div class="hch-foot"><div><span>En ${GOAL_DEFAULT.age - 15} años reúnes</span><b data-o="v"></b></div><div><span>Rebaja en tu hipoteca</span><b data-o="cut"></b></div></div>
           <p class="note">Rentabilidad estimada del 5 % anual y constancia. No es una promesa de rentabilidad.</p>
         </div>
       </div>
@@ -267,7 +266,7 @@ function vLanding() {
     </div></section>
 
     <section class="lp-sec alt" id="aprende"><div class="lp-in lp-split">
-      <div><p class="kicker">Aprende</p><h2 class="serif">Nadie conduce sin aprender antes. Con el dinero, a los 15, nadie te enseña.</h2>
+      <div><p class="kicker">Aprende</p><h2 class="serif">Nadie conduce sin aprender antes. Con el dinero, casi nadie te enseña.</h2>
         <p class="lp-lead"><b>Fundamentos</b>: cinco temas de tres minutos, juegos con 25 años de datos reales de mercado y una prueba final. Al superarla, CaixaBank invierte ${RULES.prize} € a tu nombre y recibes el <b>Certificado Horizonte</b>, verificable y listo para LinkedIn.</p></div>
       <div class="lp-game" data-lpgame data-y="${lpYear}">
         <div class="lg-top"><span>${ic("news")}El titular</span><small>Juego con datos reales</small></div>
@@ -345,9 +344,9 @@ function heroPlot(m, N) {
     const tot = P(val), con = P(put), y0 = Y(0), xs = X(0), xe = X(N), ye = Y(val(N));
     const midT = N * 0.68, yMid = (Y(val(midT)) + Y(put(midT))) / 2, thick = Y(put(midT)) - Y(val(midT));
     const grid = [.25, .5, .75, 1].map(k => { const y = Y(yMax / 1.05 * k).toFixed(1); return `<line x1="${ml}" x2="${W - mr}" y1="${y}" y2="${y}" stroke="#e6edf2" stroke-width="1"/>`; }).join("");
-    const ticks = [0, 3, 6, 9, 12].filter(t => t <= N).map(t => `<text x="${X(t).toFixed(1)}" y="${H - 9}" text-anchor="${t === 0 ? "start" : t === N ? "end" : "middle"}" font-size="13" fill="#6b7580">${15 + t} años</text>`).join("");
+    const ticks = [0, 3, 6, 9, 12].filter(t => t <= N).map(t => `<text x="${X(t).toFixed(1)}" y="${H - 9}" text-anchor="${t === 0 ? "start" : t === N ? "end" : "middle"}" font-size="13" fill="#6b7580">${t === 0 ? "Hoy" : `${t} años`}</text>`).join("");
     const halo = 'paint-order="stroke" stroke="#fff" stroke-width="4" stroke-linejoin="round"';
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfica de los 15 a los ${15 + N} años: lo que aportas y el interés acumulado">
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfica a ${N} años: lo que aportas y el interés acumulado">
       <defs><linearGradient id="hgi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b500" stop-opacity=".95"/><stop offset="1" stop-color="#ee7b1f" stop-opacity=".8"/></linearGradient>
         <linearGradient id="hgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007eae" stop-opacity=".24"/><stop offset="1" stop-color="#007eae" stop-opacity=".06"/></linearGradient></defs>
       ${grid}<line x1="${ml}" x2="${W - mr}" y1="${y0}" y2="${y0}" stroke="#cfd8e0" stroke-width="1.2"/>
@@ -364,7 +363,7 @@ function heroPlot(m, N) {
       <text x="${(xe - 12).toFixed(1)}" y="${(ye + 22).toFixed(1)}" text-anchor="end" font-size="15" font-weight="700" fill="#005b82" ${halo}>${eur(val(N))}</text>
       <g transform="translate(${xe - 206} 4)"><rect width="206" height="58" rx="12" fill="#fff" stroke="#cfe3ee"/>
         <g transform="translate(14 14) scale(1.02)"><path d="M0 14 L15 1 L30 14 M5 11 V27 H25 V11 M12 27 V19 H18 V27" fill="none" stroke="#005b82" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></g>
-        <text x="60" y="26" font-size="15" font-weight="700" fill="#0f1419">Tu primera casa</text><text x="60" y="44" font-size="12.5" fill="#6b7580">A los ${15 + N} años</text></g>
+        <text x="60" y="26" font-size="15" font-weight="700" fill="#0f1419">Tu primera casa</text><text x="60" y="44" font-size="12.5" fill="#6b7580">Dentro de ${N} años</text></g>
       ${ticks}</svg>`;
 }
 function bindLanding() {
