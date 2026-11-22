@@ -33,6 +33,20 @@ const MILES = {
     maxCut: 0.2,         // rebaja máxima: 0,20 puntos (≈ 16 €/mes en una hipoteca de 160.000 €), como en el modelo económico
 };
 
+/* Coste orientativo de los fondos (comisión de gestión de CaixaBank AM, % anual). Se muestra siempre en euros. */
+const COST = { fee: 0.9 };
+const feeTxt = String(COST.fee).replace(".", ",");
+
+/* Una pregunta cada semana para hablar de dinero en familia (PISA: hablar de dinero en casa con frecuencia mejora la competencia financiera) */
+const TALKS = [
+    "Pregúntale qué le preocupa de su futuro y si su Antídoto sigue teniendo sentido.",
+    "Mirad juntos lo que ha pasado esta semana con su dinero. ¿Qué haría si bajara un 20 %?",
+    "Hablad de una meta cercana, como el carné o un viaje, y de cuánto apartar cada semana.",
+    "Preguntadle qué es la comisión de un fondo y cuánto paga cada año, en euros.",
+    "Contadle cómo fue vuestra primera vez ahorrando para algo grande.",
+    "Repasad sus millas de casa: cuántas lleva y qué le falta para el siguiente paso.",
+];
+
 /* Valores: los tres de CaixaBank (calidad, confianza y compromiso social, según su web corporativa)
    unidos a los de Horizonte. El último es solo nuestro. */
 const VALUES = [
@@ -105,6 +119,7 @@ const FAQ = [
     { q: "¿Cómo funcionan las millas de casa?", a: "Las ganas al aprender, al jugar con datos reales, al aportar cada mes, al mantener tu racha y con los regalos de tu familia (con un tope mensual). Nunca por tener más dinero. Se canjean como rebaja del diferencial de tu primera hipoteca con CaixaBank, no caducan y, si nunca compras casa, no pierdes nada." },
     { q: "¿Qué hace Gemini con mis datos?", a: "Solo con el permiso de tu familia (y a partir de los 18, el tuyo), Gemini usa la información de tu cuenta para explicarte tu dinero con tus propios números. Nunca se usa para publicidad y puedes retirar el permiso cuando quieras." },
     { q: "¿Cómo puede ayudar mi familia?", a: "Desde el área familiar pueden hacer regalos puntuales o aportaciones mensuales con un mensaje, aprobar tu Antídoto, decidir los permisos y ver tu progreso." },
+    { q: "¿Cuánto cuesta Horizonte?", a: `Usar Horizonte es gratis: sin cuotas ni comisión de apertura. Los fondos de CaixaBank Asset Management cobran una comisión de gestión; como referencia, en torno al ${feeTxt} % al año, es decir, unos ${feeTxt} € por cada 100 € invertidos. Te la mostramos siempre en euros, y el documento de datos fundamentales de cada fondo detalla su coste exacto.` },
 ];
 const LEGAL = "Horizonte es un servicio de CaixaBank Asset Management, propuesto en el reto CaixaBank AM × Google. Invertir conlleva riesgos, incluida la pérdida del capital invertido. Los valores que se muestran son estimaciones con fines informativos y no garantizan rentabilidades futuras. La protección del primer año es una bonificación promocional sujeta a condiciones: tope de 500 € por persona, 12 meses y solo si no se vende antes. Las millas de casa son una rebaja sobre las condiciones vigentes en el momento de la firma y no obligan a contratar ningún producto (Ley 5/2019).";
 

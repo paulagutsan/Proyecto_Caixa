@@ -170,6 +170,7 @@ function geminiContext() {
         protectBase: m.protect?.base || 0, protectEnd: m.protect ? fmtD(m.protect.end) : "", protectRoom: m.protect?.room ?? RULES.protectCap, protectCap: RULES.protectCap,
         paga: S.paga, weekly: S.weekly, diploma: S.diploma ? fmtD(S.diploma.date) : null, itvDue: S.diploma ? fmtD(iso(addMonths(lastItv(), 12))) : null,
         lessonsDone: Object.keys(S.lessons).length, lessonsTotal: LESSONS.length, prize: RULES.prize, streak: streak().current,
+        name: S.teen?.name || "", hasOwn: !!m.firstOwn, roundup: !!S.roundup, gifts: m.gifts,
     };
 }
 
@@ -683,7 +684,8 @@ function vDinero() {
       ${metasCard()}
       ${card(`${cardH("Reparto", m.al.active ? `Cartera base ${pct(RULES.base * 100)} y Antídoto ${pct(RULES.antidote * 100)}.` : m.al.pending ? "Tu Antídoto espera la aprobación de tu familia. Mientras, todo está en la cartera base." : "Todo en la cartera base. Elige tu Antídoto para invertir una parte en lo que te preocupa.", m.al.active ? "" : lnk(S.fears.length ? "Ver Antídoto" : "Elegir Antídoto", "#/antidoto", "sm"))}
         ${stack(m.parts)}<div class="rows">${m.parts.map(pp => `<div class="row">${sw(pp.fund)}<div><b>${FUNDS[pp.fund].name}</b><span>${pp.fear ? "Antídoto · " + esc(pp.fear.label) : FUNDS[pp.fund].sub}</span></div><b class="amt">${eur(pp.amount, true)}</b></div>`).join("")}</div>`, "c-12")}
-      ${card(`${cardH("Movimientos")}${moves.length ? `<div class="rows">${moves.slice(0, 20).map(moveRow).join("")}</div>` : empty("plus", "Aún no hay movimientos", "Tu primera aportación aparecerá aquí.", btn("Hacer mi primera aportación", "openContribute", "primary"))}`, "c-12")}
+      ${costCard()}
+      ${card(`${cardH("Movimientos", "", moves.length ? btn("Descargar extracto", "csv", "sm") : "")}${moves.length ? `<div class="rows">${moves.slice(0, 20).map(moveRow).join("")}</div>` : empty("plus", "Aún no hay movimientos", "Tu primera aportación aparecerá aquí.", btn("Hacer mi primera aportación", "openContribute", "primary"))}`, "c-12")}
     </div>`;
 }
 function metaSaved(id) { return S.money.filter(c => c.meta === id).reduce((a, c) => a + c.amount, 0); }
@@ -694,6 +696,28 @@ function metasCard() {
     return card(`${cardH("Tus metas", "La principal es tu casa. Añade otras más cercanas y elige a cuál va cada aportación.", S.metas.length < 3 ? btn(`${ic("plus")}Nueva meta`, "openMeta", "sm") : "")}
       <div class="rows">${rows.join("")}</div>
       <p class="note">Si vas a necesitar el dinero en menos de tres años, lo prudente es no depender de la bolsa: lo verás en el tema «Las caídas pasan».</p>`, "c-12");
+}
+/* Lo que cuesta, en euros: transparencia total antes de que nadie pregunte */
+function costCard() {
+    const m = money(), yearly = m.value * COST.fee / 100;
+    return card(`${cardH("Lo que cuesta, en euros", "Usar Horizonte es gratis: sin cuotas ni comisión de apertura. Lo único que se paga es la comisión de gestión de los fondos de CaixaBank Asset Management.")}
+      <div class="split">${stat("Comisión de referencia", `${pct(COST.fee, 1)} al año`, `${eur(COST.fee, true)} por cada 100 € invertidos`)}${stat("Con tu dinero de hoy", m.value > 0 ? `≈ ${eur(yearly, true)} al año` : "Aún nada", m.value > 0 ? "Estimación sobre tu valor actual" : "Se verá cuando inviertas")}</div>
+      <p class="note">Es una referencia: el documento de datos fundamentales de cada fondo detalla su coste exacto. Un punto de comisión de diferencia, mantenido durante años, supone bastante menos dinero.</p>`, "c-12");
+}
+/* Familia: lo que ha pasado esta semana, explicado con calma */
+function weekFamilyCard() {
+    const w = weekSummary(), n = esc(teenName()), m = money(), sg = `${w.retPct >= 0 ? "+" : "−"}${pct(Math.abs(w.retPct), 1)}`;
+    const calm = Math.abs(w.retPct) >= 1.5
+        ? (w.retPct < 0 ? "Una semana mala no dice nada de un plazo de diez años. Lo mejor es no vender y hablarlo con calma." : "Una semana buena tampoco cambia el plan: lo que cuenta es la constancia.")
+        : "Una semana tranquila. Lo que cuenta es el plazo y la constancia.";
+    return card(`${cardH("Esta semana", `Semana del ${fmtD(weekOf(new Date()))}`)}
+      <div class="week"><p>${m.value > 0 ? `El dinero de ${n} ${w.chg >= 0 ? "ha subido" : "ha bajado"} <b>${eur(Math.abs(w.chg), true)}</b> (${sg}).` : `Cuando ${n} invierta, verás aquí qué ha pasado con su dinero.`}</p><p>${calm}</p>${m.protect?.active && w.retPct < 0 ? `<p>Sus ${eur(m.protect.base)} siguen protegidos ${m.protect.daysLeft} días más.</p>` : ""}</div>
+      <p class="note">Movimientos simulados en esta versión de demostración.</p>`, "c-6");
+}
+function talkCard() {
+    const t = TALKS[Math.floor(Date.now() / 6048e5) % TALKS.length];
+    return card(`${cardH("Para hablar esta semana", "Cinco minutos en casa valen más que cualquier folleto.")}
+      <p class="talk">${t}</p><p class="note">Según PISA, los alumnos que hablan de dinero con su familia con frecuencia puntúan mejor en competencia financiera.</p>`, "c-6");
 }
 function metaSheet() {
     sheet("Nueva meta", `<form data-form="meta" class="form">
@@ -744,9 +768,25 @@ async function vote(ids) {
             body: JSON.stringify(ids.map(id => ({ miedo: id, edad: ageOf() }))) });
     } catch (e) { /* sin conexión */ }
 }
+/* Asistente: mensajes con título, cifras clave y acciones, como los de los asistentes de los grandes bancos */
+let typing = false;
+const hhmm = t => t ? new Date(t).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "";
+function assistantMsg(x) {
+    const text = x.text ?? x.t ?? "";
+    const acts = (x.actions || []).map(a => a.href ? `<a class="chip ${a.primary ? "pri" : ""}" href="${esc(a.href)}">${esc(a.label)}</a>` : `<button class="chip" data-act="ask" data-q="${esc(a.q)}">${esc(a.label)}</button>`).join("");
+    return `<div class="msg g a"><div class="a-h"><span><i class="a-dot"></i>Asistente Horizonte</span><time>${hhmm(x.ts)}</time></div>
+      ${x.title ? `<b class="a-t">${esc(x.title)}</b>` : ""}<p>${esc(text)}</p>
+      ${x.facts?.length ? `<dl class="a-facts">${x.facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : ""}
+      ${acts ? `<div class="a-acts">${acts}</div>` : ""}
+      ${x.used?.length ? `<small>Basado en ${x.used.map(esc).join(", ")}</small>` : ""}</div>`;
+}
+function chatHTML() {
+    const list = S.chat.length ? S.chat.slice(-8) : [{ r: "g", ...localGemini("hola", geminiContext()), ts: 0 }];
+    return list.map(x => x.r === "u" ? `<div class="msg u"><p>${esc(x.t)}</p><time>${hhmm(x.ts)}</time></div>` : assistantMsg(x)).join("")
+        + (typing ? `<div class="msg g a typing" aria-label="Preparando la respuesta"><i></i><i></i><i></i></div>` : "");
+}
 function vAntidoto() {
     const m = money(), al = m.al, can = S.geminiOk || isAdult();
-    const chips = ["¿Cuánto me falta para la entrada de mi casa?", "¿Por qué este reparto?", "¿Qué pasa si la bolsa baja?", "¿Cuánto debería apartar de mi paga?", "¿Cuántas millas tengo?"];
     const r = ranking || { counts: {}, total: 0 }, showRank = r.total >= RANK_MIN;
     const rank = FEARS.map(f => ({ f, n: r.counts[f.id] || 0 })).sort((a, b) => b.n - a.n);
     const wpct = w => pct(w * 100, (w * 100) % 1 ? 1 : 0);
@@ -758,13 +798,13 @@ function vAntidoto() {
       ${al.fears.length ? card(`${cardH("Tu reparto", "Dentro de una selección cerrada de fondos de CaixaBank Asset Management.", badge(al.active ? "Activo" : "Pendiente de aprobación", al.active ? "ok" : "warn"))}
         ${stack(al.planned)}<div class="rows">${al.planned.map(p => `<div class="row tall">${sw(p.fund)}<div><b>${FUNDS[p.fund].name} · ${wpct(p.w)}</b><span>${p.fear ? p.fear.why : "La base reparte tu dinero entre miles de empresas para que ninguna preocupación lo decida todo."}</span></div></div>`).join("")}</div>
         ${!al.active ? `<p class="note">Hasta los ${RULES.adultAge} años, tu familia aprueba el Antídoto desde el área familiar.</p>` : ""}
-        <p class="note">El Antídoto reduce el impacto si lo que temes ocurre. No es una garantía: las inversiones pueden perder valor.</p>`, "c-7") : ""}
-      ${card(`${cardH(`<span class="gem">${ic("spark")}Gemini</span>`, "Te explica tu dinero con tus propios números.")}
-        ${can ? `<div class="chat" id="chat">${(S.chat.length ? S.chat.slice(-8) : [{ r: "g", t: "Hola. Pregúntame por tu objetivo de casa, tu reparto, qué pasa si la bolsa baja o cuánto apartar de tu paga." }]).map(x => `<div class="msg ${x.r}"><p>${esc(x.t)}</p>${x.used?.length ? `<small>Basado en ${x.used.map(esc).join(", ")}</small>` : ""}</div>`).join("")}</div>
-          <div class="chips">${chips.map(c => `<button class="chip" data-act="ask" data-q="${esc(c)}">${c}</button>`).join("")}</div>
-          <form class="ask" data-form="ask"><input name="q" placeholder="Escribe tu pregunta" aria-label="Tu pregunta" autocomplete="off" required><button class="icon-btn primary" aria-label="Enviar">${ic("send")}</button></form>
-          <p class="note">Gemini usa la información de tu cuenta solo con permiso. No es asesoramiento financiero.</p>`
-          : empty("lock", "Necesitas el permiso de tu familia", `Hasta los ${RULES.adultAge}, tu madre, padre o tutor decide si Gemini puede usar la información de tu cuenta.`, lnk("Ver permisos", "#/familia", "primary"))}`, al.fears.length ? "c-5" : "c-12")}
+        <p class="note">El Antídoto reduce el impacto si lo que temes ocurre. No es una garantía: las inversiones pueden perder valor.</p>`, "c-5") : ""}
+      ${card(`${cardH(`<span class="gem">${ic("spark")}Asistente Horizonte</span>`, "Responde con tus propios datos. Con Gemini en Google Cloud cuando el servicio esté activo.")}
+        ${can ? `<div class="chat" id="chat">${chatHTML()}</div>
+          <div class="chips tight">${G_TOPICS.map(t => `<button class="chip" data-act="ask" data-q="${esc(t.q)}">${t.label}</button>`).join("")}</div>
+          <form class="ask" data-form="ask"><input name="q" placeholder="Escribe tu consulta" aria-label="Tu consulta" autocomplete="off" required><button class="icon-btn primary" aria-label="Enviar">${ic("send")}</button></form>
+          <p class="note">Información orientativa basada en los datos de tu cuenta; no es asesoramiento financiero. Se usa tu información solo con permiso de tu familia.</p>`
+          : empty("lock", "Necesitas el permiso de tu familia", `Hasta los ${RULES.adultAge}, tu madre, padre o tutor decide si el asistente puede usar la información de tu cuenta.`, lnk("Ver permisos", "#/familia", "primary"))}`, al.fears.length ? "c-7" : "c-12")}
       ${card(`${cardH("Mapa de preocupaciones de tu generación", "Un ranking anónimo de lo que preocupa a los jóvenes en España.")}
         ${showRank ? `<div class="rank">${rank.map((x, i) => `<div class="rk ${S.fears.includes(x.f.id) ? "mine" : ""}"><span class="rk-n">${i + 1}</span><span class="fi sm">${ic(x.f.id)}</span><div><b>${x.f.label}</b>${bar(x.n, rank[0].n, "blue")}</div><span class="rk-p">${pct(x.n / r.total * 100)}</span></div>`).join("")}</div><p class="note">${num(r.total)} respuestas anónimas.</p>`
           : empty("chart", "Se publicará con las primeras respuestas", `Mostraremos el ranking cuando haya al menos ${RANK_MIN} respuestas, para que sea representativo y nadie pueda ser identificado.${S.voted ? " Tu respuesta ya cuenta." : ""}`)}`, "c-12")}
@@ -846,6 +886,7 @@ function vFResumen() {
       ${card(stat(`Aportado por ${n}`, eur(Math.max(0, m.ownReal), true), "De su paga y sus ingresos"), "c-4")}
       ${card(stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos menos de diferencial`), "c-4")}
       ${card(stat("Protegido", eur(m.protect?.base || 0), `de ${RULES.protectCap} € en su primer año`), "c-4")}
+      ${weekFamilyCard()}${talkCard()}
       ${card(`${cardH("Pendiente de tu aprobación")}${pendingRows()}`, "c-12")}
     </div>`;
 }
@@ -896,7 +937,7 @@ function vAjustes() {
           <label class="field"><span>Paga semanal (€)</span><input name="paga" type="number" min="0" max="500" value="${S.paga || ""}"></label>
           <button class="btn primary full">Guardar cambios</button></form>`, "c-7")}
       ${card(`${cardH("Cuenta")}${S.family ? `<p class="note">${fam ? "Estás en el área familiar." : "Estás en tu área personal."} En este dispositivo puedes cambiar de área.</p><div class="actions">${btn(`${ic("switch")}${fam ? `Ir al área de ${esc(teenName())}` : "Ir al área familiar"}`, "switchRole")}</div>` : ""}
-        <p class="note">Los datos se guardan en este dispositivo.</p><div class="actions">${btn("Cerrar sesión y borrar datos", "reset", "danger")}</div>`, "c-5")}
+        <p class="note">Los datos se guardan en este dispositivo y puedes descargarlos cuando quieras.</p><div class="actions">${btn("Descargar mis datos", "exportData")}${btn("Cerrar sesión y borrar datos", "reset", "danger")}</div>`, "c-5")}
     </div>${legal()}`;
 }
 
@@ -1022,6 +1063,12 @@ document.addEventListener("click", async e => {
         save(); if (S.fears.length === RULES.maxFears) vote(S.fears); rerender();
     }
     else if (act === "ask") askQ(b.dataset.q);
+    else if (act === "csv") {
+        const q = v => `"${String(v).replace(/"/g, '""')}"`;
+        const rows = [["Fecha", "Concepto", "Importe (€)", "Mensaje"], ...[...S.money].sort((a, b) => a.date < b.date ? -1 : 1).map(c => [c.date, SOURCES[c.src]?.label || c.src, String(c.amount).replace(".", ","), c.msg || ""])];
+        saveFile("extracto-horizonte.csv", "﻿" + rows.map(r => r.map(q).join(";")).join("\r\n"), "text/csv;charset=utf-8"); toast("Extracto descargado");
+    }
+    else if (act === "exportData") { saveFile("mis-datos-horizonte.json", JSON.stringify(S, null, 2), "application/json"); toast("Tus datos se han descargado"); }
     else if (act === "invite") { const t = b.dataset.text; if (navigator.share) { try { await navigator.share({ title: "Horizonte", text: t }); } catch (err) { /* cancelado */ } } else { try { await navigator.clipboard.writeText(t); toast("Invitación copiada. Compártela por WhatsApp o por correo."); } catch (err) { prompt("Copia la invitación:", t); } } }
     else if (act === "cancelSched") { S.schedules.splice(+b.dataset.i, 1); save(); toast("Aportación mensual cancelada"); rerender(); }
     else if (act === "switchRole") { S.role = S.role === "family" ? "teen" : "family"; save(); location.hash = S.role === "family" ? "#/f/resumen" : "#/inicio"; }
@@ -1076,11 +1123,18 @@ document.addEventListener("submit", e => {
     } else if (k === "ask") { askQ(d.q); f.reset(); }
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#sheet.open")) closeSheet(); });
+function saveFile(name, content, type) {
+    const url = URL.createObjectURL(new Blob([content], { type })), a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 async function askQ(q) {
-    if (!q || !q.trim()) return;
-    S.chat.push({ r: "u", t: q.trim() });
-    const res = await askGemini(q, geminiContext());
-    S.chat.push({ r: "g", t: res.answer, used: res.used });
+    if (!q || !q.trim() || typing) return;
+    S.chat.push({ r: "u", t: q.trim(), ts: Date.now() }); save();
+    typing = true; rerender();
+    const t0 = Date.now(), res = await askGemini(q, geminiContext());
+    await new Promise(r => setTimeout(r, Math.max(0, 650 - (Date.now() - t0))));   // una pausa breve, como en un asistente real
+    typing = false;
+    S.chat.push({ r: "g", ...res, ts: Date.now() });
     S.chat = S.chat.slice(-16); save(); rerender();
 }
 function downloadDiploma() {
