@@ -252,7 +252,8 @@ function vLanding() {
           <div class="hch-plot" data-o="plot"></div>
           <ul class="hch-legend"><li><i class="l1"></i>Lo que aportas<b data-o="c"></b></li><li><i class="l2"></i>Interés acumulado<b data-o="i"></b></li></ul>
           <div class="hch-foot"><div><span>En ${GOAL_DEFAULT.age - 15} años reúnes</span><b data-o="v"></b></div><div><span>Rebaja en tu hipoteca</span><b data-o="cut"></b></div></div>
-          <p class="note">Rentabilidad estimada del 5 % anual y constancia. No es una promesa de rentabilidad.</p>
+          <div class="hch-rate"><span>Rentabilidad estimada al año</span><div class="hch-chips" role="group" aria-label="Escenario de rentabilidad">${[3, 5, 8].map(v => `<button type="button" class="${v === 5 ? "on" : ""}" data-hero-rate="${v}">${v} %</button>`).join("")}</div></div>
+          <p class="note" data-o="nt"></p>
         </div>
       </div>
     </div></section>
@@ -335,9 +336,9 @@ function vLanding() {
     </div>`;
 }
 /* Portada: lo que aportas y el interés acumulado, con el diploma al empezar y la casa al final */
-function heroPlot(m, N) {
+function heroPlot(m, N, rate = 5) {
     const W = 560, H = 300, ml = 12, mr = 16, mt = 84, mb = 32, S = 4;
-    const val = t => fv(m, t), put = t => m * 12 * t, yMax = val(N) * 1.05;
+    const val = t => fv(m, t, 0, rate / 100), put = t => m * 12 * t, yMax = val(N) * 1.05;
     const X = t => ml + (W - ml - mr) * t / N, Y = v => H - mb - (H - mt - mb) * v / yMax;
     const P = f => Array.from({ length: N * S + 1 }, (_, k) => [X(k / S), Y(f(k / S))]);
     const L = a => a.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
@@ -371,15 +372,19 @@ function bindLanding() {
     if (hero) {
         const yrs = GOAL_DEFAULT.age - 15;
         const ml = MILES.lesson * LESSONS.length + MILES.theory + MILES.firstOwn + yrs * (MILES.monthOwn * 12 + MILES.itv + 13 * MILES.streak4), cut = cutOf(ml);
-        const show = m => {
-            const total = fv(m, yrs), put = m * 12 * yrs;
-            $('[data-o="plot"]', hero).innerHTML = heroPlot(m, yrs);
+        let amt = 25, rate = 5;
+        const show = () => {
+            const m = amt, total = fv(m, yrs, 0, rate / 100), put = m * 12 * yrs;
+            $('[data-o="plot"]', hero).innerHTML = heroPlot(m, yrs, rate);
+            $('[data-o="nt"]', hero).textContent = `Escenario ${{ 3: "prudente", 5: "moderado", 8: "favorable" }[rate]}: rentabilidad estimada del ${rate} % anual, antes de comisiones. No es una promesa de rentabilidad.`;
+            $$("[data-hero-rate]", hero).forEach(b => b.classList.toggle("on", +b.dataset.heroRate === rate));
             $('[data-o="c"]', hero).textContent = eur(put); $('[data-o="i"]', hero).textContent = eur(total - put);
             $('[data-o="v"]', hero).textContent = eur(total); $('[data-o="cut"]', hero).textContent = `−${pts(cut)} puntos`;
             $$("[data-hero-amt]", hero).forEach(b => b.classList.toggle("on", +b.dataset.heroAmt === m));
         };
-        $$("[data-hero-amt]", hero).forEach(b => b.addEventListener("click", () => show(+b.dataset.heroAmt)));
-        show(25);
+        $$("[data-hero-amt]", hero).forEach(b => b.addEventListener("click", () => { amt = +b.dataset.heroAmt; show(); }));
+        $$("[data-hero-rate]", hero).forEach(b => b.addEventListener("click", () => { rate = +b.dataset.heroRate; show(); }));
+        show();
     }
     const sim = $("[data-lpsim]");
     if (sim) {
@@ -1146,7 +1151,6 @@ document.addEventListener("submit", e => {
     const d = Object.fromEntries(new FormData(f)), k = f.dataset.form;
     if (k === "alta0" || k === "altaF1") {
         const age = ageOf(d.birth);
-        if (age < 14) return toast("Horizonte está disponible a partir de los 14 años.");
         Object.assign(alta.data, d);
         alta.step = k === "altaF1" ? 2 : age >= RULES.adultAge ? 2 : 1; render();
     } else if (k === "alta1") { Object.assign(alta.data, d); alta.step = 2; render(); }
