@@ -240,14 +240,26 @@ function vLanding() {
 
     <section class="hz-hero"><div class="lp-in hz-hero-in">
       <div class="hz-copy">
-        <p class="hz-kicker"><span></span>CaixaBank Asset Management</p>
-        <h1>Del primer euro<br>a tu <em>primera casa</em>.</h1>
+        <p class="hz-kicker"><img src="brand/horizonte-icono.svg" alt="" width="22" height="18">CaixaBank Asset Management</p>
+        <h1>Del primer euro<br>a tu <em>primera casa</em></h1>
         <p class="hz-lead">Aprende lo esencial, invierte desde los 15 con tu primer año acompañado y convierte cada paso en una hipoteca más barata. Con tu familia detrás.</p>
-        <div class="lp-cta">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "gold lg")}${lnk("Soy familia", "#/alta/familia", "lg light")}</div>
-        <dl class="hz-proof"><div><dt>${RULES.prize} €</dt><dd>invertidos a tu nombre al aprobar Fundamentos</dd></div><div><dt>${RULES.protectCap} €</dt><dd>protegidos durante tu primer año</dd></div><div><dt>−${pts(MILES.maxCut)}</dt><dd>puntos de interés como máximo en tu primera hipoteca</dd></div></dl>
+        <div class="lp-cta">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "primary lg")}${lnk("Soy familia", "#/alta/familia", "lg")}</div>
+        <ul class="hz-trust"><li>${ic("check")}Gratis, sin cuotas</li><li>${ic("family")}Desde los 15, con tu familia</li><li>${ic("shield")}Primer año acompañado</li></ul>
       </div>
-      <div class="hz-visual">${credVisual(true, true)}</div>
-    </div><div class="hz-horizon" aria-hidden="true"></div></section>
+      <div class="hz-visual">
+        <div class="hz-card" data-hero>
+          <div class="hc-top"><b>Calcula tu camino</b><small>Ejemplo orientativo</small></div>
+          <label>Ahorras cada mes<output data-o="m"></output><input type="range" min="5" max="100" step="5" value="30" data-i="m" aria-label="Euros que ahorras cada mes"></label>
+          <div class="hc-ring"><svg viewBox="0 0 112 112" aria-hidden="true"><circle class="rg-bg" cx="56" cy="56" r="47"></circle><circle class="rg-fg" cx="56" cy="56" r="47" data-o="rg"></circle></svg><p><b data-o="pc"></b>de la entrada de tu casa a los ${GOAL_DEFAULT.age} años</p></div>
+          <div class="hc-rows"><div><span>Reúnes a los ${GOAL_DEFAULT.age}</span><b data-o="v"></b></div><div><span>Rebaja en tu hipoteca</span><b data-o="cut"></b></div><div><span>Intereses que te ahorras</span><b data-o="save"></b></div></div>
+          <p class="note">Empezando a los 15, con una rentabilidad estimada del 5 % anual y constancia. No es una promesa de rentabilidad.</p>
+        </div>
+        <div class="hz-badge b1"><span>${ic("shield")}</span>${RULES.protectCap} € protegidos el primer año</div>
+        <div class="hz-badge b2"><span>${ic("star")}</span>${RULES.prize} € de premio al aprobar</div>
+      </div>
+    </div></section>
+
+    <section class="hz-stats"><div class="lp-in"><dl><div><dt>${RULES.prize} €</dt><dd>invertidos a tu nombre al aprobar Fundamentos</dd></div><div><dt>${RULES.protectCap} €</dt><dd>protegidos durante tu primer año</dd></div><div><dt>−${pts(MILES.maxCut)}</dt><dd>puntos de interés como máximo en tu primera hipoteca</dd></div></dl></div></section>
 
     <section class="lp-sec" id="ciclo"><div class="lp-in">
       <p class="kicker">Cómo funciona</p><h2 class="serif">Un solo ciclo. Cada paso alimenta el siguiente.</h2>
@@ -320,11 +332,25 @@ function vLanding() {
       <div class="faq">${FAQ.map(f => `<details><summary>${f.q}${ic("plus")}</summary><p>${f.a}</p></details>`).join("")}</div>
     </div></section>
 
-    <section class="hz-final"><div class="lp-in"><h2 class="serif">Tu primer euro empieza hoy.</h2><p class="hz-lead">Crea tu cuenta en dos minutos. Tu familia, en otros dos.</p><div class="lp-cta center">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "gold lg")}${lnk("Soy familia", "#/alta/familia", "lg light")}</div></div><div class="hz-horizon" aria-hidden="true"></div></section>
+    <section class="hz-final"><div class="lp-in"><h2 class="serif">Tu primer euro empieza hoy.</h2><p class="hz-lead">Crea tu cuenta en dos minutos. Tu familia, en otros dos.</p><div class="lp-cta center">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "white lg")}${lnk("Soy familia", "#/alta/familia", "lg light")}</div></div></section>
     <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}</div>
     </div>`;
 }
 function bindLanding() {
+    const hero = $("[data-hero]");
+    if (hero) {
+        const down = GOAL_DEFAULT.price * DOWN_PCT, yrs = GOAL_DEFAULT.age - 15, P0 = GOAL_DEFAULT.price * (1 - DOWN_PCT), C = 2 * Math.PI * 47;
+        const ml = MILES.lesson * LESSONS.length + MILES.theory + MILES.firstOwn + yrs * (MILES.monthOwn * 12 + MILES.itv + 13 * MILES.streak4), cut = cutOf(ml);
+        const sv = (payment(P0, MORTGAGE_RATE, MORTGAGE_YEARS) - payment(P0, MORTGAGE_RATE - cut, MORTGAGE_YEARS)) * MORTGAGE_YEARS * 12;
+        const rg = $('[data-o="rg"]', hero); rg.style.strokeDasharray = C;
+        const upd = () => {
+            const m = +$('[data-i="m"]', hero).value, v = fv(m, yrs), p = Math.min(100, v / down * 100);
+            $('[data-o="m"]', hero).textContent = `${m} € al mes`; $('[data-o="v"]', hero).textContent = eur(v);
+            $('[data-o="pc"]', hero).textContent = `${Math.round(p)} %`; rg.style.strokeDashoffset = C * (1 - p / 100);
+            $('[data-o="cut"]', hero).textContent = `−${pts(cut)} puntos`; $('[data-o="save"]', hero).textContent = eur(sv);
+        };
+        $('[data-i="m"]', hero).addEventListener("input", upd); upd();
+    }
     const sim = $("[data-lpsim]");
     if (sim) {
         const upd = () => {
