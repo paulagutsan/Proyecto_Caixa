@@ -234,22 +234,18 @@ function vLanding() {
     const lpYear = 8, lpNews = MKT_NEWS[lpYear];
     return `<div class="lp">
     <header class="lp-nav"><div class="lp-in">${brand("#/")}
-      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#familias">Familias</a><a href="#preguntas">Preguntas</a></nav>
+      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#familias">Familias</a><a href="#valores">Valores</a><a href="#preguntas">Preguntas</a></nav>
       ${lnk("Crear cuenta", "#/alta/joven", "primary sm")}</div></header>
 
     <section class="hz-hero"><div class="lp-in hz-hero-in">
       <div class="hz-copy">
         <p class="hz-kicker"><span></span>CaixaBank Asset Management</p>
         <h1>Del primer euro<br>a tu <em>primera casa</em>.</h1>
-        <p class="hz-lead">Aprende lo esencial, invierte desde los 15 sin miedo a perder el primer año y convierte cada paso en una hipoteca más barata. Con tu familia detrás.</p>
-        <div class="lp-cta">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "gold lg")}${lnk("Soy madre, padre o familiar", "#/alta/familia", "lg light")}</div>
-        <dl class="hz-proof"><div><dt>${RULES.prize} €</dt><dd>invertidos a tu nombre al superar Fundamentos</dd></div><div><dt>${RULES.protectCap} €</dt><dd>que no pueden perder durante tu primer año</dd></div><div><dt>−${pts(MILES.maxCut)}</dt><dd>puntos de interés en tu primera hipoteca</dd></div></dl>
+        <p class="hz-lead">Aprende lo esencial, invierte desde los 15 con tu primer año acompañado y convierte cada paso en una hipoteca más barata. Con tu familia detrás.</p>
+        <div class="lp-cta">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "gold lg")}${lnk("Soy familia", "#/alta/familia", "lg light")}</div>
+        <dl class="hz-proof"><div><dt>${RULES.prize} €</dt><dd>invertidos a tu nombre al aprobar Fundamentos</dd></div><div><dt>${RULES.protectCap} €</dt><dd>protegidos durante tu primer año</dd></div><div><dt>−${pts(MILES.maxCut)}</dt><dd>puntos de interés como máximo en tu primera hipoteca</dd></div></dl>
       </div>
-      <div class="hz-visual">
-        ${credVisual(true, true)}
-        <div class="hz-chip c1"><span>${ic("spark")}</span><div><b>Tu dinero hoy</b><small>Qué ha pasado esta semana, explicado con tus números</small></div></div>
-        <div class="hz-chip c2"><span>${ic("house")}</span><div><b>Millas de casa</b><small>Cada paso abarata tu hipoteca</small></div></div>
-      </div>
+      <div class="hz-visual">${credVisual(true, true)}</div>
     </div><div class="hz-horizon" aria-hidden="true"></div></section>
 
     <section class="lp-sec" id="ciclo"><div class="lp-in">
@@ -310,14 +306,12 @@ function vLanding() {
         <li><span>${ic("house")}</span><div><b>Suman a su casa</b><small>Tus regalos generan millas de casa, con un tope mensual.</small></div></li></ul>
     </div></section>
 
-    <section class="lp-sec" id="seguridad"><div class="lp-in">
-      <p class="kicker">Seguridad</p><h2 class="serif">Confianza desde el primer día.</h2>
-      <div class="lp-grid">
-        <div><span>${ic("chart")}</span><h3>Gestión profesional</h3><p>Una selección cerrada de fondos de CaixaBank Asset Management, la mayor gestora de fondos de España.</p></div>
-        <div><span>${ic("shield")}</span><h3>Primer año acompañado</h3><p>Los primeros ${RULES.protectCap} € que inviertes no pueden perder valor en ${RULES.protectMonths} meses, si no vendes antes.</p></div>
-        <div><span>${ic("lock")}</span><h3>Tus datos, con permiso</h3><p>Gemini solo usa tu información con la autorización de tu familia, y nunca para publicidad.</p></div>
-        <div><span>${ic("family")}</span><h3>A tu nombre</h3><p>La cuenta es tuya desde el principio. Hasta los 18, tu familia aprueba las decisiones importantes.</p></div>
-      </div>
+    <section class="lp-sec" id="valores"><div class="lp-in">
+      <p class="kicker">Nuestros valores</p><h2 class="serif">Los valores de CaixaBank, llevados a tu primer euro.</h2>
+      <p class="lp-lead">CaixaBank se guía por tres valores: calidad, confianza y compromiso social. En Horizonte los unimos a los nuestros para que se noten en lo que haces cada semana.</p>
+      <div class="vals-key"><span class="cb">Valor de CaixaBank</span><span class="hz">Valor de Horizonte</span></div>
+      <div class="vals">${VALUES.map(v => `<article><div class="val-pair">${v.cb ? `<span class="cb">${v.cb}</span><i>+</i>` : ""}<span class="hz">${v.hz}</span></div><h3>${v.t}</h3><p>${v.p}</p></article>`).join("")}</div>
+      <p class="note vals-src">Valores de CaixaBank según su <a href="https://www.caixabank.com/informacioncorporativa/misionvisionyvalores_es.html" target="_blank" rel="noopener">web corporativa</a>. Gemini solo usa tu información con la autorización de tu familia y nunca para publicidad.</p>
     </div></section>
 
     <section class="lp-sec alt" id="preguntas"><div class="lp-in lp-narrow">

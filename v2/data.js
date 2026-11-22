@@ -33,6 +33,19 @@ const MILES = {
     maxCut: 0.2,         // rebaja máxima: 0,20 puntos (≈ 16 €/mes en una hipoteca de 160.000 €), como en el modelo económico
 };
 
+/* Valores: los tres de CaixaBank (calidad, confianza y compromiso social, según su web corporativa)
+   unidos a los de Horizonte. El último es solo nuestro. */
+const VALUES = [
+    { cb: "Calidad", hz: "Claridad", t: "Calidad que se entiende",
+      p: "Una selección cerrada de fondos de CaixaBank Asset Management, la mayor gestora de fondos de España, explicada sin jerga y con 25 años de datos reales." },
+    { cb: "Confianza", hz: "Cercanía", t: "Confianza que se comparte",
+      p: `Tu familia aprueba las decisiones importantes hasta los ${RULES.adultAge}, tus datos solo se usan con permiso y tus primeros ${RULES.protectCap} € no pueden perder valor en ${RULES.protectMonths} meses, si no vendes antes.` },
+    { cb: "Compromiso social", hz: "Constancia", t: "Un futuro que no depende de tu cartera",
+      p: "Aprender a invertir desde los 15, con las mismas reglas para todos: las millas premian tu constancia, nunca cuánto dinero tengas." },
+    { cb: "", hz: "Futuro", t: "Mirar lejos",
+      p: "Cada paso de hoy suma para tu primera casa. Pensamos a diez años, no a la semana que viene." },
+];
+
 /* Menú cerrado de CaixaBank AM (temas, no productos concretos) y rentabilidad anual SIMULADA */
 const FUNDS = {
     global:      { name: "Fondo global diversificado", sub: "Miles de empresas de todo el mundo", r: 6.0 },
