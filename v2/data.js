@@ -29,8 +29,8 @@ const MILES = {
     streak4: 20,         // cada 4 semanas seguidas con actividad
     giftPer5: 1,         // 1 milla por cada 5 € que te regalan…
     giftMonthCap: 20,    // …con un tope de 20 millas al mes, para que no se pueda «comprar» la rebaja
-    perPoint: 10000,     // 10.000 millas = 1 punto porcentual menos de diferencial (100 millas = 0,01)
-    maxCut: 0.5,         // rebaja máxima: 0,50 puntos
+    perPoint: 25000,     // 25.000 millas = 1 punto porcentual menos de diferencial (250 millas = 0,01)
+    maxCut: 0.2,         // rebaja máxima: 0,20 puntos (≈ 16 €/mes en una hipoteca de 160.000 €), como en el modelo económico
 };
 
 /* Menú cerrado de CaixaBank AM (temas, no productos concretos) y rentabilidad anual SIMULADA */
