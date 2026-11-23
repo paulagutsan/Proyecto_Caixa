@@ -140,7 +140,7 @@ const RANK_MIN = 100;          // el mapa de miedos se publica a partir de 100 r
 const CYCLE = [
     { id: "aprende", t: "Aprende", p: "Un curso elaborado para aprender todo lo necesario sobre invertir, desde lo más básico. Al superarlo, recibes un diploma que acredita tu nivel.", ic: "book" },
     { id: "invierte", t: "Invierte", p: `Desde 1 €, con tu familia detrás. Tu primer año, los primeros ${RULES.protectCap} € no pueden perder.`, ic: "chart" },
-    { id: "entiende", t: "Entiende", p: "Cada semana, qué ha pasado con tu dinero y por qué. Y tu Antídoto: invierte en lo que te preocupa.", ic: "spark" },
+    { id: "entiende", t: "Anticípate", p: "Cada semana, qué ha pasado con tu dinero y por qué. Y tu Antídoto: invierte en lo que te preocupa.", ic: "spark" },
     { id: "millas", t: "Gana millas", p: "Aprender, aportar y ser constante suma millas. Nunca por tener más dinero que nadie.", ic: "star" },
     { id: "casa", t: "Tu casa", p: "Las millas rebajan el interés de tu primera hipoteca con CaixaBank.", ic: "house" },
 ];
@@ -168,85 +168,145 @@ const SOURCES = {
 
 /* ---------------------------------------------------------------- Fundamentos (5 temas) */
 const LESSONS = [
-    { id: "invertir", title: "Ahorrar o invertir", sub: "Por qué empezar pronto es tu mayor ventaja", min: 3,
+    { id: "invertir", title: "Ahorrar o invertir", sub: "Por qué empezar pronto es tu mayor ventaja", min: 8,
       cards: [
         { h: "Guardar no es lo mismo que poner a trabajar", p: [
             "<b>Ahorrar</b> es apartar dinero para más adelante. Sabes cuánto tendrás, pero apenas crece.",
             "<b>Invertir</b> es comprar una parte de empresas, bonos o edificios que pueden crecer. A cambio de poder ganar más, aceptas que el valor suba y baje." ] },
+        { h: "El dinero quieto pierde valor", p: [
+            "Los precios suben con los años: a eso se le llama <b>inflación</b>. Si el dinero no crece al menos lo mismo, cada año compra menos cosas.",
+            "Con una inflación del 3 % anual, 100 € guardados en un cajón compran dentro de diez años lo que hoy cuesta unos 74 €." ],
+          ex: "Un menú que hoy cuesta 10 € costaría unos 13,40 € dentro de diez años con un 3 % de inflación." },
         { h: "El interés compuesto", p: [
             "Cuando inviertes, ganas sobre lo que pones… y también sobre lo que ya has ganado. Es una bola de nieve.",
             "Mueve los controles y mira qué pasa." ], viz: "compound" },
         { h: "El tiempo pesa más que la cantidad", p: [
-            "Quien empieza pronto con 20 € al mes puede acabar con más que quien empieza diez años después con el doble. No hace falta mucho dinero: hace falta tiempo.",
-            "Por eso Horizonte empieza ahora y no cuando tengas nómina." ] },
+            "No hace falta mucho dinero: hace falta tiempo. Cada año que tu dinero está invertido, la bola de nieve se hace más grande.",
+            "Por eso Horizonte empieza ahora y no cuando tengas nómina." ],
+          ex: "Ana aparta 20 € al mes desde los 16 hasta los 36. Leo aparta 40 € al mes desde los 26 hasta los 36. Los dos ponen 4.800 €, pero al 5 % anual Ana llega a unos 8.200 € y Leo a unos 6.200 €." },
+        { h: "Más rentabilidad, más vaivenes", p: [
+            "Rentabilidad y riesgo van juntos. Un depósito apenas se mueve, pero rinde poco. La bolsa ha rendido históricamente bastante más, a cambio de años con caídas del 20 % o más.",
+            "No existe una inversión que rinda mucho y no se mueva nunca. Si alguien te la ofrece, desconfía." ] },
+        { h: "Tres reglas para empezar", p: [
+            "<b>1.</b> El dinero que vas a necesitar pronto no se invierte en bolsa.",
+            "<b>2.</b> Invierte lo que no vas a necesitar en años, como la entrada de tu casa.",
+            "<b>3.</b> Sé constante: una cantidad pequeña cada mes vale más que una grande de vez en cuando." ] },
       ],
       check: [
         { q: "¿Qué es el interés compuesto?", o: ["Un interés que solo cobran los bancos", "Ganar también sobre lo que ya has ganado", "Un tipo de cuenta de ahorro"], a: 1, why: "Las ganancias se suman a lo que tienes y también empiezan a generar ganancias." },
+        { q: "Tienes 100 € en un cajón y los precios suben un 3 % al año. Dentro de 10 años…", o: ["Podrás comprar lo mismo que hoy", "Podrás comprar menos cosas", "Tendrás más dinero"], a: 1, why: "Seguirás teniendo 100 €, pero con la inflación comprarán lo que hoy cuesta unos 74 €." },
         { q: "¿Qué pesa más para que tu dinero crezca?", o: ["Empezar con mucho dinero", "Empezar pronto y ser constante", "Cambiar de inversión cada mes"], a: 1, why: "El tiempo multiplica el efecto del interés compuesto." },
+        { q: "¿Qué dinero no tiene sentido invertir en bolsa?", o: ["El que no vas a necesitar en diez años", "El que necesitas para algo dentro de unos meses", "El de la entrada de tu casa futura"], a: 1, why: "Si la bolsa cae justo antes de que lo necesites, no tendrías tiempo de esperar a que se recupere." },
       ] },
-    { id: "caidas", title: "Las caídas pasan", sub: "Riesgo, plazo y qué hacer cuando la bolsa baja", min: 3,
+    { id: "caidas", title: "Las caídas pasan", sub: "Riesgo, plazo y qué hacer cuando la bolsa baja", min: 8,
       cards: [
         { h: "Subir y bajar es normal", p: [
             "Las inversiones no suben en línea recta: hay meses buenos y meses malos. A eso se le llama <b>volatilidad</b>.",
             "Una caída solo se convierte en pérdida si vendes en ese momento." ], viz: "drops" },
+        { h: "Las caídas grandes también llegan", p: [
+            "En la crisis de 2008 la bolsa mundial cayó más de un 40 % y tardó años en recuperarse. En 2020, con la pandemia, cayó cerca de un tercio en pocas semanas y recuperó ese nivel en menos de un año.",
+            "No se puede saber cuándo llegará la próxima. Lo que sí puedes decidir es cómo vas a reaccionar." ] },
         { h: "El plazo lo cambia todo", p: [
             "En un análisis del índice mundial MSCI World entre 1970 y 2023, el 12 % de los periodos de 5 años acabó en negativo. En periodos de 15 años, ninguno.",
             "Por eso el dinero que necesitas pronto no se invierte en bolsa, y el de tu casa sí puede." ] },
         { h: "Qué hacer cuando cae", p: [
             "Lo peor que suele hacer un inversor es vender por miedo. Lo mejor: no tocarlo y seguir aportando.",
-            "Tu primer año, además, no puedes perder: CaixaBank te protege los primeros 500 €." ] },
+            "Tu primer año, además, va acompañado: si tus primeros 500 € valen menos al cumplir 12 meses, CaixaBank te abona la diferencia." ] },
+        { h: "Aportar en las caídas", p: [
+            "Si aportas lo mismo cada mes, cuando los precios bajan compras más participaciones con el mismo dinero. Cuando vuelven a subir, tienes más.",
+            "Por eso aportar cada mes, pase lo que pase, suaviza los vaivenes." ],
+          ex: "Con 20 € compras 2 participaciones si cuestan 10 €, pero 2,5 si han bajado a 8 €." },
+        { h: "Conócete antes de que caiga", p: [
+            "Antes de invertir, pregúntate dos cosas: ¿cuándo voy a necesitar este dinero? ¿Podría dormir tranquilo si baja un 20 %?",
+            "Si la respuesta a la segunda es no, empieza con menos. Tener un plan antes de la caída es lo que evita vender por miedo." ] },
       ],
       check: [
-        { q: "La bolsa cae un 10 % y no necesitas el dinero hasta dentro de 10 años. ¿Qué tiene más sentido?", o: ["Vender todo antes de que baje más", "No tocarlo y seguir aportando", "Pedir un préstamo para comprar más"], a: 1, why: "Con un plazo largo hay tiempo para que se recupere; vender convierte la caída en pérdida." },
         { q: "¿Cuándo se convierte una caída en una pérdida real?", o: ["Cuando lo ves en la app", "Cuando vendes en ese momento", "Nunca"], a: 1, why: "Mientras no vendas, el valor puede recuperarse." },
+        { q: "Históricamente, tras una caída fuerte de la bolsa mundial…", o: ["Nunca se ha recuperado", "Se ha recuperado, aunque a veces ha tardado años", "Se recupera siempre al día siguiente"], a: 1, why: "La bolsa mundial se ha recuperado de todas sus grandes caídas, pero no siempre rápido. Por eso importa el plazo." },
+        { q: "La bolsa cae un 10 % y no necesitas el dinero hasta dentro de 10 años. ¿Qué tiene más sentido?", o: ["Vender todo antes de que baje más", "No tocarlo y seguir aportando", "Pedir un préstamo para comprar más"], a: 1, why: "Con un plazo largo, las caídas suelen recuperarse. Vender convierte la caída en pérdida." },
+        { q: "Aportas 20 € al mes. Este mes cada participación cuesta 8 € en vez de 10 €. ¿Qué pasa?", o: ["Pierdes dinero", "Compras más participaciones con el mismo dinero", "No puedes comprar"], a: 1, why: "Con 20 € compras 2,5 participaciones en lugar de 2. Cuando el precio se recupere, tendrás más." },
       ] },
-    { id: "cesta", title: "No todo en la misma cesta", sub: "Diversificar y qué es un fondo", min: 2,
+    { id: "cesta", title: "No todo en la misma cesta", sub: "Diversificar y qué es un fondo", min: 7,
       cards: [
         { h: "Diversificar", p: [
             "Si todo tu dinero está en una sola empresa y le va mal, lo pierdes casi todo. Si está repartido entre miles, una mala noticia apenas se nota.",
-            "Diversificar no elimina el riesgo, pero lo hace mucho más pequeño." ] },
+            "Diversificar no elimina el riesgo, pero lo hace mucho más pequeño." ],
+          ex: "Si tienes 100 € en una sola empresa y cae un 50 %, pierdes 50 €. Si esa empresa es una de mil en las que inviertes, pierdes unos céntimos." },
+        { h: "Repartir de muchas formas", p: [
+            "Se puede repartir entre <b>empresas</b>, entre <b>sectores</b> (tecnología, salud, energía…), entre <b>países</b> y entre tipos de inversión, como acciones y bonos.",
+            "Y también en el <b>tiempo</b>: aportar un poco cada mes evita meterlo todo justo en el peor momento." ] },
         { h: "Qué es un fondo", p: [
             "Un fondo junta el dinero de muchas personas y lo invierte en muchas empresas a la vez. Lo gestiona un equipo profesional, como el de CaixaBank Asset Management.",
             "Con 5 € ya tienes un trocito de cientos de empresas." ] },
+        { h: "Fondos indexados", p: [
+            "Un fondo indexado no intenta adivinar qué empresa subirá: copia un índice entero. Por ejemplo, el MSCI World incluye unas 1.400 grandes empresas de 23 países desarrollados.",
+            "Suelen tener costes bajos y te dan una diversificación enorme sin tener que elegir empresa por empresa." ] },
+        { h: "Lo que no es diversificar", p: [
+            "Tener cinco criptomonedas o tres empresas tecnológicas no es diversificar: suelen subir y bajar a la vez.",
+            "Diversificar de verdad es tener cosas que no dependen de lo mismo." ] },
         { h: "Base + Antídoto", p: [
             "En Horizonte, la mayor parte de tu dinero (75 %) va a un <b>fondo global</b> muy diversificado.",
             "Solo una parte (25 %) va a tu <b>Antídoto</b>: los temas que te preocupan de tu futuro." ] },
       ],
       check: [
         { q: "¿Para qué sirve diversificar?", o: ["Para ganar siempre", "Para que una mala noticia no lo hunda todo", "Para pagar menos impuestos"], a: 1, why: "Repartir reduce el impacto de que a una empresa le vaya mal." },
+        { q: "¿Cuál de estas carteras está más diversificada?", o: ["Tres empresas tecnológicas de EE. UU.", "Un fondo con empresas de muchos sectores y países", "Cinco criptomonedas distintas"], a: 1, why: "Las otras dos dependen de lo mismo: suelen subir y bajar a la vez." },
         { q: "¿Qué es un fondo de inversión?", o: ["Una cuenta corriente", "Dinero de muchas personas invertido en muchos activos", "Una criptomoneda"], a: 1, why: "Junta el dinero de muchos y lo reparte entre muchos activos." },
+        { q: "¿Qué hace un fondo indexado?", o: ["Intenta adivinar qué acción subirá", "Copia un índice con muchas empresas", "Invierte solo en bancos"], a: 1, why: "Replica un índice entero, así que te da una diversificación muy grande con costes bajos." },
       ] },
-    { id: "trampas", title: "Ni apuestas ni estafas", sub: "Cómo distinguir invertir de jugarte el dinero", min: 3,
+    { id: "trampas", title: "Ni apuestas ni estafas", sub: "Cómo distinguir invertir de jugarte el dinero", min: 8,
       cards: [
         { h: "Invertir no es apostar", p: [
             "En una apuesta, la casa gana a largo plazo por diseño. Al invertir, pones dinero en empresas que crean valor con el tiempo.",
             "Si alguien te promete ganar rápido y seguro, no es inversión." ] },
+        { h: "Las apuestas, en números", p: [
+            "En la ruleta europea, por cada 100 € apostados la casa se queda de media con 2,70 €. Cuanto más juegas, más se acerca el resultado a esa pérdida.",
+            "En las apuestas deportivas pasa lo mismo: las cuotas están calculadas para que la casa gane aunque tú aciertes a veces." ] },
         { h: "Señales de estafa", p: [
             "Rentabilidades altas «garantizadas», prisas para decidir, contacto por redes o mensajes que no pediste y empresas que no aparecen en la CNMV.",
             "Ante la duda, compruébalo en cnmv.es antes de enviar un euro." ] },
+        { h: "Estafas piramidales", p: [
+            "Prometen ganancias por invitar a otras personas. En realidad, pagan a los primeros con el dinero de los que entran después.",
+            "Cuando deja de entrar gente nueva, se hunde, y casi todos pierden lo que pusieron." ] },
         { h: "Finfluencers, cripto y comisiones", p: [
             "Un vídeo viral no sabe nada de tu vida ni de tus metas. Las criptomonedas pueden subir y bajar muchísimo en días.",
             "Y mira siempre las comisiones: un 1 % al año parece poco, pero se acumula igual que las ganancias." ] },
+        { h: "Cómo protegerte", p: [
+            "Nunca des tus claves ni códigos: tu banco no te los pide nunca por SMS, llamada o redes.",
+            "Desconfía de las prisas, comprueba en la CNMV y, antes de mover dinero, cuéntaselo a alguien de confianza." ] },
       ],
       check: [
         { q: "Te escriben por Instagram: «Gana un 20 % al mes, garantizado». ¿Qué haces?", o: ["Pruebo con poco dinero", "Es una señal clara de estafa: no envío nada", "Se lo paso a mis amigos"], a: 1, why: "Rentabilidad alta garantizada y contacto no pedido son dos señales de estafa." },
+        { q: "En la ruleta europea, a la larga…", o: ["Ganas si tienes una buena estrategia", "La casa se queda de media con parte de lo apostado", "Ganas y pierdes lo mismo"], a: 1, why: "La casa tiene ventaja por diseño: de media se queda con 2,70 € de cada 100 € apostados." },
+        { q: "Una web promete duplicar tu dinero si invitas a tres amigos. ¿Qué es probablemente?", o: ["Un fondo de inversión", "Una estafa piramidal", "Un depósito bancario"], a: 1, why: "Pagar por traer gente nueva es la señal típica de una pirámide." },
         { q: "¿Dónde compruebas si una empresa de inversión está autorizada?", o: ["En sus redes sociales", "En la CNMV", "En los comentarios de YouTube"], a: 1, why: "La CNMV tiene los registros oficiales de entidades autorizadas." },
       ] },
-    { id: "horizonte", title: "Cómo funciona Horizonte", sub: "Primera inversión, primer año acompañado, millas y Antídoto", min: 2,
+    { id: "horizonte", title: "Cómo funciona Horizonte", sub: "Primera inversión, primer año acompañado, millas y Antídoto", min: 7,
       cards: [
         { h: "Tu primer euro se gana", p: [
             `Al superar Fundamentos, CaixaBank ingresa <b>${RULES.prize} €</b> invertidos a tu nombre. No es un regalo: te lo has ganado.`,
             "Después, el objetivo es que pongas tu <b>primer euro propio</b>: de tu paga, del redondeo de tus compras o de un trabajo de verano." ] },
+        { h: "Tu dinero, en dos partes", p: [
+            "El <b>75 %</b> va a la cartera base: un fondo global con miles de empresas de todo el mundo.",
+            "El <b>25 %</b> es tu Antídoto: lo inviertes en lo que te preocupa de tu futuro, para que si pasa, tu dinero gane." ] },
         { h: "Tu primer año, acompañado", p: [
-            `Durante tus primeros 12 meses, los primeros <b>${RULES.protectCap} €</b> que inviertes tú no pueden perder. Si al cumplir el año valen menos, CaixaBank pone la diferencia.`,
+            `Durante tus primeros 12 meses, los primeros <b>${RULES.protectCap} €</b> que inviertes tú están acompañados: si al cumplir el año valen menos, CaixaBank te abona la diferencia.`,
             "Solo cuenta si no vendes antes de los 12 meses." ] },
         { h: "Millas de casa", p: [
             "Cada tema que completas, cada juego, cada mes que aportas y cada regalo de tu familia suman <b>millas de casa</b>.",
             "Años después se convierten en una rebaja del interés de tu primera hipoteca con CaixaBank. No caducan." ] },
+        { h: "Tu familia te acompaña", p: [
+            "Hasta los 18, tu madre, padre o tutor aprueba tu Antídoto y los permisos de la app, y puede regalarte dinero para tu casa.",
+            "A los 18, la cuenta pasa a ser solo tuya y te conviertes en inversor certificado." ] },
+        { h: "Tu revisión anual", p: [
+            `Una vez al año, diez minutos para repasar tu plan: cuánto llevas, si tu Antídoto sigue teniendo sentido y si quieres cambiar tu aportación. Suma <b>${MILES.itv} millas</b>.`,
+            "Así tu certificado sigue al día." ] },
       ],
       check: [
-        { q: "¿Qué protege el primer año sin perder?", o: ["Todo tu dinero para siempre", "Tus primeros 500 € durante 12 meses, si no vendes", "Solo el dinero que te regalan"], a: 1, why: "Es una protección con tope: 500 € y 12 meses, si no vendes antes." },
+        { q: "¿Qué parte de tu dinero va a la cartera base?", o: ["El 25 %", "El 75 %", "Todo"], a: 1, why: "La base global (75 %) reparte el riesgo; el Antídoto es el otro 25 %." },
+        { q: "¿Qué cubre el primer año acompañado?", o: ["Todo tu dinero para siempre", "Tus primeros 500 € durante 12 meses, si no vendes", "Solo el dinero que te regalan"], a: 1, why: "Tiene tope: 500 € y 12 meses, si no vendes antes." },
         { q: "¿Para qué sirven las millas de casa?", o: ["Para viajar gratis", "Para rebajar el interés de tu futura hipoteca", "Para comprar videojuegos"], a: 1, why: "Se canjean en una hipoteca con CaixaBank como rebaja del diferencial." },
+        { q: "Si tienes 16 años, ¿quién aprueba tu Antídoto?", o: ["Nadie", "Tu madre, padre o tutor", "Tus amigos"], a: 1, why: "Hasta los 18, tu familia aprueba las decisiones de la cuenta." },
       ] },
 ];
 

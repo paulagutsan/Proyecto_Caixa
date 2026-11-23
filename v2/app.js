@@ -28,6 +28,10 @@ const P = {
     chart: '<path d="M4 17l5-5 4 3 7-8"/><path d="M15 7h5v5"/>',
     shield: '<path d="M12 3l7.5 3v6c0 4.6-3.2 8-7.5 9.3C7.7 20 4.5 16.6 4.5 12V6z"/><path d="M9 12.2l2.1 2.1L15.3 10"/>',
     house: '<path d="M3 11 12 4l9 7"/><path d="M5 9.8V20h14V9.8"/><path d="M10 20v-5.5h4V20"/>',
+    voice: '<path d="M4 10v4h3l6 4V6L7 10H4z"/><path d="M16.5 9.5a3.5 3.5 0 0 1 0 5M19 7a7 7 0 0 1 0 10"/>',
+    bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2v.2h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
+    menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    chevl: '<path d="m14 6-6 6 6 6"/>',
     family: '<circle cx="8.5" cy="8" r="3"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M3 19.5c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M14.4 15c2.6-.6 5.4.8 6.1 4.2"/>',
     gift: '<rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5V20h14v-7.5M12 8.5V20M12 8.5C10.8 5.5 7.5 4.6 7 6.5S10 8.5 12 8.5zM12 8.5c1.2-3 4.5-3.9 5-2s-3 2-5 2z"/>',
     key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l2.5 2.5M14 9l2 2"/>',
@@ -95,7 +99,7 @@ const RANK_IDS = { tecnologia: "ia", inmobiliario: "casa", energia: "clima", inf
 const plainTxt = t => String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 function classifyFear(text) {
     const t = ` ${plainTxt(text)} `;
-    for (const [fund, keys] of FEAR_KEYS) if (keys.some(k => k.length <= 3 ? new RegExp(`\\b${k.trim()}\\b`).test(t) : t.includes(k))) return fund;
+    for (const [fund, keys] of FEAR_KEYS) if (keys.some(k => k.trim().length <= 3 ? new RegExp(`(^|\\s)${k.trim()}(\\s|$)`).test(t) : t.includes(" " + k.trim()))) return fund;
     return null;
 }
 function normFear(x) {
@@ -287,7 +291,7 @@ function vLanding() {
     const lpYear = 8, lpNews = MKT_NEWS[lpYear];
     return `<div class="lp">
     <header class="lp-nav"><div class="lp-in">${brand("#/")}
-      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#por-que">Por qué Horizonte</a><a href="#aprende">Aprende</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#familias">Familias</a><a href="#preguntas">Preguntas</a></nav>
+      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#aprende">Aprende</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#voz">Tu voz</a><a href="#proyecto">Tu proyecto</a><a href="#familias">Familias</a><a href="#preguntas">Preguntas</a></nav>
       <div class="lp-right">${themeBtn()}${lnk("Crear cuenta", "#/alta/joven", "primary sm")}</div></div></header>
 
     <section class="hz-hero"><div class="lp-in hz-hero-in">
@@ -364,6 +368,24 @@ function vLanding() {
         <div class="ls-row"><span>Intereses que te ahorras</span><b data-o="save"></b></div>
         <p class="note">Estimación con una hipoteca de ${eur(GOAL_DEFAULT.price * (1 - DOWN_PCT))} a ${MORTGAGE_YEARS} años, aportando cada mes y con la revisión anual. Rebaja máxima: ${pts(MILES.maxCut)} puntos.</p>
       </div>
+    </div></section>
+
+    <section class="lp-sec alt" id="voz"><div class="lp-in lp-split">
+      <div><p class="kicker">Tu voz</p><h2 class="serif">Tu dinero también opina.</h2>
+        <p class="lp-lead">Cuando inviertes en un fondo, la gestora vota en las juntas de accionistas de las empresas. En Horizonte le dices qué preferirías tú: sueldos de directivos, clima, igualdad, privacidad. Tu opinión se suma a la de miles de jóvenes.</p>
+        ${lnk(`Dar mi opinión${ic("arrow")}`, "#/alta/joven", "primary lg")}</div>
+      <div class="lp-vz"><p class="vz-co">${VOZ[0].co} · Junta de accionistas</p><h3>${VOZ[0].t}</h3><p>${VOZ[0].d}</p>
+        <div class="vz-btns"><a class="btn vz-c" href="#/alta/joven">${ic("chevl")}En contra</a><a class="btn ghost" href="#/alta/joven">No lo tengo claro</a><a class="btn vz-a" href="#/alta/joven">A favor${ic("chev")}</a></div>
+        <small>Propuesta de ejemplo. La opinión es consultiva.</small></div>
+    </div></section>
+
+    <section class="lp-sec" id="proyecto"><div class="lp-in lp-split">
+      <div><p class="kicker">Tu proyecto</p><h2 class="serif">¿Tienes una idea? Encuentra quién la impulse.</h2>
+        <p class="lp-lead">Una app, una marca de ropa, un huerto urbano, un podcast… Cuéntalo en privado y te enseñamos qué empresas asociadas podrían apoyarlo con financiación, mentoría o primeros clientes.</p>
+        ${lnk(`Contar mi proyecto${ic("arrow")}`, "#/alta/joven", "primary lg")}</div>
+      <ul class="lp-checks"><li><span>${ic("lock")}</span><div><b>Privado por defecto</b><small>Solo lo ves tú hasta que decides contactar con alguien.</small></div></li>
+        <li><span>${ic("bulb")}</span><div><b>Encajes a tu medida</b><small>Según el sector, la fase en la que está y lo que necesitas.</small></div></li>
+        <li><span>${ic("send")}</span><div><b>Tú decides</b><small>La empresa solo ve el resumen: nunca tu nombre ni tu dinero.</small></div></li></ul>
     </div></section>
 
     <section class="lp-sec alt" id="familias"><div class="lp-in lp-split">
@@ -582,7 +604,7 @@ function vInicio() {
     const steps = [
         ["aprende", "Aprende", S.exam?.passed, S.exam?.passed ? "Certificado" : `${Object.keys(S.lessons).length} de ${LESSONS.length} temas`, "#/aprende"],
         ["invierte", "Invierte", !!m.firstOwn, m.firstOwn ? eur(m.value, true) : "Tu primer euro", "#/dinero"],
-        ["entiende", "Entiende", S.fears.length > 0, S.fears.length ? (m.al.active ? "Antídoto activo" : "Antídoto pendiente") : "Elige tu Antídoto", "#/antidoto"],
+        ["entiende", "Anticípate", S.fears.length > 0, S.fears.length ? (m.al.active ? "Antídoto activo" : "Antídoto pendiente") : "Elige tu Antídoto", "#/antidoto"],
         ["millas", "Gana millas", st.current >= 4, `${num(mi.total)} millas`, "#/casa"],
         ["casa", "Tu casa", false, `−${pts(mi.cut)} puntos`, "#/casa"],
     ];
@@ -721,20 +743,28 @@ function vJuego(id) {
 
 let lessonState = null;
 const focus = (back, i, n, body) => `<div class="focus"><header class="focus-top"><a class="icon-btn" href="${back}" aria-label="Cerrar">${ic("close")}</a>${n ? `${bar(i, n, "blue")}<span>${i} / ${n}</span>` : ""}</header><article class="focus-body">${body}</article></div>`;
+/* Las preguntas van intercaladas: dos pantallas de explicación y una pregunta */
+function lessonSeq(l) {
+    const seq = []; let qi = 0;
+    l.cards.forEach((c, i) => { seq.push({ c }); if (i % 2 === 1 && qi < l.check.length) seq.push({ qi: qi++ }); });
+    while (qi < l.check.length) seq.push({ qi: qi++ });
+    return seq;
+}
 function vTema(id, step) {
     const l = LESSONS.find(x => x.id === id);
     if (!l) return null;
-    const total = l.cards.length + l.check.length;
+    const seq = lessonSeq(l), total = seq.length;
     step = Math.max(0, Math.min(total - 1, +step || 0));
     if (!lessonState || lessonState.id !== id) lessonState = { id, answers: {} };
+    const last = step === total - 1, it = seq[step];
     let body;
-    if (step < l.cards.length) {
-        const c = l.cards[step];
-        body = `<span class="kicker">${esc(l.title)}</span><h1>${c.h}</h1>${c.p.map(p => `<p>${p}</p>`).join("")}${c.viz ? viz(c.viz) : ""}
+    if (it.c) {
+        const c = it.c;
+        body = `<span class="kicker">${esc(l.title)}</span><h1>${c.h}</h1>${c.p.map(p => `<p>${p}</p>`).join("")}${c.ex ? `<div class="ex"><b>Ejemplo</b><p>${c.ex}</p></div>` : ""}${c.viz ? viz(c.viz) : ""}
           <div class="focus-nav">${step ? lnk("Anterior", `#/tema/${id}/${step - 1}`) : "<span></span>"}${lnk(`Siguiente${ic("arrow")}`, `#/tema/${id}/${step + 1}`, "primary")}</div>`;
     } else {
-        const qi = step - l.cards.length, q = l.check[qi], ans = lessonState.answers[qi], last = step === total - 1;
-        body = `<span class="kicker">Comprueba lo que sabes · ${qi + 1} de ${l.check.length}</span><h1>${q.q}</h1>${opts(q, ans, "lessonAns", `data-q="${qi}"`)}
+        const qi = it.qi, q = l.check[qi], ans = lessonState.answers[qi];
+        body = `<span class="kicker">Comprueba lo que sabes · pregunta ${qi + 1} de ${l.check.length}</span><h1>${q.q}</h1>${opts(q, ans, "lessonAns", `data-q="${qi}"`)}
           ${ans !== undefined ? why(ans === q.a, q.why) : ""}
           <div class="focus-nav">${lnk("Anterior", `#/tema/${id}/${step - 1}`)}${ans !== undefined ? (last ? btn("Terminar tema", "lessonDone", "primary", `data-id="${id}"`) : lnk(`Siguiente${ic("arrow")}`, `#/tema/${id}/${step + 1}`, "primary")) : ""}</div>`;
     }
@@ -899,7 +929,7 @@ function drawValueChart(box) {
     svg.addEventListener("pointerleave", () => { g.style.display = "none"; setHead(pts[pts.length - 1], true); });
 }
 function bindValueCharts() { $$("[data-vchart]").forEach(drawValueChart); }
-let vcResize; addEventListener("resize", () => { clearTimeout(vcResize); vcResize = setTimeout(bindValueCharts, 120); });
+let vcResize; addEventListener("resize", () => { clearTimeout(vcResize); vcResize = setTimeout(() => { bindValueCharts(); bindProj(); }, 120); });
 
 function vDinero() {
     const m = money(), moves = [...S.money].reverse(), has = S.money.length > 0;
@@ -924,14 +954,14 @@ function vDinero() {
         <div class="auto">
           <div class="auto-row"><div><b>Cada semana</b><span>${S.weekly ? `≈ ${eur(S.weekly * 52 / 12)} al mes` : "Elige una cantidad"}</span></div>
             <div class="seg" role="radiogroup" aria-label="Euros a la semana">${weeklyOpts.map(v => `<button role="radio" aria-checked="${S.weekly === v}" class="${S.weekly === v ? "on" : ""}" data-act="setWeekly" data-v="${v}">${v ? `${v} €` : "No"}</button>`).join("")}</div></div>
-          <div class="auto-row"><div><b>Redondeo de compras</b><span>Cada compra con tu tarjeta se redondea al euro.</span></div>${toggle("roundup", S.roundup, "Redondeo de compras")}</div>
+          <div class="auto-row"><div><b>Redondeo de compras</b><span>Cada compra con tu tarjeta se redondea al euro siguiente y la diferencia se invierte. Pagas 3,40 € y se invierten 0,60 €.</span></div>${toggle("roundup", S.roundup, "Redondeo de compras")}</div>
         </div>`, "c-12")}
       ${card(`${cardH("Dónde está tu dinero", m.al.active ? `Cartera base ${pct(RULES.base * 100)} · Antídoto ${pct(RULES.antidote * 100)}` : m.al.pending ? "Tu Antídoto espera la aprobación de tu familia." : "Todo en la cartera base.", m.al.active ? "" : lnk(S.fears.length ? "Ver Antídoto" : "Elegir Antídoto", "#/antidoto", "sm ghost"))}
         ${stack(m.parts)}<div class="rows">${m.parts.map(pp => `<div class="row">${sw(pp.fund)}<div><b>${FUNDS[pp.fund].name}</b><span>${pp.fear ? "Antídoto · " + esc(pp.fear.label) : FUNDS[pp.fund].sub}</span></div><b class="amt">${eur(pp.amount, true)}</b></div>`).join("")}</div>`, "c-12")}
       ${card(`${cardH("Primer año acompañado", `Los primeros ${RULES.protectCap} € que inviertes tú no pueden perder valor durante ${RULES.protectMonths} meses. Si al cumplirse valen menos, CaixaBank pone la diferencia.`)}
         <div class="protect"><div class="pr-num"><b>${eur(m.protect?.base || 0)}</b><span>de ${RULES.protectCap} € protegidos</span></div>${bar(m.protect?.base || 0, RULES.protectCap, "blue")}
         <p class="note">${m.protect ? (m.protect.active ? `Del ${fmtD(m.protect.start)} al ${fmtD(m.protect.end)} · quedan ${m.protect.daysLeft} días` : `Tu periodo de protección terminó el ${fmtD(m.protect.end)}.`) : "Empieza con tu primera aportación."}</p></div>
-        <details class="terms"><summary>Condiciones${ic("plus")}</summary><ul><li>Tope de ${RULES.protectCap} € por persona.</li><li>Solo cubre si no vendes antes de los ${RULES.protectMonths} meses.</li><li>Es una bonificación promocional de CaixaBank, no un producto garantizado.</li></ul></details>`, "c-12")}
+        <details class="terms"><summary>Condiciones${ic("plus")}</summary><ul><li>Tope de ${RULES.protectCap} € por persona.</li><li>Solo cubre si no vendes antes de los ${RULES.protectMonths} meses.</li><li>Es una promoción de CaixaBank, no un fondo garantizado: tu dinero sigue invertido y puede bajar, pero si a los 12 meses tus primeros 500 € valen menos, CaixaBank te abona la diferencia en tu cuenta.</li></ul></details>`, "c-12")}
     </div>
     <p class="note center-note">Movimientos de mercado simulados en esta versión de demostración.</p>`;
 }
@@ -1009,37 +1039,34 @@ function chatHTML() {
     return list.map(x => x.r === "u" ? `<div class="umsg"><p>${esc(x.t)}</p></div>` : assistantMsg(x)).join("")
         + (typing ? `<div class="amsg"><span class="am-av" aria-hidden="true">${ic("spark")}</span><div class="am-body typing" aria-label="Preparando la respuesta"><i></i><i></i><i></i></div></div>` : "");
 }
+let moreIdeas = false;
 function vAntidoto() {
     const m = money(), al = m.al, can = S.geminiOk || isAdult();
     const r = ranking || { counts: {}, total: 0 }, showRank = r.total >= RANK_MIN;
     const rank = FEARS.map(f => ({ f, n: r.counts[f.id] || 0 })).sort((a, b) => b.n - a.n);
     const mine = S.fears.map(fearOf), full = S.fears.length >= RULES.maxFears;
-    const ex = mine.find(f => f?.fund) || { label: "No poder pagarme nunca una casa", fund: "inmobiliario" };
-    const ideas = FEAR_IDEAS.filter(t => !S.fears.some(f => f.label === t));
-    return `${pageH("Antídoto", "Invierte una parte de tu dinero en lo que te preocupa del futuro. Si ocurre, tu dinero gana.")}
+    const ideas = FEAR_IDEAS.filter(t => !S.fears.some(f => f.label === t)), shown = moreIdeas ? ideas : ideas.slice(0, 4);
+    return `${pageH("Antídoto", "Invierte una parte de tu dinero en lo que te preocupa del futuro.")}
     <div class="grid">
-      ${card(`<div class="ad-how">
+      ${card(`<div class="ad-hero">
           <div class="ad-why"><span class="kicker">Por qué invertir en lo que te preocupa</span>
             <h2>Funciona como un seguro, pero invertido.</h2>
-            <p>La mayoría de tu dinero (${pct(RULES.base * 100)}) va a la cartera base, repartida entre miles de empresas de todo el mundo. El otro ${pct(RULES.antidote * 100)} es tu Antídoto: se invierte en las empresas a las que les va mejor justo si pasa lo que temes.</p></div>
-          <div class="ad-cases">
-            <div class="ad-case"><span class="ad-ic bad">${ic(FUND_ICON[ex.fund] || "precios")}</span><b>Si pasa lo que temes</b><p>«${esc(ex.label)}». Tu Antídoto, en ${esc(FUNDS[ex.fund].name.toLowerCase())}, tiende a subir y compensa parte del golpe.</p></div>
-            <div class="ad-case"><span class="ad-ic good">${ic("check")}</span><b>Si no pasa</b><p>Mejor todavía. La cartera base sigue creciendo con la economía mundial y tu plan sigue igual.</p></div>
-          </div></div>
-        <ol class="ad-steps"><li><span>1</span><b>Escribe lo que te preocupa</b><small>Con tus palabras, hasta ${RULES.maxFears} cosas.</small></li><li><span>2</span><b>Lo traducimos a una inversión</b><small>Elegimos el fondo que gana si eso ocurre.</small></li><li><span>3</span><b>Tu dinero queda cubierto</b><small>Lo revisas cada año en tu revisión anual.</small></li></ol>`, "c-12")}
+            <p>El ${pct(RULES.base * 100)} de tu dinero va a la cartera base. El otro ${pct(RULES.antidote * 100)} se invierte en empresas a las que les va mejor justo si pasa lo que temes.</p>
+            <ul class="ad-if"><li><span class="ad-ic bad">${ic("spark")}</span><div><b>Si pasa</b>, tu Antídoto tiende a subir y compensa parte del golpe.</div></li>
+              <li><span class="ad-ic good">${ic("check")}</span><div><b>Si no pasa</b>, mejor todavía: tu cartera base sigue creciendo.</div></li></ul></div>
+          <div class="ad-mapcol"><div class="ad-maph"><span>Tu mapa</span>${al.fears.length ? badge(al.active ? "Activo" : "Pendiente de tu familia", al.active ? "ok" : "warn") : ""}</div>${antidoteMap(m)}</div>
+        </div>`, "c-12")}
 
-      ${card(`${cardH("¿Qué te preocupa a ti?", "Escríbelo como lo dirías tú. También puedes partir de una idea.", `<span class="count">${S.fears.length}/${RULES.maxFears}</span>`)}
-        <form class="ad-add" data-form="fearAdd"><input name="t" maxlength="80" autocomplete="off" placeholder="${full ? `Ya tienes ${RULES.maxFears}: quita una para añadir otra` : "Por ejemplo: que las carreteras estén cada vez peor"}" aria-label="Lo que te preocupa" ${full ? "disabled" : ""} required><button class="btn primary" ${full ? "disabled" : ""}>${ic("plus")}Añadir</button></form>
-        ${!full && ideas.length ? `<div class="ad-ideas"><span>Ideas</span>${ideas.map(t => `<button class="chip" data-act="fearIdea" data-t="${esc(t)}">${esc(t)}</button>`).join("")}</div>` : ""}
+      ${card(`${cardH("¿Qué te preocupa a ti?", "Escríbelo con tus palabras. Lo traducimos al fondo que gana si eso ocurre.", `<span class="count">${S.fears.length}/${RULES.maxFears}</span>`)}
+        ${full ? "" : `<form class="ad-add" data-form="fearAdd"><input name="t" maxlength="80" autocomplete="off" placeholder="Por ejemplo: que las carreteras estén cada vez peor" aria-label="Lo que te preocupa" required><button class="btn primary">${ic("plus")}Añadir</button></form>
+          ${ideas.length ? `<div class="ad-ideas"><span>Ideas</span>${shown.map(t => `<button class="chip" data-act="fearIdea" data-t="${esc(t)}">${esc(t)}</button>`).join("")}${ideas.length > 4 ? `<button class="ad-more" data-act="moreIdeas">${moreIdeas ? "Menos" : `+${ideas.length - 4} ideas`}</button>` : ""}</div>` : ""}`}
         ${mine.length ? `<div class="ad-mine">${mine.map((f, i) => `<div class="ad-item">
             <span class="ad-dot" style="background:${FUND_COLOR[f.fund] || "var(--ink-4)"}">${ic(FUND_ICON[f.fund] || "spark")}</span>
-            <div><b>«${esc(f.label)}»</b>${f.fund ? `<span>Se invierte en <strong>${esc(FUNDS[f.fund].name)}</strong>. ${FUND_WHY[f.fund]}</span>` : `<span class="warn">No hemos sabido a qué fondo asociarlo. Elige el que mejor encaje.</span>`}
-              <label class="ad-change"><span>${f.fund ? "¿No encaja? Cambiar fondo" : "Fondo"}</span><select data-act="fearFund" data-i="${i}">${f.fund ? "" : `<option value="">Elige…</option>`}${Object.keys(FUND_WHY).map(k => `<option value="${k}" ${k === f.fund ? "selected" : ""}>${FUNDS[k].name}</option>`).join("")}</select></label></div>
-            ${btn(ic("close"), "fearDel", "icon-btn", `data-i="${i}" aria-label="Quitar"`)}</div>`).join("")}</div>` : ""}`, "c-12")}
-
-      ${card(`${cardH("Tu mapa", al.fears.length ? (al.active ? "Así se reparte tu dinero hoy." : `Pendiente de que tu familia lo apruebe. Mientras, todo sigue en la cartera base.`) : "Así quedará tu dinero cuando añadas lo que te preocupa.", al.fears.length ? badge(al.active ? "Activo" : "Pendiente", al.active ? "ok" : "warn") : "")}
-        ${antidoteMap(m)}
-        <p class="note">El Antídoto reduce el impacto si lo que temes ocurre. No es una garantía: las inversiones pueden perder valor. Siempre dentro de una selección cerrada de fondos de CaixaBank Asset Management.</p>`, "c-12")}
+            <div><b>«${esc(f.label)}»</b>
+              <label class="ad-change"><span>${f.fund ? "Se invierte en" : "Elige a qué fondo asociarlo"}</span><select data-act="fearFund" data-i="${i}">${f.fund ? "" : `<option value="">Elige…</option>`}${Object.keys(FUND_WHY).map(k => `<option value="${k}" ${k === f.fund ? "selected" : ""}>${FUNDS[k].name}</option>`).join("")}</select></label>
+              ${f.fund ? `<small>${FUND_WHY[f.fund]}</small>` : ""}</div>
+            ${btn(ic("close"), "fearDel", "icon-btn", `data-i="${i}" aria-label="Quitar"`)}</div>`).join("")}</div>` : ""}
+        <p class="note">No es una garantía: reduce el impacto si lo que temes ocurre, pero las inversiones pueden perder valor. Siempre con fondos de CaixaBank Asset Management.</p>`, "c-12")}
 
       ${card(`${cardH(`<span class="gem">${ic("spark")}Asistente Horizonte</span>`, "Pregunta lo que quieras sobre tu dinero. Responde con tus datos.")}
         ${can ? `<div class="chat" id="chat">${chatHTML()}</div>
@@ -1087,24 +1114,15 @@ function vCasa() {
     ];
     return `${pageH("Tu casa", "Tus millas de casa se convierten en una rebaja del interés de tu primera hipoteca con CaixaBank.")}
     <div class="grid">
-      ${card(`${cardH("Tu camino a casa", "Mueve los valores y mira a dónde llegarías.")}
-        <div class="pj" data-proj>
-          <div class="pj-ctrl">
-            <label><span>Aportas al mes</span><output data-o="mon"></output><input type="range" min="0" max="400" step="5" value="${Math.round(m.monthly / 5) * 5}" data-i="mon"></label>
-            <label><span>Precio de la vivienda</span><output data-o="price"></output><input type="range" min="60000" max="600000" step="5000" value="${Math.min(600000, Math.max(60000, S.goal.price))}" data-i="price"></label>
-            <label><span>Edad a la que compras</span><output data-o="age"></output><input type="range" min="${minAge}" max="45" step="1" value="${Math.max(S.goal.age, minAge)}" data-i="age"></label>
+      ${card(`${cardH("¿Cuándo podrías comprar?", "Mueve las dos cifras y mira cuándo tendrías la entrada de tu casa.")}
+        <div class="pj2" data-proj>
+          <div class="pj2-in">
+            <label class="pj2-f"><span>Cada mes apartas</span><output data-o="mon"></output><input type="range" min="0" max="${MON_STEPS.length - 1}" step="1" value="${monIdx(m.monthly)}" data-i="mon" aria-label="Euros al mes"></label>
+            <label class="pj2-f"><span>Para una casa de</span><output data-o="price"></output><input type="range" min="60000" max="600000" step="5000" value="${Math.min(600000, Math.max(60000, S.goal.price))}" data-i="price" aria-label="Precio de la vivienda"></label>
           </div>
-          <div class="pj-out">
-            <span class="pj-k" data-o="when"></span>
-            <p class="pj-big"><b data-o="down"></b> ahorrados para la entrada</p>
-            <div class="pj-bar">${bar(0, 1, "up")}<small data-o="need"></small></div>
-            <p class="pj-tip" data-o="tip"></p>
-            <dl class="pj-list">
-              <div><dt>Millas de casa</dt><dd data-o="miles"></dd></div>
-              <div><dt>Rebaja en tu hipoteca</dt><dd data-o="cut"></dd></div>
-              <div><dt>Ahorro en intereses</dt><dd data-o="save"></dd></div>
-            </dl>
-          </div>
+          <p class="pj2-say" data-o="say"></p>
+          <div class="pj2-chart" data-o="chart"></div>
+          <dl class="pj-list"><div><dt data-o="atk"></dt><dd data-o="miles"></dd></div><div><dt>Rebaja en tu hipoteca</dt><dd data-o="cut"></dd></div><div><dt>Ahorro en intereses</dt><dd data-o="save"></dd></div></dl>
         </div>
         <p class="note">Estimación con una rentabilidad del 5 % anual, entrada del 20 % del precio, hipoteca a ${MORTGAGE_YEARS} años y tipo de referencia del ${pct(MORTGAGE_RATE, 1)}. El aval del ICO para menores de 35 puede reducir la entrada necesaria.</p>`, "c-12")}
       ${card(`<div class="miles-hero"><div>${stat("Millas de casa", num(mi.total))}<p>Equivalen a <b>${pts(mi.cut)} puntos</b> menos de diferencial: unos <b>${eur(mortgageSaving(mi.cut))}</b> menos de intereses en la hipoteca de tu casa.</p></div>
@@ -1115,26 +1133,52 @@ function vCasa() {
       ${card(`${cardH("Historial de millas")}${mi.items.length ? `<div class="rows">${mi.items.slice(0, 15).map(i => `<div class="row"><div><b>${esc(i.label)}</b><span>${fmtD(i.date)}</span></div><b class="amt gold">+${i.n}</b></div>`).join("")}</div>` : empty("house", "Aún no tienes millas", "Empieza por Fundamentos: cada tema suma.", lnk("Ir a Aprende", "#/aprende", "primary"))}`, "c-12")}
     </div>`;
 }
+/* Aportación mensual: pasos finos al principio y más grandes al final, hasta 2.000 € */
+const MON_STEPS = [0, 5, ...Array.from({ length: 10 }, (_, i) => 10 * (i + 1)), ...Array.from({ length: 16 }, (_, i) => 125 + 25 * i), ...Array.from({ length: 10 }, (_, i) => 550 + 50 * i), ...Array.from({ length: 10 }, (_, i) => 1100 + 100 * i)];
+const monIdx = v => MON_STEPS.reduce((best, x, i) => Math.abs(x - v) < Math.abs(MON_STEPS[best] - v) ? i : best, 0);
 function bindProj() {
     const v = $("[data-proj]"); if (!v) return;
-    const age = ageOf(), base = miles().total, value = money().value;
+    if (v._upd) return v._upd();
+    const age = ageOf(), base = miles().total, value = money().value, r = .05 / 12, maxAge = 45;
     let t;
     const upd = () => {
-        const mon = +$('[data-i="mon"]', v).value, price = +$('[data-i="price"]', v).value, goalAge = +$('[data-i="age"]', v).value, yrs = Math.max(0, goalAge - age);
-        S.goal = { price, age: goalAge }; clearTimeout(t); t = setTimeout(save, 300);
-        const giftM = Math.min(MILES.giftMonthCap, Math.floor(S.schedules.reduce((a, x) => a + x.amount, 0) / 5));
+        const mon = MON_STEPS[+$('[data-i="mon"]', v).value], price = +$('[data-i="price"]', v).value, need = price * DOWN_PCT;
+        // mes a mes hasta los 45
+        const path = [{ m: 0, v: value }]; let x = value, reach = null;
+        for (let k = 1; k <= (maxAge - age) * 12; k++) { x = x * (1 + r) + mon; path.push({ m: k, v: x }); if (reach === null && x >= need) reach = k; }
+        if (value >= need) reach = 0;
+        const reachAge = reach === null ? null : age + Math.ceil(reach / 12), goalAge = reachAge ?? maxAge, yrs = goalAge - age;
+        S.goal = { price, age: Math.max(goalAge, age + 1) }; clearTimeout(t); t = setTimeout(save, 300);
+        const giftM = Math.min(MILES.giftMonthCap, Math.floor(S.schedules.reduce((a, y) => a + y.amount, 0) / 5));
         const mt = base + ((mon > 0 ? MILES.monthOwn * 12 : 0) + giftM * 12 + MILES.itv) * yrs, c = cutOf(mt);
-        const need = price * DOWN_PCT, got = fv(mon, yrs, value), gap = need - got;
-        const perMonth = yrs > 0 ? Math.max(0, Math.ceil((need - fv(0, yrs, value)) / fv(1, yrs) / 5) * 5) : 0;
         const o = (k, txt) => { $(`[data-o="${k}"]`, v).innerHTML = txt; };
-        o("mon", eur(mon)); o("price", eur(price)); o("age", `${goalAge} años`);
-        o("when", `A los ${goalAge} años, dentro de ${yrs} ${yrs === 1 ? "año" : "años"}`);
-        o("down", eur(got)); o("need", `de ${eur(need)} de entrada (20 % de ${eur(price)})`);
-        $(".bar i", v).style.width = `${Math.min(100, got / need * 100).toFixed(1)}%`;
-        o("tip", gap <= 0 ? `<b>Llegas a la entrada.</b> Te sobrarían ${eur(-gap)}.` : `Te faltarían <b>${eur(gap)}</b>. Para llegar, necesitarías apartar unos <b>${eur(perMonth)} al mes</b>.`);
-        o("miles", num(mt)); o("cut", `−${pts(c)} puntos`); o("save", eur(mortgageSaving(c)));
+        o("mon", eur(mon)); o("price", eur(price));
+        if (reachAge !== null) o("say", `Tendrías la entrada de <b>${eur(need)}</b> a los <b>${reachAge} años</b>${reach ? `, dentro de ${Math.ceil(reach / 12)} ${Math.ceil(reach / 12) === 1 ? "año" : "años"}` : ""}.`);
+        else {
+            const target = Math.min(maxAge, age + 12), n = (target - age) * 12, needMon = Math.ceil(Math.max(0, need - value * (1 + r) ** n) / (((1 + r) ** n - 1) / r) / 5) * 5;
+            o("say", `Con ${eur(mon)} al mes no llegarías a la entrada de <b>${eur(need)}</b> antes de los ${maxAge}. Con unos <b>${eur(needMon)} al mes</b> la tendrías a los ${target}.`);
+        }
+        o("atk", `Millas a los ${goalAge} años`); o("miles", num(mt)); o("cut", `−${pts(c)} puntos`); o("save", eur(mortgageSaving(c)));
+        // gráfica: lo que ahorras frente a la entrada que necesitas
+        const box = $('[data-o="chart"]', v), W = Math.max(300, box.clientWidth), H = W < 560 ? 200 : 240, pl = 0, pr = 8, pt = 22, pb = 26;
+        const endM = Math.min(path.length - 1, Math.max(reach === null ? path.length - 1 : reach + 36, 60)), ser = path.slice(0, endM + 1);
+        const top = Math.max(need * 1.18, ser[ser.length - 1].v * 1.05), X = k => pl + k / endM * (W - pl - pr), Y = y => pt + (1 - y / top) * (H - pt - pb);
+        const line = ser.filter((_, i) => i % 2 === 0 || i === ser.length - 1).map((q, i) => `${i ? "L" : "M"}${X(q.m).toFixed(1)},${Y(q.v).toFixed(1)}`).join("");
+        const ticks = []; for (let a = age; a <= age + endM / 12; a += endM > 180 ? 5 : endM > 84 ? 2 : 1) ticks.push(a);
+        box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Lo que ahorrarías hasta la entrada">
+          <defs><linearGradient id="pjg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" style="stop-color:var(--blue)" stop-opacity=".22"/><stop offset="1" style="stop-color:var(--blue)" stop-opacity="0"/></linearGradient></defs>
+          <line x1="0" x2="${W}" y1="${H - pb}" y2="${H - pb}" style="stroke:var(--line-2)"/>
+          ${ticks.map(a => `<text x="${X((a - age) * 12).toFixed(1)}" y="${H - 6}" text-anchor="${a === age ? "start" : "middle"}" class="pj2-t">${a === age ? "Hoy" : `${a} años`}</text>`).join("")}
+          <path d="${line}L${X(endM).toFixed(1)},${H - pb}L${X(0)},${H - pb}Z" fill="url(#pjg)"/>
+          <path d="${line}" fill="none" style="stroke:var(--blue)" stroke-width="2.4" stroke-linejoin="round"/>
+          <line x1="0" x2="${W}" y1="${Y(need).toFixed(1)}" y2="${Y(need).toFixed(1)}" style="stroke:var(--gold)" stroke-width="1.6" stroke-dasharray="5 5"/>
+          <text x="${W - pr}" y="${(Y(need) - 8).toFixed(1)}" text-anchor="end" class="pj2-need">Entrada · ${eur(need)}</text>
+          ${reach !== null && reach <= endM ? `<line x1="${X(reach).toFixed(1)}" x2="${X(reach).toFixed(1)}" y1="${Y(need).toFixed(1)}" y2="${H - pb}" style="stroke:var(--gold)" stroke-dasharray="2 4"/>
+            <circle cx="${X(reach).toFixed(1)}" cy="${Y(need).toFixed(1)}" r="7" style="fill:var(--gold);stroke:var(--surface)" stroke-width="3"/>
+            <text x="${Math.min(W - 60, Math.max(40, X(reach))).toFixed(1)}" y="${(Y(need) - 14).toFixed(1)}" text-anchor="middle" class="pj2-reach">${reachAge} años</text>` : ""}
+        </svg>`;
     };
-    $$("input", v).forEach(i => i.addEventListener("input", upd)); upd();
+    v._upd = upd; $$("input", v).forEach(i => i.addEventListener("input", upd)); upd();
 }
 
 /* ---------------- Familia (vista del joven) */
@@ -1222,6 +1266,7 @@ function vAjustes() {
 
 /* ------------------------------------------------------------------ estructura y rutas */
 const NAV_T = [["inicio", "Inicio", "home"], ["dinero", "Dinero", "chart"], ["aprende", "Aprende", "book"], ["antidoto", "Antídoto", "spark"], ["casa", "Tu casa", "house"]];
+const NAV_T3 = [["voz", "Tu voz", "voice"], ["proyecto", "Tu proyecto", "bulb"]];
 const NAV_T2 = [["familia", "Familia", "family"], ["ajustes", "Ajustes", "settings"]];
 const NAV_F = [["f/resumen", "Resumen", "home"], ["f/regalar", "Regalos", "gift"], ["f/permisos", "Permisos", "key"]];
 const NAV_F2 = [["ajustes", "Ajustes", "settings"]];
@@ -1234,10 +1279,10 @@ function shell(route, content) {
     const tabs = fam ? [...main, ...extra] : main;
     return `<div class="shell ${fam ? "fam" : ""}">
       <aside class="side">${brand(home, 34)}${fam ? `<span class="area">Área familiar</span>` : ""}
-        <nav class="side-nav" aria-label="Secciones">${main.map(item).join("")}<span class="sep"></span>${extra.map(item).join("")}</nav>
+        <nav class="side-nav" aria-label="Secciones">${main.map(item).join("")}${fam ? "" : `<span class="sep"></span>${NAV_T3.map(item).join("")}`}<span class="sep"></span>${extra.map(item).join("")}</nav>
         <div class="side-foot">${themeBtn()}<span>${isDark() ? "Modo noche" : "Modo día"}</span></div>
         <a class="me" href="#/ajustes"><span class="avatar">${esc(who.slice(0, 1).toUpperCase())}</span><div><b>${esc(who)}</b><small>${fam ? esc(S.family?.relation || "") : `${ageOf()} años`}</small></div></a></aside>
-      <header class="topbar">${brand(home, 28)}${fam ? `<span class="area">Familia</span>` : ""}${themeBtn()}${fam ? "" : `<a class="icon-btn" href="#/familia" aria-label="Familia">${ic("family")}</a>`}<a class="avatar" href="#/ajustes" aria-label="Ajustes">${esc(who.slice(0, 1).toUpperCase())}</a></header>
+      <header class="topbar">${brand(home, 28)}${fam ? `<span class="area">Familia</span>` : ""}${themeBtn()}${fam ? "" : `<button class="icon-btn" data-act="moreMenu" aria-label="Más secciones">${ic("menu")}</button>`}<a class="avatar" href="#/ajustes" aria-label="Ajustes">${esc(who.slice(0, 1).toUpperCase())}</a></header>
       <main class="main" id="main" tabindex="-1"><div class="page">${content}</div></main>
       <nav class="tabbar" aria-label="Secciones">${tabs.map(item).join("")}</nav>
     </div>`;
@@ -1264,8 +1309,8 @@ function render() {
             route = r === "f" && ["resumen", "regalar", "permisos"].includes(parts[1]) ? "f/" + parts[1] : r === "ajustes" ? "ajustes" : "f/resumen";
             content = { "f/resumen": vFResumen, "f/regalar": vFRegalar, "f/permisos": vFPermisos, ajustes: vAjustes }[route]();
         } else {
-            route = r === "carnet" ? "aprende" : ["inicio", "aprende", "dinero", "antidoto", "casa", "familia", "ajustes"].includes(r) ? r : "inicio";
-            content = { inicio: vInicio, aprende: vAprende, dinero: vDinero, antidoto: vAntidoto, casa: vCasa, familia: vFamiliaJoven, ajustes: vAjustes }[route]();
+            route = r === "carnet" ? "aprende" : ["inicio", "aprende", "dinero", "antidoto", "casa", "voz", "proyecto", "familia", "ajustes"].includes(r) ? r : "inicio";
+            content = { inicio: vInicio, aprende: vAprende, dinero: vDinero, antidoto: vAntidoto, casa: vCasa, voz: vVoz, proyecto: vProyecto, familia: vFamiliaJoven, ajustes: vAjustes }[route]();
         }
         html = shell(route, content);
     }
@@ -1340,6 +1385,8 @@ document.addEventListener("click", async e => {
     else if (act === "itv") { const t = iso(new Date()); if (S.itv.includes(t)) return toast("Ya has hecho la revisión hoy"); S.itv.push(t); save(); toast(`Revisión anual completada · +${MILES.itv} millas de casa`); location.hash = "#/antidoto"; }
     else if (act === "openContribute") contributeSheet();
     else if (/^fr[A-Z]/.test(act)) friendsAct(act, b);
+    else if (/^(voz|pj)[A-Z]/.test(act)) cxAct(act, b);
+    else if (act === "moreMenu") sheet("Más", `<nav class="more-nav">${[...NAV_T3, ...NAV_T2].map(([id, l, i]) => `<a href="#/${id}">${ic(i)}<span>${l}</span>${ic("chev", "chev")}</a>`).join("")}</nav>`);
     else if (act === "vRange") {
         vRange = b.dataset.k; $$(".vc-ranges button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", x === b); });
         const box = $("[data-vchart]:not(.mini)"); if (box) { box.dataset.range = vRange; drawValueChart(box); }
@@ -1350,6 +1397,7 @@ document.addEventListener("click", async e => {
     else if (act === "theme") setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
     else if (act === "setAmount") { const i = $('#sheet input[name="amount"]'); i.value = b.dataset.v; i.focus(); }
     else if (act === "fearIdea") addFear(b.dataset.t);
+    else if (act === "moreIdeas") { moreIdeas = !moreIdeas; rerender(); }
     else if (act === "fearDel") { S.fears.splice(+b.dataset.i, 1); if (!isAdult()) S.antidoteApproved = false; save(); rerender(); }
     else if (act === "ask") askQ(b.dataset.q);
     else if (act === "csv") {
@@ -1387,6 +1435,7 @@ document.addEventListener("submit", e => {
     } else if (k === "alta1") { Object.assign(alta.data, d); finishTeen(); }
     else if (k === "frCode") connectCode(d.c);
     else if (k === "fearAdd") addFear(d.t);
+    else if (k === "pj") pjSave(f);
     else if (k === "altaF0") { Object.assign(alta.data, d); alta.step = 1; render(); }
     else if (k === "altaF2") {
         const a = alta.data;
@@ -1441,7 +1490,7 @@ function downloadDiploma() {
 }
 
 window.addEventListener("hashchange", () => {
-    if (/^#(ciclo|por-que|aprende|antidoto|casa|familias|preguntas)$/.test(location.hash)) return;
+    if (/^#(ciclo|por-que|aprende|antidoto|casa|voz|proyecto|familias|preguntas)$/.test(location.hash)) return;
     closeSheet(); render(); scrollTo(0, 0);
 });
 render();
