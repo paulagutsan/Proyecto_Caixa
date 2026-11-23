@@ -269,7 +269,6 @@ function vLanding() {
         <div><dt>${RULES.prize} €</dt><dd><b>Tu primera inversión, de regalo</b>Los invertimos a tu nombre cuando superas Fundamentos.</dd></div>
         <div><dt>${RULES.protectCap} €</dt><dd><b>Un primer año sin perder</b>Si a los ${RULES.protectMonths} meses valen menos de lo que pusiste, ponemos la diferencia.</dd></div>
         <div><dt>−${pts(MILES.maxCut)}</dt><dd><b>Puntos menos en tu hipoteca</b>Tus millas de casa rebajan el interés de tu primera hipoteca.</dd></div>
-        <div><dt>0 €</dt><dd><b>Sin cuotas de mantenimiento</b>Ni comisión de apertura. Empiezas desde 1 €.</dd></div>
       </dl>
     </div></section>
 
@@ -285,17 +284,22 @@ function vLanding() {
       </div>
     </div></section>
 
-    <section class="hz-dark" id="antidoto"><div class="lp-in">
-      <p class="kicker gold">El Antídoto</p><h2 class="serif">Invierte en lo que te preocupa.</h2>
-      <p class="lp-lead">Si inviertes en aquello que te da miedo y ese miedo se cumple, esa parte de tu dinero gana valor justo cuando más lo necesitas. Así, lo que te preocupa pesa menos en tu bolsillo y tu dinero queda mejor protegido.</p>
-      <ol class="anti-steps">
-        <li><span>1</span><div><b>Eliges lo que te preocupa</b><p>Por ejemplo, que la IA cambie el trabajo que quieres o no poder pagarte nunca una casa.</p></div></li>
-        <li><span>2</span><div><b>Una parte se invierte ahí</b><p>El ${Math.round(RULES.antidote * 100)} % va a empresas de ese tema; el ${Math.round(RULES.base * 100)} %, a un fondo global diversificado.</p></div></li>
-        <li><span>3</span><div><b>Si ocurre, compensa</b><p>Si la IA avanza o los pisos suben, esas empresas suelen ganar más, y esa parte de tu dinero sube con ellas.</p></div></li>
-      </ol>
-      <div class="lp-fears">${FEARS.map((f, i) => `<button class="lf ${i === 0 ? "on" : ""}" data-act="lpFear" data-id="${f.id}"><span>${ic(f.id)}</span>${f.label}</button>`).join("")}</div>
-      <div class="lf-out" data-o="lf"><b>${FUNDS[FEARS[0].fund].name}</b><p>${FEARS[0].why}</p></div>
-      <p class="hz-small">Funciona como una cobertura, no como una garantía: reduce el golpe, pero tu dinero puede bajar. Siempre dentro de una selección cerrada de fondos de CaixaBank AM, y Gemini te lo explica con tus propios números.</p>
+    <section class="hz-dark" id="antidoto"><div class="lp-in anti-grid">
+      <div class="anti-l">
+        <p class="kicker gold">El Antídoto</p><h2 class="serif">Invierte en lo que te preocupa.</h2>
+        <p class="lp-lead">Si inviertes en aquello que te da miedo y ese miedo se cumple, esa parte de tu dinero gana valor justo cuando más lo necesitas. Así, lo que te preocupa pesa menos en tu bolsillo.</p>
+        <ol class="anti-steps">
+          <li><span>1</span><div><b>Eliges lo que te preocupa</b><p>Por ejemplo, que la IA cambie el trabajo que quieres o no poder pagarte una casa.</p></div></li>
+          <li><span>2</span><div><b>Una parte se invierte ahí</b><p>El ${Math.round(RULES.antidote * 100)} % va a empresas de ese tema; el ${Math.round(RULES.base * 100)} %, a un fondo global diversificado.</p></div></li>
+          <li><span>3</span><div><b>Si ocurre, compensa</b><p>Si la IA avanza o los pisos suben, esas empresas suelen ganar más, y esa parte de tu dinero sube con ellas.</p></div></li>
+        </ol>
+      </div>
+      <div class="anti-r">
+        <p class="anti-q">¿Qué te preocupa a ti?</p>
+        <div class="lp-fears">${FEARS.map((f, i) => `<button class="lf ${i === 0 ? "on" : ""}" data-act="lpFear" data-id="${f.id}"><span>${ic(f.id)}</span>${f.label}</button>`).join("")}</div>
+        <div class="lf-out" data-o="lf"><b>${FUNDS[FEARS[0].fund].name}</b><p>${FEARS[0].why}</p></div>
+        <p class="hz-small">Funciona como una cobertura, no como una garantía: reduce el golpe, pero tu dinero puede bajar. Siempre dentro de una selección cerrada de fondos de CaixaBank AM, y Gemini te lo explica con tus propios números.</p>
+      </div>
     </div></section>
 
     <section class="lp-sec" id="casa"><div class="lp-in lp-split">
