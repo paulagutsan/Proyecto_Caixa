@@ -69,9 +69,42 @@ const FUNDS = {
     inflacion:   { name: "Activos contra la inflación", sub: "Bonos ligados a los precios y materias primas", r: 3.0 },
     salud:       { name: "Salud", sub: "Farmacéuticas, hospitales y biotecnología", r: 5.0 },
     movilidad:   { name: "Energía y movilidad", sub: "Petróleo, gas, coche eléctrico y baterías", r: 4.0 },
+    infraestructuras: { name: "Infraestructuras", sub: "Carreteras, puentes, trenes y redes", r: 5.0 },
+    agua:        { name: "Agua y medio ambiente", sub: "Agua, reciclaje y gestión de residuos", r: 5.0 },
 };
+const FUND_COLOR = { global: "#007eae", tecnologia: "#5b50d6", inmobiliario: "#d9a03a", energia: "#1f9d63", inflacion: "#d4622a", salud: "#d33f73", movilidad: "#11867c", infraestructuras: "#6d7f99", agua: "#1aa3c4" };
+/* Por qué cada fondo es un antídoto: si pasa lo que temes, a estas empresas les suele ir mejor */
+const FUND_WHY = {
+    tecnologia: "Si la tecnología y la IA avanzan más de lo esperado, las empresas que las crean y las usan suelen ganar más, y esta parte de tu dinero con ellas.",
+    inmobiliario: "Si la vivienda sigue subiendo, las empresas dueñas de pisos y edificios tienden a valer más, y tu entrada no se queda tan atrás.",
+    energia: "Cuanto más se invierta en energía limpia y en frenar el cambio climático, más pueden crecer las empresas que lo hacen posible.",
+    inflacion: "Estos activos se mueven con los precios: cuando todo se encarece, protegen lo que vale tu dinero.",
+    salud: "El gasto en salud crece con los años; invertir en el sector es estar del lado de quien encuentra soluciones.",
+    movilidad: "Si moverse en coche se encarece, a las empresas de energía y movilidad les suele ir mejor, y a esta parte de tu dinero también.",
+    infraestructuras: "Cuando hay que arreglar carreteras, puentes o redes, alguien cobra por hacerlo: las empresas que construyen y mantienen infraestructuras.",
+    agua: "Si el agua escasea o hay que limpiar lo que contaminamos, crecen las empresas que depuran, reciclan y gestionan residuos.",
+};
+/* De lo que escribes a un fondo: palabras clave (sin tildes). El orden importa: lo más concreto primero. */
+const FEAR_KEYS = [
+    ["infraestructuras", ["carretera", "puente", "bache", "infraestructura", "tren", "metro", "autobus", "obra", "apagon", "aeropuerto", "ferrocarril", "tunel", "autopista", "transporte publico"]],
+    ["agua", ["agua", "sequia", "oceano", "mar ", "mares", "plastico", "residuo", "basura", "recicl", "rio", "medio ambiente", "contamina", "bosque", "incendio"]],
+    ["inmobiliario", ["casa", "piso", "vivienda", "alquiler", "hipoteca", "independiz", "inmobili", "compartir piso"]],
+    ["tecnologia", ["ia", "inteligencia artificial", "robot", "automat", "trabajo", "empleo", "paro", "maquina", "tecnolog", "ciber", "hacker", "internet", "datos", "chatgpt"]],
+    ["salud", ["salud", "enfermedad", "pandemia", "virus", "hospital", "medic", "cancer", "envejec", "abuel", "mental", "ansiedad"]],
+    ["movilidad", ["coche", "gasolina", "diesel", "combustible", "carnet", "conducir", "electrico", "bateria", "petroleo", "moto"]],
+    ["energia", ["clima", "calentamiento", "sostenib", "renovable", "energia", "co2", "emision", "verde", "planeta", "calor", "luz", "polucion"]],
+    ["inflacion", ["precio", "inflac", "caro", "carisim", "suba", "sueldo", "salario", "compra", "crisis", "dinero no", "pension", "ahorros"]],
+];
+/* Ideas para empezar: se pueden elegir o escribir las propias */
+const FEAR_IDEAS = [
+    "Que la IA haga el trabajo que quiero", "No poder pagarme nunca una casa", "El cambio climático", "Que las carreteras estén cada vez peor",
+    "Que falte agua", "Que todo suba de precio", "Los plásticos en el mar", "La salud de mi familia", "No poder pagar el coche y la gasolina",
+];
+const FUND_ICON = { tecnologia: "ia", inmobiliario: "casa", energia: "clima", inflacion: "precios", salud: "salud", movilidad: "coche", infraestructuras: "road", agua: "drop", global: "precios" };
 
 const ICONS = {
+    road: '<path d="M8 3 5 21M16 3l3 18M12 4v3M12 10.5v3M12 17v3"/>',
+    drop: '<path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
     ia: '<path d="M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2"/><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9.5 15l1.6-6h1.8l1.6 6M10.1 13h3.8"/>',
     casa: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>',
     clima: '<path d="M12 3v2M5.6 5.6l1.4 1.4M3 12h2M17 7l1.4-1.4M19 12h2"/><circle cx="12" cy="12" r="3.5"/><path d="M7 19c1.2-1 2.4-1 3.6 0s2.4 1 3.6 0 2.4-1 3.6 0"/>',
