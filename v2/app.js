@@ -71,7 +71,7 @@ const themeBtn = (cls = "") => `<button class="icon-btn theme-btn ${cls}" data-a
 /* ------------------------------------------------------------------ estado */
 const blank = () => ({ v: 2, role: null, teen: null, family: null, familyAuth: false, paga: 0, weekly: 0, roundup: false,
     lessons: {}, exam: null, diploma: null, itv: [], money: [], schedules: [], fears: [], antidoteApproved: false,
-    geminiOk: false, voted: false, chat: [], goal: { ...GOAL_DEFAULT }, games: {}, metas: [] });
+    geminiOk: false, friendsOk: false, friends: null, voted: false, chat: [], goal: { ...GOAL_DEFAULT }, games: {}, metas: [] });
 let S;
 try { S = { ...blank(), ...(JSON.parse(localStorage.getItem(KEY)) || {}) }; } catch (e) { S = blank(); }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } };
@@ -642,6 +642,7 @@ function vAprende() {
       ${card(`${cardH("Juegos con datos reales", `25 años de mercados, en partidas de un minuto. Una al día suma ${MILES.game} millas.`, played ? badge(`${ic("check")}Hoy: ${played.score}/${GAMES.find(g => g.id === played.id)?.rounds}`, "ok") : "")}
         <div class="games">${GAMES.map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div>
         <p class="note">Datos anuales aproximados entre ${MKT_FROM} y ${MKT_FROM + MKT[0].r.length - 1}. Rentabilidades pasadas no garantizan las futuras.</p>`, "c-5")}
+      ${friendsCard()}
       ${dip}
     </div>`;
 }
@@ -672,7 +673,7 @@ function vJuego(id) {
         return focus("#/aprende", 0, 0, `<div class="center"><div class="result ok">${ic("star")}</div>
           <h1>${e.score} de ${e.qs.length}</h1>
           <p>${e.score >= 4 ? "Tienes buen olfato. Pero recuerda: nadie acierta siempre, por eso se diversifica." : e.score >= 2 ? "Ni tan mal. Acertar el mercado año a año es casi imposible, por eso cuenta el plazo." : "Si cuesta acertar con el resultado delante, imagina sin él. Por eso se invierte a largo plazo."}${e.miles ? ` <b>+${e.miles} millas de casa.</b>` : ""}</p>
-          <div class="focus-nav center">${btn("Otra partida", "gameAgain", "primary lg", `data-id="${id}"`)}${lnk("Volver", "#/aprende", "lg")}</div></div>`);
+          ${friendsToday(id)}<div class="focus-nav center">${btn("Otra partida", "gameAgain", "primary lg", `data-id="${id}"`)}${lnk("Volver", "#/aprende", "lg")}</div></div>`);
     }
     const q = e.qs[e.i];
     return focus("#/aprende", e.i + 1, e.qs.length, `<span class="kicker">${q.kick} · ${e.score} aciertos</span><h1 class="${id === "titular" ? "serif-q" : ""}">${esc(q.q)}</h1>${q.sub ? `<p class="lead-q">${q.sub}</p>` : ""}${opts(q, e.ans, "gameAns")}
@@ -1049,7 +1050,8 @@ function vFamiliaJoven() {
         <div class="actions">${btn(`${ic("send")}Invitar a un familiar`, "invite", "primary", `data-text="${esc(invite)}"`)}</div>`, "c-6")}
       ${card(`${cardH("Permisos", isAdult() ? "Ya eres mayor de edad: decides tú." : "Hasta los 18, los decide tu madre, padre o tutor.")}
         <div class="rows"><div class="row"><div><b>Antídoto</b><span>${al.fears.length ? (al.active ? "Aprobado" : "Pendiente de aprobación") : "Aún no lo has elegido"}</span></div>${badge(al.active ? "Aprobado" : al.fears.length ? "Pendiente" : "Sin elegir", al.active ? "ok" : al.fears.length ? "warn" : "")}</div>
-          <div class="row"><div><b>Gemini</b><span>Usar la información de tu cuenta para explicarte tu dinero</span></div>${isAdult() ? toggle("gemOk", S.geminiOk, "Permitir Gemini") : badge(ok ? "Permitido" : "Sin permiso", ok ? "ok" : "")}</div></div>`, "c-6")}
+          <div class="row"><div><b>Gemini</b><span>Usar la información de tu cuenta para explicarte tu dinero</span></div>${isAdult() ? toggle("gemOk", S.geminiOk, "Permitir Gemini") : badge(ok ? "Permitido" : "Sin permiso", ok ? "ok" : "")}</div>
+          <div class="row"><div><b>Amigos en los juegos</b><span>Comparar tus resultados de los juegos con tus amigos</span></div>${isAdult() ? badge("Permitido", "ok") : badge(S.friendsOk ? "Permitido" : "Sin permiso", S.friendsOk ? "ok" : "")}</div></div>`, "c-6")}
       ${card(`${cardH("Regalos recibidos")}${gifts.length ? `<div class="rows">${gifts.map(moveRow).join("")}</div>` : empty("gift", "Todavía no has recibido regalos", "Cuando tu familia te regale dinero, lo verás aquí con su mensaje.")}`, "c-12")}
     </div>`;
 }
@@ -1099,6 +1101,8 @@ function vFPermisos() {
         ${al.fears.length ? `${stack(al.planned)}<div class="rows">${al.planned.map(p => `<div class="row">${sw(p.fund)}<div><b>${FUNDS[p.fund].name} · ${wpct(p.w)}</b><span>${p.fear ? esc(p.fear.label) : "Cartera base diversificada"}</span></div></div>`).join("")}</div>` : ""}`, "c-6")}
       ${card(`${cardH("Gemini", "Permitir que Gemini use la información de su cuenta (aportaciones y objetivos) para explicarle su dinero. Nunca se usa para publicidad.", adult ? "" : toggle("gemOk", S.geminiOk, "Permitir Gemini"))}
         <p class="note">Puedes retirar el permiso en cualquier momento.</p>`, "c-6")}
+      ${card(`${cardH("Amigos en los juegos", `Permitir que ${n} conecte con sus amigos para comparar los resultados de los juegos. Solo se comparten su nombre con la inicial del apellido y sus aciertos; nada de su dinero.`, adult ? "" : toggle("frOk", S.friendsOk, "Permitir amigos en los juegos"))}
+        <p class="note">Las conexiones se aceptan una a una y se pueden quitar cuando quiera.</p>`, "c-6")}
       ${card(`${cardH("Autorización de la cuenta")}<div class="rows"><div class="row"><div><b>${S.familyAuth ? "Cuenta autorizada" : "Pendiente"}</b><span>${S.family ? `${esc(S.family.name)} · ${esc(S.family.relation)}` : ""}</span></div>${badge(S.familyAuth ? "Autorizada" : "Pendiente", S.familyAuth ? "ok" : "warn")}</div></div>`, "c-12")}
     </div>`;
 }
@@ -1151,6 +1155,7 @@ function render() {
     if (r !== "alta") alta = null;
     if (r !== "juego") gameState = null;
     let html, view = "app";
+    if (r === "amigos") { if (params.get("c")) setPendingInvite(params.get("c").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6)); location.hash = S.role === "teen" ? "#/aprende" : "#/"; return; }
     if (r === "verificar") { html = vVerificar(params); view = "public"; }
     else if (!S.role) { html = r === "alta" ? vAlta(parts[1] === "familia" ? "familia" : "joven") : vLanding(); view = "public"; }
     else if (r === "tema" && S.role === "teen") { html = vTema(parts[1], parts[2]); view = "focus"; if (!html) { location.hash = "#/aprende"; return; } }
@@ -1198,6 +1203,7 @@ document.addEventListener("click", async e => {
             g.over = true; const t = iso(new Date());
             if (!S.games[t]) { const before = miles().total; S.games[t] = { id: g.id, score: g.score }; save(); g.miles = miles().total - before; }
             else if (g.score > S.games[t].score) { S.games[t] = { id: g.id, score: g.score }; save(); }
+            friendsAfterGame(g.id, g.score);
         } else { g.i++; g.ans = null; }
         render(); scrollTo(0, 0);
     }
@@ -1231,6 +1237,7 @@ document.addEventListener("click", async e => {
     else if (act === "copyVerify") { const u = verifyUrl(diplomaData()); try { await navigator.clipboard.writeText(u); toast("Enlace de verificación copiado"); } catch (err) { prompt("Copia el enlace:", u); } }
     else if (act === "itv") { const t = iso(new Date()); if (S.itv.includes(t)) return toast("Ya has hecho la revisión hoy"); S.itv.push(t); save(); toast(`Revisión anual completada · +${MILES.itv} millas de casa`); location.hash = "#/antidoto"; }
     else if (act === "openContribute") contributeSheet();
+    else if (/^fr[A-Z]/.test(act)) friendsAct(act, b);
     else if (act === "vRange") {
         vRange = b.dataset.k; $$(".vc-ranges button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", x === b); });
         const box = $("[data-vchart]:not(.mini)"); if (box) { box.dataset.range = vRange; drawValueChart(box); }
@@ -1257,13 +1264,14 @@ document.addEventListener("click", async e => {
     else if (act === "invite") { const t = b.dataset.text; if (navigator.share) { try { await navigator.share({ title: "Horizonte", text: t }); } catch (err) { /* cancelado */ } } else { try { await navigator.clipboard.writeText(t); toast("Invitación copiada. Compártela por WhatsApp o por correo."); } catch (err) { prompt("Copia la invitación:", t); } } }
     else if (act === "cancelSched") { S.schedules.splice(+b.dataset.i, 1); save(); toast("Aportación mensual cancelada"); rerender(); }
     else if (act === "switchRole") { S.role = S.role === "family" ? "teen" : "family"; save(); location.hash = S.role === "family" ? "#/f/resumen" : "#/inicio"; }
-    else if (act === "reset") { if (confirm("Se borrarán todos los datos de este dispositivo. ¿Continuar?")) { S = blank(); save(); ranking = null; location.hash = "#/"; render(); } }
+    else if (act === "reset") { if (confirm("Se borrarán todos los datos de este dispositivo. ¿Continuar?")) { S = blank(); save(); ranking = null; sb2Save(null); setPendingInvite(""); soc = { red: [], partidas: [], loaded: false, loading: false, err: "" }; location.hash = "#/"; render(); } }
 });
 document.addEventListener("change", e => {
     const t = e.target, act = t.dataset.act;
     if (act === "weekly") { S.weekly = +t.value; save(); toast(S.weekly ? `Apartarás ${eur(S.weekly)} cada semana` : "Ahorro semanal desactivado"); }
     else if (act === "roundup") { S.roundup = t.checked; save(); toast(S.roundup ? "Redondeo activado" : "Redondeo desactivado"); }
     else if (act === "approve") { S.antidoteApproved = t.checked; save(); toast(t.checked ? "Antídoto aprobado" : "Aprobación retirada"); }
+    else if (act === "frOk") { S.friendsOk = t.checked; save(); toast(t.checked ? "Permiso concedido para jugar con amigos" : "Permiso retirado"); }
     else if (act === "gemOk") { S.geminiOk = t.checked; save(); toast(t.checked ? "Permiso concedido a Gemini" : "Permiso retirado"); }
     else return;
     rerender();
@@ -1279,6 +1287,7 @@ document.addEventListener("submit", e => {
         if (k === "alta0" && age >= RULES.adultAge) { finishTeen(); return; }
         alta.step = k === "altaF1" ? 2 : 1; render();
     } else if (k === "alta1") { Object.assign(alta.data, d); finishTeen(); }
+    else if (k === "frCode") connectCode(d.c);
     else if (k === "altaF0") { Object.assign(alta.data, d); alta.step = 1; render(); }
     else if (k === "altaF2") {
         const a = alta.data;
