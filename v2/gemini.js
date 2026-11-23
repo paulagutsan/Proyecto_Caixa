@@ -26,7 +26,7 @@ const G_TOPICS = [
     { id: "drop", q: "¿Qué pasa si el mercado cae?", label: "Si el mercado cae" },
     { id: "antidote", q: "¿Cómo funciona mi Antídoto?", label: "Mi Antídoto" },
     { id: "miles", q: "¿Cuántas millas de casa tengo?", label: "Mis millas de casa" },
-    { id: "cost", q: "¿Cuánto cuesta?", label: "Cuánto cuesta" },
+    { id: "save", q: "¿Cuánto debería apartar cada semana?", label: "Cuánto apartar" },
     { id: "human", q: "Quiero hablar con una persona", label: "Hablar con una persona" },
 ];
 
@@ -68,9 +68,9 @@ function localGemini(question, c) {
     switch (intent) {
         case "hello": {
             return R(`${gHello()}${c.name ? `, ${c.name}` : ""}`,
-                `Soy el asistente de Horizonte y te explico tu cuenta con tus propios datos. Siguiente paso recomendado: ${next.label.charAt(0).toLowerCase() + next.label.slice(1)}. ${next.why}`,
-                [["Valor estimado", c.value > 0 ? G_EUR(c.value) : "Aún sin inversión"], ["Millas de casa", G_NUM(c.miles)], ["Primer año acompañado", c.protectBase > 0 ? `${G_EUR(c.protectBase)} protegidos` : "Sin iniciar"]],
-                [{ label: next.label, href: next.href, primary: true }, topic("house")], ["tu resumen"]);
+                `Pregúntame lo que quieras sobre tu dinero, tu Antídoto o tu casa. Te respondo con los datos de tu cuenta. ${next.why}`,
+                [["Tu dinero", c.value > 0 ? G_EUR(c.value) : "0 €"], ["Millas de casa", G_NUM(c.miles)]],
+                [{ label: next.label, href: next.href, primary: true }], ["tu cuenta"]);
         }
         case "thanks":
             return R("A tu disposición", "Si necesitas algo más sobre tu cuenta, tu Antídoto o tus millas de casa, aquí estoy.", [], [topic("house"), topic("miles")]);
@@ -119,14 +119,10 @@ function localGemini(question, c) {
                 [{ label: "Ver mis millas", href: "#/casa", primary: true }, topic("house")], ["tus millas", "tu ritmo de aportación"]);
         }
         case "save": {
-            if (!c.paga) {
-                return R("Cuánto apartar", "Si indicas tu paga en Ajustes, te propongo una aportación semanal que apenas se note. Aportar poco cada semana pesa más que aportar mucho una sola vez.",
-                    [], [{ label: "Indicar mi paga", href: "#/ajustes", primary: true }], ["tus aportaciones"]);
-            }
-            const sug = Math.max(1, Math.round(c.paga * 0.15)), v = gFuture(sug * 52 / 12, years);
-            return R("Cuánto apartar", `Con una paga de ${G_EUR(c.paga)} a la semana, apartar el 15 % es un punto de partida razonable. Mantenido hasta los ${c.goalAge}, podría convertirse en unos ${G_EUR(v)} con una rentabilidad estimada del 5 % anual. Cada mes que aportas suma ${MILES.monthOwn} millas de casa.`,
-                [["Propuesta semanal", G_EUR(sug)], ["Ahora apartas", c.weekly ? `${G_EUR(c.weekly)} a la semana` : "Nada todavía"], [`Proyección a los ${c.goalAge}`, G_EUR(v)]],
-                [{ label: "Automatizar mi ahorro", href: "#/dinero", primary: true }], ["tu paga", "tus aportaciones"]);
+            const sug = c.weekly || 5, v = gFuture(sug * 52 / 12, years);
+            return R("Cuánto apartar", `${c.weekly ? `Ahora apartas ${G_EUR(c.weekly)} a la semana.` : "Un buen punto de partida es una cantidad pequeña que no notes, por ejemplo 5 € a la semana."} Mantenido hasta los ${c.goalAge}, ${G_EUR(sug)} semanales podrían convertirse en unos ${G_EUR(v)} con una rentabilidad estimada del 5 % anual. Aportar poco cada semana pesa más que aportar mucho una sola vez.`,
+                [["Cada semana", G_EUR(sug)], ["Al mes", G_EUR(sug * 52 / 12)], [`A los ${c.goalAge}`, G_EUR(v)]],
+                [{ label: c.weekly ? "Ver mi ahorro" : "Automatizar mi ahorro", href: "#/dinero", primary: true }], ["tus aportaciones"]);
         }
         case "cert": {
             return c.diploma

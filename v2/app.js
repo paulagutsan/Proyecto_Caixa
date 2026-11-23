@@ -51,8 +51,22 @@ const P = {
     target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
     play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l5.5-3.5z"/>',
     news: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M7 8.5h10M7 12h10M7 15.5h6"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/>',
+    moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>',
 };
 const ic = (name, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[name] || ICONS[name] || ""}</svg>`;
+
+/* ------------------------------------------------------------------ modo día y noche */
+const isDark = () => document.documentElement.dataset.theme === "dark";
+function setTheme(t) {
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem("hz2_theme", t); } catch (e) { /* sin almacenamiento */ }
+    $('meta[name="theme-color"]')?.setAttribute("content", t === "dark" ? "#0b1218" : "#ffffff");
+    rerender();
+}
+const themeIcon = () => ic(isDark() ? "sun" : "moon");
+const themeLabel = () => isDark() ? "Cambiar a modo día" : "Cambiar a modo noche";
+const themeBtn = (cls = "") => `<button class="icon-btn theme-btn ${cls}" data-act="theme" aria-label="${themeLabel()}" title="${themeLabel()}">${themeIcon()}</button>`;
 
 /* ------------------------------------------------------------------ estado */
 const blank = () => ({ v: 2, role: null, teen: null, family: null, familyAuth: false, paga: 0, weekly: 0, roundup: false,
@@ -236,7 +250,7 @@ function vLanding() {
     return `<div class="lp">
     <header class="lp-nav"><div class="lp-in">${brand("#/")}
       <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#por-que">Por qué Horizonte</a><a href="#aprende">Aprende</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#familias">Familias</a><a href="#preguntas">Preguntas</a></nav>
-      ${lnk("Crear cuenta", "#/alta/joven", "primary sm")}</div></header>
+      <div class="lp-right">${themeBtn()}${lnk("Crear cuenta", "#/alta/joven", "primary sm")}</div></div></header>
 
     <section class="hz-hero"><div class="lp-in hz-hero-in">
       <div class="hz-copy">
@@ -342,15 +356,15 @@ function heroPlot(m, N, rate = 5) {
     return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="En ${N} años, lo que pones tú y lo que gana tu dinero">
       <defs><linearGradient id="hgi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b500"/><stop offset="1" stop-color="#ee7b1f" stop-opacity=".85"/></linearGradient>
         <linearGradient id="hgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007eae" stop-opacity=".28"/><stop offset="1" stop-color="#007eae" stop-opacity=".06"/></linearGradient></defs>
-      <line x1="${ml}" x2="${xe}" y1="${y0}" y2="${y0}" stroke="#d5dee6" stroke-width="1.2"/>
+      <line x1="${ml}" x2="${xe}" y1="${y0}" y2="${y0}" style="stroke:var(--line-2)" stroke-width="1.2"/>
       <polygon points="${L(con)} ${xe.toFixed(1)},${y0.toFixed(1)} ${xs.toFixed(1)},${y0.toFixed(1)}" fill="url(#hgc)"/>
       <polygon points="${L(tot)} ${L([...con].reverse())}" fill="url(#hgi)"/>
       <polyline points="${L(tot)}" fill="none" stroke="#007eae" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
-      <circle cx="${xs}" cy="${y0}" r="4.5" fill="#fff" stroke="#007eae" stroke-width="2"/>
-      <circle cx="${xe}" cy="${ye.toFixed(1)}" r="6" fill="#007eae" stroke="#fff" stroke-width="2.5"/>
+      <circle cx="${xs}" cy="${y0}" r="4.5" style="fill:var(--surface)" stroke="#007eae" stroke-width="2"/>
+      <circle cx="${xe}" cy="${ye.toFixed(1)}" r="6" fill="#007eae" style="stroke:var(--surface)" stroke-width="2.5"/>
       <g transform="translate(${xe + 8} ${(ye - 17).toFixed(1)})"><rect width="34" height="34" rx="10" fill="#fff4dc" stroke="#f2d08a"/><path transform="translate(7 7)" d="M1 9.5 L10 2 L19 9.5 M4 8 V18 H16 V8 M8.5 18 V13 H11.5 V18" fill="none" stroke="#b36b00" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></g>
-      <text x="${xs}" y="${H - 6}" font-size="13" fill="#6b7580">Hoy</text>
-      <text x="${xe}" y="${H - 6}" text-anchor="end" font-size="13" fill="#6b7580">Dentro de ${N} años</text></svg>`;
+      <text x="${xs}" y="${H - 6}" font-size="13" style="fill:var(--ink-3)">Hoy</text>
+      <text x="${xe}" y="${H - 6}" text-anchor="end" font-size="13" style="fill:var(--ink-3)">Dentro de ${N} años</text></svg>`;
 }
 function bindLanding() {
     const hero = $("[data-hero]");
@@ -387,8 +401,8 @@ function vAlta(role) {
     const a = alta, d = a.data, adult = d.birth && ageOf(d.birth) >= RULES.adultAge;
     let steps, idx, body;
     if (role === "joven") {
-        steps = adult ? ["Tus datos", "Tu paga"] : ["Tus datos", "Autorización", "Tu paga"];
-        idx = adult && a.step === 2 ? 1 : a.step;
+        steps = adult ? ["Tus datos"] : ["Tus datos", "Autorización"];
+        idx = a.step;
         if (a.step === 0) body = `<h1>Crea tu cuenta</h1><p class="sub">Empecemos por lo básico.</p>
           <form data-form="alta0" class="form">
             <label class="field"><span>Nombre</span><input name="name" required maxlength="30" autocomplete="given-name" value="${esc(d.name || "")}"></label>
@@ -400,11 +414,7 @@ function vAlta(role) {
             <label class="field"><span>Nombre de la persona que autoriza</span><input name="fname" required maxlength="40" value="${esc(d.fname || "")}"></label>
             <label class="field"><span>Relación</span><select name="relation">${["Madre", "Padre", "Tutor o tutora legal"].map(r => `<option ${d.relation === r ? "selected" : ""}>${r}</option>`).join("")}</select></label>
             <label class="check"><input type="checkbox" name="ok" required><span>Soy su madre, padre o tutor legal, autorizo la apertura de la cuenta y entiendo que invertir conlleva riesgos.</span></label>
-            <button class="btn primary lg block">Autorizar y continuar</button></form>`;
-        else body = `<h1>¿Recibes paga?</h1><p class="sub">Es opcional. Nos ayuda a proponerte cuánto apartar cada semana sin que lo notes.</p>
-          <form data-form="alta2" class="form">
-            <label class="field"><span>Paga semanal (€)</span><input name="paga" type="number" min="0" max="500" step="1" inputmode="numeric" value="${esc(d.paga ?? "")}"></label>
-            <button class="btn primary lg block">Entrar en Horizonte</button>${btn("Ahora no", "altaSkip", "ghost block")}</form>`;
+            <button class="btn primary lg block">Autorizar y entrar en Horizonte</button></form>`;
     } else {
         steps = ["Tus datos", "Su cuenta", "Autorización"];
         idx = a.step;
@@ -476,8 +486,66 @@ function weekCard(cls = "c-12") {
       <p class="note">Movimientos simulados en esta versión de demostración.</p>`, cls);
 }
 
+/* ------------------------------------------------------------------ inicio */
+/* Una frase corta que cambia según el momento en el que está la persona */
+function greeting() {
+    const m = money(), done = Object.keys(S.lessons).length, st = streak(), h = new Date().getHours();
+    const hi = h < 6 ? "Buenas noches" : h < 14 ? "Buenos días" : h < 21 ? "Buenas tardes" : "Buenas noches";
+    const sub = !done ? "Te damos la bienvenida. Empieza aprendiendo para conseguir tu certificado."
+        : !S.exam?.passed && done < LESSONS.length ? `Llevas ${done} de ${LESSONS.length} temas. Tu certificado está cerca.`
+        : !S.exam?.passed ? "Solo te queda la prueba final."
+        : !m.firstOwn ? "Ya tienes tu certificado. Ahora, tu primer euro."
+        : !S.fears.length ? "Siguiente paso: elige tu Antídoto."
+        : !(S.weekly > 0 || S.roundup) ? "Automatiza tu ahorro y olvídate."
+        : !st.thisWeek ? "Haz algo esta semana para no perder tu racha."
+        : st.current >= 2 ? `${st.current} semanas seguidas. Así se llega a casa.`
+        : "Todo en marcha. Sigue así.";
+    return { hi, sub };
+}
+function credChip() {
+    const st = stageOf();
+    return `<button class="cred-chip st${st}" data-act="openCred" aria-label="Tu Certificado Horizonte: ${STAGES[st]}${S.exam?.passed ? ", obtenido" : ", en curso"}">
+      <span class="cc-top"><img src="brand/horizonte-icono.svg" alt="" width="18" height="15"><small>${S.exam?.passed ? "Obtenido" : "En curso"}</small></span>
+      <b>Certificado</b><span class="cc-st">${STAGES[st]}</span>
+      <span class="cc-bars">${STAGES.map((x, i) => `<i class="${i < st ? "done" : i === st ? "on" : ""}"></i>`).join("")}</span></button>`;
+}
+/* Ficha del certificado, al estilo de los certificados de cursos en línea: el diploma y, al lado, quién, cuándo, qué y cómo verificarlo */
+function credSheet() {
+    const st = stageOf(), passed = S.exam?.passed && S.diploma, done = Object.keys(S.lessons).length, age = ageOf(), m = money();
+    const name = `${S.teen?.name || ""} ${S.teen?.surname || ""}`.trim();
+    const d = passed ? diplomaData() : { n: name, i: "HZ-····-····", f: iso(new Date()), s: "—", v: iso(addMonths(new Date(), 12)) };
+    const stageSub = [
+        passed ? `Superado el ${fmtD(S.exam.date)}` : `${done} de ${LESSONS.length} temas`,
+        passed ? (m.protect?.active ? `En curso · ${m.protect.daysLeft} días` : m.protect ? "Completado" : "Empieza con tu primera aportación") : "Al superar Fundamentos",
+        age >= RULES.adultAge ? "La cuenta es solo tuya" : `A los ${RULES.adultAge} años`,
+    ];
+    const el = $("#sheet");
+    el.innerHTML = `<div class="sheet-bg" data-act="closeSheet"></div><div class="sheet-card cert-sheet" role="dialog" aria-modal="true" aria-labelledby="sheetT">
+      <button class="icon-btn cs-close" data-act="closeSheet" aria-label="Cerrar">${ic("close")}</button>
+      <div class="cs-grid">
+        <div class="cs-dip ${passed ? "" : "pending"}">${diplomaSVG(d)}${passed ? "" : `<span class="cs-stamp">En curso</span>`}</div>
+        <div class="cs-info">
+          ${badge(passed ? `${ic("check")}Certificado obtenido` : "En curso", passed ? "ok" : "")}
+          <h2 id="sheetT">Certificado Horizonte</h2><p class="cs-sub">Fundamentos de inversión · CaixaBank Asset Management</p>
+          <dl class="cs-facts">
+            <div><dt>${passed ? "Completado por" : "A nombre de"}</dt><dd>${esc(name)}</dd></div>
+            ${passed ? `<div><dt>Fecha</dt><dd>${fmtD(d.f)}</dd></div><div><dt>Resultado</dt><dd>${esc(d.s)}</dd></div><div><dt>Código</dt><dd>${esc(d.i)}</dd></div><div><dt>Próxima revisión</dt><dd>${fmtD(d.v)}</dd></div>`
+              : `<div><dt>Progreso</dt><dd>${done} de ${LESSONS.length} temas</dd></div><div><dt>Duración</dt><dd>Unos ${LESSONS.reduce((a, l) => a + l.min, 0)} minutos</dd></div>`}
+          </dl>
+          ${passed ? "" : bar(done, LESSONS.length + 1, "blue")}
+          <h3 class="cs-h">Etapas</h3>
+          <ol class="cs-stages">${STAGES.map((t, i) => `<li class="${i < st ? "done" : i === st ? "on" : ""}"><span>${i < st ? ic("check") : i + 1}</span><div><b>${t}</b><small>${stageSub[i]}</small></div></li>`).join("")}</ol>
+          <h3 class="cs-h">Lo que ${passed ? "has aprendido" : "aprenderás"}</h3>
+          <div class="cs-skills">${LESSONS.map(l => `<span class="${S.lessons[l.id] ? "ok" : ""}">${S.lessons[l.id] ? ic("check") : ""}${l.title}</span>`).join("")}</div>
+          <div class="cs-acts">${passed
+            ? `${btn(`${ic("download")}Descargar`, "dlDiploma", "primary sm")}${age >= RULES.linkedinAge ? `<a class="btn sm" href="${esc(linkedinUrl(d))}" target="_blank" rel="noopener">LinkedIn</a>` : ""}${btn(`${ic("link")}Copiar enlace`, "copyVerify", "sm")}`
+            : lnk(done >= LESSONS.length ? "Hacer la prueba final" : done ? "Continuar Fundamentos" : "Empezar Fundamentos", done >= LESSONS.length ? "#/prueba" : "#/aprende", "primary")}</div>
+        </div>
+      </div></div>`;
+    el.classList.add("open");
+}
 function vInicio() {
-    const m = money(), mi = miles(), age = ageOf(), st = streak(), stage = stageOf();
+    const m = money(), mi = miles(), st = streak(), g = greeting();
     const steps = [
         ["aprende", "Aprende", S.exam?.passed, S.exam?.passed ? "Certificado" : `${Object.keys(S.lessons).length} de ${LESSONS.length} temas`, "#/aprende"],
         ["invierte", "Invierte", !!m.firstOwn, m.firstOwn ? eur(m.value, true) : "Tu primer euro", "#/dinero"],
@@ -493,25 +561,18 @@ function vInicio() {
         [S.weekly > 0 || S.roundup, "Automatiza tu ahorro", "Una cantidad semanal o el redondeo de tus compras.", "#/dinero"],
         [!!S.family || m.gifts > 0, "Invita a tu familia", "Pueden regalarte dinero para tu casa.", "#/familia"],
     ];
-    const done = tasks.filter(t => t[0]).length;
-    const headline = !S.exam?.passed ? "Empieza por Fundamentos y gana tu primera inversión."
-        : !m.firstOwn ? "Fundamentos superados. Ahora, tu primer euro propio."
-        : age >= RULES.adultAge ? "Eres inversor certificado. La cuenta es tuya."
-        : m.protect?.active ? `Primer año acompañado: tu protección termina en ${m.protect.daysLeft} días.`
-        : "Sigue sumando millas: cada semana cuenta.";
-    const recent = [...S.money].reverse().slice(0, 5);
-    return `${pageH(`Hola, ${esc(teenName())}`, headline)}
+    const done = tasks.filter(t => t[0]).length, recent = [...S.money].reverse().slice(0, 4), has = S.money.length > 0;
+    return `<header class="page-h home-h"><div><h1>${g.hi}, ${esc(teenName())}</h1><p>${g.sub}</p></div>${credChip()}</header>
     <div class="grid">
       ${card(`<ol class="loop">${steps.map(([id, t, ok, sub, h], i) => `<li class="${ok ? "done" : i === cur ? "on" : ""} ${id}"><a href="${h}"><span class="lp-dot">${ok ? ic("check") : i + 1}</span><b>${t}</b><small>${sub}</small></a></li>`).join("")}</ol>`, "c-12 loop-card")}
-      ${card(`<div class="hero-cred">${credVisual()}<div class="hc-copy">
-          <span class="kicker">Certificado Horizonte</span><h2>${STAGES[stage]}</h2>
-          <p>${S.exam?.passed ? `Superado el ${fmtD(S.exam.date)}. ${age >= RULES.adultAge ? "Tienes el control total de tu cuenta." : `Inversor certificado a los ${RULES.adultAge}.`}` : `${Object.keys(S.lessons).length} de ${LESSONS.length} temas completados.`}</p>
-          ${lnk(S.exam?.passed ? "Ver mi certificado" : Object.keys(S.lessons).length ? "Continuar" : "Empezar Fundamentos", "#/aprende", "primary")}</div></div>`, "c-7")}
-      ${weekCard("c-5")}
-      ${card(`${stat("Valor estimado", eur(m.value, true), m.invested ? `${eur(m.invested, true)} aportados` : "Aún no has invertido")}${btn(`${ic("plus")}Aportar`, "openContribute", "block")}`, "c-3 stat-card")}
-      ${card(`${stat("Protegido el primer año", eur(m.protect?.base || 0), `de ${RULES.protectCap} € · ${m.protect?.active ? `${m.protect.daysLeft} días restantes` : m.protect ? "periodo terminado" : "empieza con tu primera aportación"}`)}${bar(m.protect?.base || 0, RULES.protectCap, "blue")}`, "c-3")}
-      ${card(`${stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos menos de diferencial`)}${bar(mi.cut, MILES.maxCut, "gold")}`, "c-3")}
-      ${card(`${stat("Racha", `${st.current} ${st.current === 1 ? "semana" : "semanas"}`, st.thisWeek ? "Esta semana ya cuenta" : "Haz algo esta semana para no perderla")}<div class="streak">${Array.from({ length: 4 }, (_, i) => `<i class="${i < st.current % 4 || (st.current && st.current % 4 === 0) ? "on" : ""}"></i>`).join("")}<small>+${MILES.streak4} millas cada 4</small></div>`, "c-3")}
+      ${card(`<div class="vhead sm" data-vhead><div class="vh-main"><span class="vh-k">Tu dinero</span><b class="vh-v" data-o="val">${eur(m.value, true)}</b>
+          ${has ? `<p class="vh-chg"><span data-o="chg"></span> <small data-o="when"></small></p>` : `<p class="vh-chg"><small>Aún no has invertido</small></p>`}</div></div>
+        ${has ? `<a href="#/dinero" class="vchart mini" data-vchart data-range="1M" aria-label="Ver tu dinero"></a>` : `<div class="mini-empty"></div>`}
+        <div class="actions">${btn(`${ic("plus")}Aportar`, "openContribute", "primary")}${lnk("Ver detalle", "#/dinero", "ghost")}</div>`, "c-5 home-money")}
+      ${weekCard("c-7")}
+      ${card(`${stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos menos de diferencial`)}${bar(mi.cut, MILES.maxCut, "gold")}`, "c-4")}
+      ${card(`${stat("Racha", `${st.current} ${st.current === 1 ? "semana" : "semanas"}`, st.thisWeek ? "Esta semana ya cuenta" : "Haz algo esta semana para no perderla")}<div class="streak">${Array.from({ length: 4 }, (_, i) => `<i class="${i < st.current % 4 || (st.current && st.current % 4 === 0) ? "on" : ""}"></i>`).join("")}<small>+${MILES.streak4} millas cada 4</small></div>`, "c-4")}
+      ${card(`${stat("Protegido el primer año", eur(m.protect?.base || 0), `de ${RULES.protectCap} € · ${m.protect?.active ? `${m.protect.daysLeft} días restantes` : m.protect ? "periodo terminado" : "empieza con tu primera aportación"}`)}${bar(m.protect?.base || 0, RULES.protectCap, "blue")}`, "c-4")}
       ${done < tasks.length ? card(`${cardH("Primeros pasos", `${done} de ${tasks.length} completados`)}${bar(done, tasks.length, "blue")}
         <div class="rows">${tasks.map(([ok, t, d, h]) => `<a class="row ${ok ? "ok" : ""}" href="${h}"><span class="tick">${ok ? ic("check") : ""}</span><div><b>${t}</b><span>${d}</span></div>${ic("chev", "chev")}</a>`).join("")}</div>`, "c-6") : ""}
       ${card(`${cardH("Actividad reciente", "", recent.length ? lnk("Ver todo", "#/dinero", "ghost sm") : "")}
@@ -697,44 +758,144 @@ function vVerificar(params) {
 }
 
 /* ---------------- Dinero */
+/* Evolución del dinero. La tendencia es la misma que usa money() (cada aportación crece a la rentabilidad
+   estimada de tu reparto) y encima va un movimiento de mercado simulado y reproducible para cada cuenta,
+   que siempre termina en tu saldo de hoy. En producción vendría del valor liquidativo de CaixaBank AM. */
+const DAY = 864e5, YEAR = 365.25 * DAY;
+const RANGES = [["1D", "hoy", DAY], ["1S", "esta semana", 7 * DAY], ["1M", "este mes", 30 * DAY], ["1A", "este año", 365 * DAY], ["Máx", "desde el principio", Infinity]];
+let vRange = "1M", allMoves = false;
+function prng(seed) { let h = seed | 0; return () => { h = (h + 0x6D2B79F5) | 0; let t = Math.imul(h ^ (h >>> 15), 1 | h); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const hashStr = str => { let h = 2166136261; for (const ch of str) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
+const gauss = r => Math.sqrt(-2 * Math.log(r() || 1e-9)) * Math.cos(2 * Math.PI * r());
+const depT = c => new Date(c.date + "T00:00:00").getTime();
+/* Puente browniano de n pasos, anclado a 0 en los dos extremos */
+function bridge(n, seed) {
+    const r = prng(seed), w = [0];
+    for (let i = 1; i <= n; i++) w.push(w[i - 1] + gauss(r));
+    return w.map((x, i) => x - i / n * w[n]);
+}
+function valueSeries() {
+    const m = money(), now = Date.now(), deps = S.money.map(c => ({ t: Math.min(depT(c), now), g: T(c.date).getTime(), a: c.amount })).sort((x, y) => x.t - y.t);
+    if (!deps.length) return null;
+    const vol = m.al.parts.reduce((a, p) => a + p.w * (VOL[p.fund] || 15), 0) / 100;
+    const sd = vol / Math.sqrt(252) * 0.7, sh = sd * 0.35;                     // movimiento diario y, dentro del día, más suave
+    const start = deps[0].t, days = Math.max(1, Math.ceil((now - start) / DAY));
+    const seed = hashStr(`${S.teen?.name}|${S.teen?.birth}|${deps[0].t}`);
+    const daily = bridge(days, seed), intra = {};
+    const hourly = k => intra[k] || (intra[k] = bridge(48, seed ^ (k * 2654435761)));
+    const noise = t => {                                                // los días se cuentan hacia atrás desde ahora
+        const back = (now - t) / DAY, k = Math.floor(back), f = back - k;
+        const d0 = daily[days - k] ?? 0, d1 = daily[days - k - 1] ?? 0;
+        const h = hourly(k), hi = (1 - f) * 48, j = Math.floor(hi), hf = hi - j;
+        return sd * (d0 + (d1 - d0) * f) + sh * ((h[j] ?? 0) + ((h[j + 1] ?? 0) - (h[j] ?? 0)) * hf);
+    };
+    const at = t => {
+        let trend = 0, put = 0;
+        for (const d of deps) if (d.t <= t) { trend += d.a * (1 + m.r * Math.max(0, t - d.g) / YEAR); put += d.a; }
+        return { t, v: t >= now ? m.value : trend * Math.exp(noise(t)), put };
+    };
+    return { at, start, now, deps, m };
+}
+function rangePoints(vs, key) {
+    const span = RANGES.find(r => r[0] === key)[2], from = Math.max(vs.start, span === Infinity ? vs.start : vs.now - span);
+    const n = 160, pts = [];
+    for (let i = 0; i <= n; i++) pts.push(vs.at(from + (vs.now - from) * i / n));
+    vs.deps.filter(d => d.t > from && d.t < vs.now).forEach(d => { pts.push(vs.at(d.t - 1)); pts.push(vs.at(d.t)); });   // escalón limpio en cada aportación
+    return pts.sort((x, y) => x.t - y.t);
+}
+const signed = (v, dec = true) => `${v >= 0 ? "+" : "−"}${eur(Math.abs(v), dec)}`;
+function rangeChange(pts) {
+    const a = pts[0], b = pts[pts.length - 1], added = b.put - a.put, chg = b.v - a.v - added, base = a.v + added;
+    return { chg, pct: base > 0 ? chg / base * 100 : 0 };
+}
+const fmtWhen = (t, key) => {
+    const d = new Date(t);
+    return key === "1D" ? d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+        : key === "1S" ? d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }) + " · " + d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+        : d.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
+};
+function drawValueChart(box) {
+    const vs = valueSeries(); if (!vs) return;
+    const key = box.dataset.range || vRange, pts = rangePoints(vs, key), { chg, pct: p } = rangeChange(pts);
+    const mini = box.classList.contains("mini"), W = Math.max(mini ? 120 : 280, box.clientWidth), H = mini ? Math.max(70, box.clientHeight) : W < 560 ? 200 : 260, padR = box.classList.contains("mini") ? 0 : 64, padT = 12, padB = 12;
+    const vals = pts.flatMap(x => [x.v, x.put]), lo0 = Math.min(...vals), hi0 = Math.max(...vals), pad = Math.max((hi0 - lo0) * .12, hi0 * .004, .5);
+    const lo = Math.max(0, lo0 - pad), hi = hi0 + pad;
+    const X = t => (t - pts[0].t) / Math.max(1, pts[pts.length - 1].t - pts[0].t) * (W - padR), Y = v => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
+    const line = pts.map((q, i) => `${i ? "L" : "M"}${X(q.t).toFixed(1)},${Y(q.v).toFixed(1)}`).join("");
+    let put = ""; pts.forEach((q, i) => { put += i ? `H${X(q.t).toFixed(1)}V${Y(q.put).toFixed(1)}` : `M${X(q.t).toFixed(1)},${Y(q.put).toFixed(1)}`; });
+    const up = chg >= 0, col = up ? "var(--green)" : "var(--red)", id = "g" + Math.random().toString(36).slice(2, 7);
+    const ticks = box.classList.contains("mini") ? [] : [0, 1, 2, 3].map(i => lo + (hi - lo) * (i + .5) / 4);
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Evolución de tu dinero ${RANGES.find(r => r[0] === key)[1]}">
+      <defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" style="stop-color:${col}" stop-opacity=".16"/><stop offset="1" style="stop-color:${col}" stop-opacity="0"/></linearGradient></defs>
+      ${ticks.map(v => `<line class="vc-grid" x1="0" x2="${W - padR}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}"/><text class="vc-lbl" x="${W - padR + 10}" y="${(Y(v) + 4).toFixed(1)}">${eur(v, hi - lo < 20)}</text>`).join("")}
+      <path d="${line}L${X(pts[pts.length - 1].t).toFixed(1)},${H}L0,${H}Z" fill="url(#${id})"/>
+      ${box.classList.contains("mini") ? "" : `<path class="vc-put" d="${put}"/>`}
+      <path d="${line}" fill="none" style="stroke:${col}" stroke-width="${box.classList.contains("mini") ? 1.8 : 2.2}" stroke-linejoin="round" stroke-linecap="round"/>
+      <g class="vc-hover" style="display:none"><line y1="0" y2="${H}"/><circle r="5" style="fill:${col}"/></g>
+      <circle cx="${X(pts[pts.length - 1].t).toFixed(1)}" cy="${Y(pts[pts.length - 1].v).toFixed(1)}" r="3.5" style="fill:${col}"/>
+    </svg>`;
+    const head = box.closest(".card")?.querySelector("[data-vhead]");
+    const setHead = (q, live) => {
+        if (!head) return;
+        const c = live ? { chg, pct: p } : rangeChange(pts.filter(x => x.t <= q.t));
+        $("[data-o=val]", head).textContent = eur(q.v, true);
+        const o = $("[data-o=chg]", head); o.className = c.chg >= 0 ? "up" : "down";
+        o.textContent = `${signed(c.chg)} (${c.pct >= 0 ? "+" : "−"}${pct(Math.abs(c.pct), 2)})`;
+        $("[data-o=when]", head).textContent = live ? RANGES.find(r => r[0] === key)[1] : fmtWhen(q.t, key);
+    };
+    setHead(pts[pts.length - 1], true);
+    if (box.classList.contains("mini")) return;
+    const svg = $("svg", box), g = $(".vc-hover", svg);
+    const move = e => {
+        const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width;
+        let best = pts[0]; for (const q of pts) if (Math.abs(X(q.t) - x) < Math.abs(X(best.t) - x)) best = q;
+        g.style.display = ""; $("line", g).setAttribute("x1", X(best.t)); $("line", g).setAttribute("x2", X(best.t));
+        $("circle", g).setAttribute("cx", X(best.t)); $("circle", g).setAttribute("cy", Y(best.v));
+        setHead(best, false);
+    };
+    svg.addEventListener("pointermove", move); svg.addEventListener("pointerdown", move);
+    svg.addEventListener("pointerleave", () => { g.style.display = "none"; setHead(pts[pts.length - 1], true); });
+}
+function bindValueCharts() { $$("[data-vchart]").forEach(drawValueChart); }
+let vcResize; addEventListener("resize", () => { clearTimeout(vcResize); vcResize = setTimeout(bindValueCharts, 120); });
+
 function vDinero() {
-    const m = money(), gain = m.value - m.invested, p = m.protect, moves = [...S.money].reverse();
-    return `${pageH("Dinero", "Tu cuenta, tus metas y tu primer año acompañado.", btn(`${ic("plus")}Aportar`, "openContribute", "primary"))}
+    const m = money(), moves = [...S.money].reverse(), has = S.money.length > 0;
+    const added = [["Por ti", m.ownReal], ["Tu familia", m.gifts], ["Premios", m.prizes]].filter(([, v], i) => v > 0 || i < 2);
+    const weeklyOpts = [0, 2, 5, 10, 20];
+    return `${pageH("Dinero", "", btn(`${ic("plus")}Aportar`, "openContribute", "primary"))}
     <div class="grid">
-      ${card(`<div class="value-head">${stat("Valor estimado", eur(m.value, true))}<div class="vh-side"><div><span>Aportado</span><b>${eur(m.invested, true)}</b></div><div><span>Rendimiento estimado</span><b class="${gain >= 0 ? "up" : "down"}">${gain >= 0 ? "+" : "−"}${eur(Math.abs(gain), true)}</b></div><div><span>Aportado por ti</span><b>${eur(m.ownReal, true)}</b></div><div><span>De tu familia</span><b>${eur(m.gifts, true)}</b></div>${m.prizes ? `<div><span>Premios</span><b>${eur(m.prizes, true)}</b></div>` : ""}</div></div>`, "c-12")}
-      ${card(`${cardH("Primer año acompañado", `Los primeros ${RULES.protectCap} € que inviertes tú no pueden perder valor en ${RULES.protectMonths} meses. Si al cumplirse valen menos, CaixaBank pone la diferencia.`)}
-        <div class="protect"><div class="pr-num"><b>${eur(p?.base || 0)}</b><span>de ${RULES.protectCap} € protegidos</span></div>${bar(p?.base || 0, RULES.protectCap, "blue")}
-        <p class="note">${p ? (p.active ? `Del ${fmtD(p.start)} al ${fmtD(p.end)} · ${p.daysLeft} días restantes · ${eur(p.room)} de margen` : `Tu periodo de protección terminó el ${fmtD(p.end)}.`) : "Empieza con tu primera aportación o con tu primera inversión al superar Fundamentos."}</p></div>
-        <div class="sim" data-sim><label>Si el mercado cayera <output data-o="d"></output><input type="range" min="-40" max="10" step="5" value="-20" data-i="d"></label><p data-o="out"></p></div>
-        <details class="terms"><summary>Condiciones${ic("plus")}</summary><ul><li>Tope de ${RULES.protectCap} € por persona y límite por campaña.</li><li>Aplica a la cartera base y al Antídoto, siempre en fondos de perfil moderado.</li><li>Solo cubre si no vendes antes de los ${RULES.protectMonths} meses.</li><li>Es una bonificación promocional de CaixaBank, no un producto garantizado.</li></ul></details>`, "c-7")}
-      ${card(`${cardH("Ahorro automático", "Lo que se aparta solo, sin que tengas que acordarte.")}
-        <div class="rows">
-          <div class="row"><span class="mv-ic own">${ic("plus")}</span><div><b>Cada semana</b><span>${S.paga ? `De tu paga de ${eur(S.paga)}` : "Indica tu paga en Ajustes y te sugerimos una cantidad"}</span></div>
-            <select data-act="weekly" aria-label="Euros a la semana">${[0, 1, 2, 3, 5, 10, 15, 20].map(v => `<option value="${v}" ${S.weekly === v ? "selected" : ""}>${v ? `${v} €` : "No"}</option>`).join("")}</select></div>
-          <div class="row"><span class="mv-ic own">${ic("spark")}</span><div><b>Redondeo de compras</b><span>Cada compra con tu tarjeta se redondea al euro y la diferencia se invierte.</span></div>${toggle("roundup", S.roundup, "Redondeo de compras")}</div>
-        </div>${S.paga && !S.weekly ? `<p class="note">Te sugerimos apartar ${eur(Math.max(1, Math.round(S.paga * 0.15)))} a la semana: un 15 % de tu paga.</p>` : ""}`, "c-5")}
+      ${card(`<div class="vhead" data-vhead>
+          <div class="vh-main"><span class="vh-k">Tu dinero</span><b class="vh-v" data-o="val">${eur(m.value, true)}</b>
+            ${has ? `<p class="vh-chg"><span data-o="chg"></span> <small data-o="when"></small></p>` : `<p class="vh-chg"><small>Aún no has invertido</small></p>`}</div>
+          <dl class="vh-added"><div class="tot"><dt>Has añadido</dt><dd>${eur(m.invested, true)}</dd></div>${added.map(([k, v]) => `<div><dt>${k}</dt><dd>${eur(v, true)}</dd></div>`).join("")}</dl>
+        </div>
+        ${has ? `<div class="vchart" data-vchart data-range="${vRange}"></div>
+          <div class="vc-foot"><div class="vc-ranges" role="tablist" aria-label="Periodo">${RANGES.map(([k]) => `<button role="tab" class="${k === vRange ? "on" : ""}" aria-selected="${k === vRange}" data-act="vRange" data-k="${k}">${k}</button>`).join("")}</div>
+          <div class="vc-key"><span><i class="k1"></i>Tu dinero</span><span><i class="k2"></i>Lo que has añadido</span></div></div>`
+        : `<div class="vchart-empty">${empty("chart", "Tu curva empieza con tu primer euro", "Aquí verás cómo se mueve tu dinero cada día.", btn("Hacer mi primera aportación", "openContribute", "primary"))}</div>`}`, "c-12 money-card")}
+      ${has ? card(`${cardH("Movimientos", "", btn(`${ic("download")}Extracto`, "csv", "sm ghost"))}
+        <div class="rows moves">${moves.slice(0, allMoves ? 50 : 5).map(moveRow).join("")}</div>
+        ${moves.length > 5 ? `<button class="more" data-act="allMoves">${allMoves ? "Ver menos" : `Ver los ${moves.length} movimientos`}</button>` : ""}`, "c-12") : ""}
+      ${card(`${cardH("Ahorro automático", "Se aparta solo, sin que tengas que acordarte.")}
+        <div class="auto">
+          <div class="auto-row"><div><b>Cada semana</b><span>${S.weekly ? `≈ ${eur(S.weekly * 52 / 12)} al mes` : "Elige una cantidad"}</span></div>
+            <div class="seg" role="radiogroup" aria-label="Euros a la semana">${weeklyOpts.map(v => `<button role="radio" aria-checked="${S.weekly === v}" class="${S.weekly === v ? "on" : ""}" data-act="setWeekly" data-v="${v}">${v ? `${v} €` : "No"}</button>`).join("")}</div></div>
+          <div class="auto-row"><div><b>Redondeo de compras</b><span>Cada compra con tu tarjeta se redondea al euro.</span></div>${toggle("roundup", S.roundup, "Redondeo de compras")}</div>
+        </div>`, "c-6")}
       ${metasCard()}
-      ${card(`${cardH("Reparto", m.al.active ? `Cartera base ${pct(RULES.base * 100)} y Antídoto ${pct(RULES.antidote * 100)}.` : m.al.pending ? "Tu Antídoto espera la aprobación de tu familia. Mientras, todo está en la cartera base." : "Todo en la cartera base. Elige tu Antídoto para invertir una parte en lo que te preocupa.", m.al.active ? "" : lnk(S.fears.length ? "Ver Antídoto" : "Elegir Antídoto", "#/antidoto", "sm"))}
+      ${card(`${cardH("Dónde está tu dinero", m.al.active ? `Cartera base ${pct(RULES.base * 100)} · Antídoto ${pct(RULES.antidote * 100)}` : m.al.pending ? "Tu Antídoto espera la aprobación de tu familia." : "Todo en la cartera base.", m.al.active ? "" : lnk(S.fears.length ? "Ver Antídoto" : "Elegir Antídoto", "#/antidoto", "sm ghost"))}
         ${stack(m.parts)}<div class="rows">${m.parts.map(pp => `<div class="row">${sw(pp.fund)}<div><b>${FUNDS[pp.fund].name}</b><span>${pp.fear ? "Antídoto · " + esc(pp.fear.label) : FUNDS[pp.fund].sub}</span></div><b class="amt">${eur(pp.amount, true)}</b></div>`).join("")}</div>`, "c-12")}
-      ${costCard()}
-      ${card(`${cardH("Movimientos", "", moves.length ? btn("Descargar extracto", "csv", "sm") : "")}${moves.length ? `<div class="rows">${moves.slice(0, 20).map(moveRow).join("")}</div>` : empty("plus", "Aún no hay movimientos", "Tu primera aportación aparecerá aquí.", btn("Hacer mi primera aportación", "openContribute", "primary"))}`, "c-12")}
-    </div>`;
+    </div>
+    <p class="note center-note">Movimientos de mercado simulados en esta versión de demostración.</p>`;
 }
 function metaSaved(id) { return S.money.filter(c => c.meta === id).reduce((a, c) => a + c.amount, 0); }
 function metasCard() {
     const m = money(), small = S.metas.reduce((a, x) => a + metaSaved(x.id), 0), house = Math.max(0, m.value - small), down = S.goal.price * DOWN_PCT;
-    const rows = [`<div class="row tall"><span class="mv-ic gold">${ic("house")}</span><div><b>Tu casa · entrada</b><span>${eur(house, true)} de ${eur(down)}</span>${bar(house, down, "gold")}</div>${lnk("Ajustar", "#/casa", "sm")}</div>`,
+    const rows = [`<div class="row tall"><span class="mv-ic gold">${ic("house")}</span><div><b>Tu casa · entrada</b><span>${eur(house, true)} de ${eur(down)}</span>${bar(house, down, "gold")}</div>${lnk("Ajustar", "#/casa", "sm ghost")}</div>`,
         ...S.metas.map(x => { const sv = metaSaved(x.id); return `<div class="row tall"><span class="mv-ic own">${ic("target")}</span><div><b>${esc(x.name)}</b><span>${eur(sv, true)} de ${eur(x.target)}${sv >= x.target ? " · conseguida" : ""}</span>${bar(sv, x.target, "blue")}</div>${btn("Quitar", "delMeta", "sm ghost", `data-id="${x.id}"`)}</div>`; })];
-    return card(`${cardH("Tus metas", "La principal es tu casa. Añade otras más cercanas y elige a cuál va cada aportación.", S.metas.length < 3 ? btn(`${ic("plus")}Nueva meta`, "openMeta", "sm") : "")}
-      <div class="rows">${rows.join("")}</div>
-      <p class="note">Si vas a necesitar el dinero en menos de tres años, lo prudente es no depender de la bolsa: lo verás en el tema «Las caídas pasan».</p>`, "c-12");
-}
-/* Lo que cuesta, en euros: transparencia total antes de que nadie pregunte */
-function costCard() {
-    const m = money(), yearly = m.value * COST.fee / 100;
-    return card(`${cardH("Lo que cuesta, en euros", "Horizonte no cobra cuotas ni comisión de apertura. Lo que sí tiene coste es la comisión de gestión de los fondos de CaixaBank Asset Management.")}
-      <div class="split">${stat("Comisión de referencia", `${pct(COST.fee, 1)} al año`, `${eur(COST.fee, true)} por cada 100 € invertidos`)}${stat("Con tu dinero de hoy", m.value > 0 ? `≈ ${eur(yearly, true)} al año` : "Aún nada", m.value > 0 ? "Estimación sobre tu valor actual" : "Se verá cuando inviertas")}</div>
-      <p class="note">Es una referencia: el documento de datos fundamentales de cada fondo detalla su coste exacto. Un punto de comisión de diferencia, mantenido durante años, supone bastante menos dinero.</p>`, "c-12");
+    return card(`${cardH("Tus metas", "Elige a cuál va cada aportación.", S.metas.length < 3 ? btn(`${ic("plus")}Nueva`, "openMeta", "sm ghost") : "")}
+      <div class="rows">${rows.join("")}</div>`, "c-6");
 }
 /* Familia: lo que ha pasado esta semana, explicado con calma */
 function weekFamilyCard() {
@@ -758,27 +919,13 @@ function metaSheet() {
       <button class="btn primary lg block">Crear meta</button></form>`);
 }
 function contributeSheet() {
-    const p = money().protect;
     sheet("Aportar", `<form data-form="contribute" class="form">
       <div class="amount-in"><input name="amount" type="number" min="1" max="3000" step="0.01" inputmode="decimal" required placeholder="0" aria-label="Importe en euros"><span>€</span></div>
       <div class="chips">${[1, 5, 10, 20, 50].map(v => `<button type="button" class="chip" data-act="setAmount" data-v="${v}">${v} €</button>`).join("")}</div>
       <div class="form two"><label class="field"><span>Origen del dinero</span><select name="src"><option value="paga">Mi paga</option><option value="verano">Un trabajo de verano</option><option value="otro">Otro ingreso</option></select></label>
       <label class="field"><span>Para</span><select name="meta"><option value="">Tu casa</option>${S.metas.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></label></div>
-      <p class="note">${!p || p.active ? `Hasta ${RULES.protectCap} € de lo que aportas quedan protegidos durante tu primer año.` : "Tu periodo de protección ha terminado."}</p>
       <button class="btn primary lg block">Confirmar aportación</button></form>`);
 }
-function bindSim() {
-    const v = $("[data-sim]"); if (!v) return;
-    const upd = () => {
-        const d = +$('[data-i="d"]', v).value, base = money().protect?.base || 0, val = base * (1 + d / 100), pay = Math.max(0, base - val);
-        $('[data-o="d"]', v).textContent = `${d > 0 ? "+" : d < 0 ? "−" : ""}${Math.abs(d)} %`;
-        $('[data-o="out"]', v).innerHTML = !base ? "Cuando tengas dinero propio verás aquí cuánto te cubriría la protección."
-            : pay > 0 ? `Tus ${eur(base)} protegidos valdrían ${eur(val)}. Al cumplirse el año, <b>CaixaBank pondría ${eur(pay)}</b>.`
-            : `Tus ${eur(base)} protegidos valdrían ${eur(val)}. No haría falta la protección.`;
-    };
-    $('[data-i="d"]', v).addEventListener("input", upd); upd();
-}
-
 /* ---------------- Antídoto */
 let ranking = null;
 async function loadRanking() {
@@ -804,18 +951,18 @@ async function vote(ids) {
 let typing = false;
 const hhmm = t => t ? new Date(t).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "";
 function assistantMsg(x) {
-    const text = x.text ?? x.t ?? "";
-    const acts = (x.actions || []).map(a => a.href ? `<a class="chip ${a.primary ? "pri" : ""}" href="${esc(a.href)}">${esc(a.label)}</a>` : `<button class="chip" data-act="ask" data-q="${esc(a.q)}">${esc(a.label)}</button>`).join("");
-    return `<div class="msg g a"><div class="a-h"><span><i class="a-dot"></i>Asistente Horizonte</span><time>${hhmm(x.ts)}</time></div>
-      ${x.title ? `<b class="a-t">${esc(x.title)}</b>` : ""}<p>${esc(text)}</p>
-      ${x.facts?.length ? `<dl class="a-facts">${x.facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : ""}
-      ${acts ? `<div class="a-acts">${acts}</div>` : ""}
-      ${x.used?.length ? `<small>Basado en ${x.used.map(esc).join(", ")}</small>` : ""}</div>`;
+    const text = x.text ?? x.t ?? "", gem = x.kind === "remote" || x.used?.includes("Gemini");
+    const acts = (x.actions || []).map(a => a.href ? `<a class="am-act ${a.primary ? "pri" : ""}" href="${esc(a.href)}">${esc(a.label)}${a.primary ? ic("arrow") : ""}</a>` : `<button class="am-act" data-act="ask" data-q="${esc(a.q)}">${esc(a.label)}</button>`).join("");
+    return `<div class="amsg"><span class="am-av" aria-hidden="true">${ic("spark")}</span><div class="am-body">
+      ${x.title ? `<b class="am-t">${esc(x.title)}</b>` : ""}<p>${esc(text)}</p>
+      ${x.facts?.length ? `<div class="am-facts">${x.facts.slice(0, 3).map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>` : ""}
+      ${acts ? `<div class="am-acts">${acts}</div>` : ""}
+      <small class="am-meta">${gem ? "Gemini · " : ""}Con los datos de tu cuenta${x.ts ? ` · ${hhmm(x.ts)}` : ""}</small></div></div>`;
 }
 function chatHTML() {
     const list = S.chat.length ? S.chat.slice(-8) : [{ r: "g", ...localGemini("hola", geminiContext()), ts: 0 }];
-    return list.map(x => x.r === "u" ? `<div class="msg u"><p>${esc(x.t)}</p><time>${hhmm(x.ts)}</time></div>` : assistantMsg(x)).join("")
-        + (typing ? `<div class="msg g a typing" aria-label="Preparando la respuesta"><i></i><i></i><i></i></div>` : "");
+    return list.map(x => x.r === "u" ? `<div class="umsg"><p>${esc(x.t)}</p></div>` : assistantMsg(x)).join("")
+        + (typing ? `<div class="amsg"><span class="am-av" aria-hidden="true">${ic("spark")}</span><div class="am-body typing" aria-label="Preparando la respuesta"><i></i><i></i><i></i></div></div>` : "");
 }
 function vAntidoto() {
     const m = money(), al = m.al, can = S.geminiOk || isAdult();
@@ -831,11 +978,11 @@ function vAntidoto() {
         ${stack(al.planned)}<div class="rows">${al.planned.map(p => `<div class="row tall">${sw(p.fund)}<div><b>${FUNDS[p.fund].name} · ${wpct(p.w)}</b><span>${p.fear ? p.fear.why : "La base reparte tu dinero entre miles de empresas para que ninguna preocupación lo decida todo."}</span></div></div>`).join("")}</div>
         ${!al.active ? `<p class="note">Hasta los ${RULES.adultAge} años, tu familia aprueba el Antídoto desde el área familiar.</p>` : ""}
         <p class="note">El Antídoto reduce el impacto si lo que temes ocurre. No es una garantía: las inversiones pueden perder valor.</p>`, "c-5") : ""}
-      ${card(`${cardH(`<span class="gem">${ic("spark")}Asistente Horizonte</span>`, "Responde con tus propios datos. Con Gemini en Google Cloud cuando el servicio esté activo.")}
+      ${card(`${cardH(`<span class="gem">${ic("spark")}Asistente Horizonte</span>`, "Pregunta lo que quieras sobre tu dinero. Responde con tus datos.")}
         ${can ? `<div class="chat" id="chat">${chatHTML()}</div>
-          <div class="chips tight">${G_TOPICS.map(t => `<button class="chip" data-act="ask" data-q="${esc(t.q)}">${t.label}</button>`).join("")}</div>
+          <div class="sugg">${G_TOPICS.map(t => `<button class="chip" data-act="ask" data-q="${esc(t.q)}">${t.label}</button>`).join("")}</div>
           <form class="ask" data-form="ask"><input name="q" placeholder="Escribe tu consulta" aria-label="Tu consulta" autocomplete="off" required><button class="icon-btn primary" aria-label="Enviar">${ic("send")}</button></form>
-          <p class="note">Información orientativa basada en los datos de tu cuenta; no es asesoramiento financiero. Se usa tu información solo con permiso de tu familia.</p>`
+          <p class="note">Información orientativa, no es asesoramiento financiero.</p>`
           : empty("lock", "Necesitas el permiso de tu familia", `Hasta los ${RULES.adultAge}, tu madre, padre o tutor decide si el asistente puede usar la información de tu cuenta.`, lnk("Ver permisos", "#/familia", "primary"))}`, al.fears.length ? "c-7" : "c-12")}
       ${card(`${cardH("Mapa de preocupaciones de tu generación", "Un ranking anónimo de lo que preocupa a los jóvenes en España.")}
         ${showRank ? `<div class="rank">${rank.map((x, i) => `<div class="rk ${S.fears.includes(x.f.id) ? "mine" : ""}"><span class="rk-n">${i + 1}</span><span class="fi sm">${ic(x.f.id)}</span><div><b>${x.f.label}</b>${bar(x.n, rank[0].n, "blue")}</div><span class="rk-p">${pct(x.n / r.total * 100)}</span></div>`).join("")}</div><p class="note">${num(r.total)} respuestas anónimas.</p>`
@@ -915,7 +1062,7 @@ function vFResumen() {
       ${card(`<div class="hero-cred">${credVisual()}<div class="hc-copy"><span class="kicker">Su Certificado Horizonte</span><h2>${STAGES[stageOf()]}</h2>
         <p>${S.exam?.passed ? `Superó Fundamentos el ${fmtD(S.exam.date)} con ${S.exam.score}/${S.exam.total}.` : `Lleva ${Object.keys(S.lessons).length} de ${LESSONS.length} temas de Fundamentos.`} ${m.firstOwn ? `Puso su primer euro propio el ${fmtD(m.firstOwn.date)}.` : "Aún no ha puesto su primer euro propio."}</p></div></div>`, "c-8")}
       ${card(stat("Valor estimado", eur(m.value, true), `${eur(m.gifts, true)} aportados por la familia`), "c-4 stat-card")}
-      ${card(stat(`Aportado por ${n}`, eur(Math.max(0, m.ownReal), true), "De su paga y sus ingresos"), "c-4")}
+      ${card(stat(`Aportado por ${n}`, eur(Math.max(0, m.ownReal), true), "Con su propio dinero"), "c-4")}
       ${card(stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos menos de diferencial`), "c-4")}
       ${card(stat("Protegido", eur(m.protect?.base || 0), `de ${RULES.protectCap} € en su primer año`), "c-4")}
       ${weekFamilyCard()}${talkCard()}
@@ -950,7 +1097,7 @@ function vFPermisos() {
     <div class="grid">
       ${card(`${cardH("Antídoto", al.fears.length ? `${n} ha elegido invertir una parte en lo que le preocupa.` : `${n} aún no ha elegido su Antídoto.`, al.fears.length && !adult ? toggle("approve", S.antidoteApproved, "Aprobar Antídoto") : "")}
         ${al.fears.length ? `${stack(al.planned)}<div class="rows">${al.planned.map(p => `<div class="row">${sw(p.fund)}<div><b>${FUNDS[p.fund].name} · ${wpct(p.w)}</b><span>${p.fear ? esc(p.fear.label) : "Cartera base diversificada"}</span></div></div>`).join("")}</div>` : ""}`, "c-6")}
-      ${card(`${cardH("Gemini", "Permitir que Gemini use la información de su cuenta (aportaciones, objetivos y paga) para explicarle su dinero. Nunca se usa para publicidad.", adult ? "" : toggle("gemOk", S.geminiOk, "Permitir Gemini"))}
+      ${card(`${cardH("Gemini", "Permitir que Gemini use la información de su cuenta (aportaciones y objetivos) para explicarle su dinero. Nunca se usa para publicidad.", adult ? "" : toggle("gemOk", S.geminiOk, "Permitir Gemini"))}
         <p class="note">Puedes retirar el permiso en cualquier momento.</p>`, "c-6")}
       ${card(`${cardH("Autorización de la cuenta")}<div class="rows"><div class="row"><div><b>${S.familyAuth ? "Cuenta autorizada" : "Pendiente"}</b><span>${S.family ? `${esc(S.family.name)} · ${esc(S.family.relation)}` : ""}</span></div>${badge(S.familyAuth ? "Autorizada" : "Pendiente", S.familyAuth ? "ok" : "warn")}</div></div>`, "c-12")}
     </div>`;
@@ -966,7 +1113,6 @@ function vAjustes() {
           <label class="field"><span>Nombre</span><input name="name" value="${esc(S.teen?.name || "")}" maxlength="30" required></label>
           <label class="field"><span>Apellidos</span><input name="surname" value="${esc(S.teen?.surname || "")}" maxlength="60"></label>
           <label class="field"><span>Fecha de nacimiento</span><input name="birth" type="date" value="${esc(S.teen?.birth || "")}" required></label>
-          <label class="field"><span>Paga semanal (€)</span><input name="paga" type="number" min="0" max="500" value="${S.paga || ""}"></label>
           <button class="btn primary full">Guardar cambios</button></form>`, "c-7")}
       ${card(`${cardH("Cuenta")}${S.family ? `<p class="note">${fam ? "Estás en el área familiar." : "Estás en tu área personal."} En este dispositivo puedes cambiar de área.</p><div class="actions">${btn(`${ic("switch")}${fam ? `Ir al área de ${esc(teenName())}` : "Ir al área familiar"}`, "switchRole")}</div>` : ""}
         <p class="note">Los datos se guardan en este dispositivo y puedes descargarlos cuando quieras.</p><div class="actions">${btn("Descargar mis datos", "exportData")}${btn("Cerrar sesión y borrar datos", "reset", "danger")}</div>`, "c-5")}
@@ -974,7 +1120,7 @@ function vAjustes() {
 }
 
 /* ------------------------------------------------------------------ estructura y rutas */
-const NAV_T = [["inicio", "Inicio", "home"], ["aprende", "Aprende", "book"], ["dinero", "Dinero", "chart"], ["antidoto", "Antídoto", "spark"], ["casa", "Casa", "house"]];
+const NAV_T = [["inicio", "Inicio", "home"], ["dinero", "Dinero", "chart"], ["aprende", "Aprende", "book"], ["antidoto", "Antídoto", "spark"], ["casa", "Tu casa", "house"]];
 const NAV_T2 = [["familia", "Familia", "family"], ["ajustes", "Ajustes", "settings"]];
 const NAV_F = [["f/resumen", "Resumen", "home"], ["f/regalar", "Regalos", "gift"], ["f/permisos", "Permisos", "key"]];
 const NAV_F2 = [["ajustes", "Ajustes", "settings"]];
@@ -984,12 +1130,13 @@ function shell(route, content) {
     const item = ([id, l, i]) => `<a href="#/${id}" class="${route === id ? "on" : ""}" ${route === id ? 'aria-current="page"' : ""}>${ic(i)}<span>${l}</span></a>`;
     const who = (fam ? S.family?.name : teenName()) || "";
     const home = fam ? "#/f/resumen" : "#/inicio";
-    const tabs = fam ? [...main, ...extra] : [...main.slice(0, 4), ["familia", "Familia", "family"]];
+    const tabs = fam ? [...main, ...extra] : main;
     return `<div class="shell ${fam ? "fam" : ""}">
       <aside class="side">${brand(home, 34)}${fam ? `<span class="area">Área familiar</span>` : ""}
         <nav class="side-nav" aria-label="Secciones">${main.map(item).join("")}<span class="sep"></span>${extra.map(item).join("")}</nav>
+        <div class="side-foot">${themeBtn()}<span>${isDark() ? "Modo noche" : "Modo día"}</span></div>
         <a class="me" href="#/ajustes"><span class="avatar">${esc(who.slice(0, 1).toUpperCase())}</span><div><b>${esc(who)}</b><small>${fam ? esc(S.family?.relation || "") : `${ageOf()} años`}</small></div></a></aside>
-      <header class="topbar">${brand(home, 28)}${fam ? `<span class="area">Familia</span>` : ""}<a class="avatar" href="#/ajustes" aria-label="Ajustes">${esc(who.slice(0, 1).toUpperCase())}</a></header>
+      <header class="topbar">${brand(home, 28)}${fam ? `<span class="area">Familia</span>` : ""}${themeBtn()}${fam ? "" : `<a class="icon-btn" href="#/familia" aria-label="Familia">${ic("family")}</a>`}<a class="avatar" href="#/ajustes" aria-label="Ajustes">${esc(who.slice(0, 1).toUpperCase())}</a></header>
       <main class="main" id="main" tabindex="-1"><div class="page">${content}</div></main>
       <nav class="tabbar" aria-label="Secciones">${tabs.map(item).join("")}</nav>
     </div>`;
@@ -1022,7 +1169,7 @@ function render() {
     }
     document.body.dataset.view = view;
     $("#app").innerHTML = html;
-    bindViz(); bindSim(); bindProj(); bindLanding();
+    bindViz(); bindProj(); bindLanding(); bindValueCharts();
     if (r === "antidoto" && !ranking) loadRanking().then(() => { if (location.hash.startsWith("#/antidoto")) rerender(); });
     const chat = $("#chat"); if (chat) chat.scrollTop = chat.scrollHeight;
 }
@@ -1034,7 +1181,6 @@ function finishTeen() {
     S = blank(); S.role = "teen";
     S.teen = { name: d.name.trim(), surname: (d.surname || "").trim(), birth: d.birth };
     if (d.fname) { S.family = { name: d.fname.trim(), relation: d.relation }; S.familyAuth = true; }
-    S.paga = Math.max(0, Math.round(+d.paga || 0));
     save(); alta = null; location.hash = "#/inicio"; toast(`Te damos la bienvenida a Horizonte, ${esc(S.teen.name)}`);
 }
 document.addEventListener("click", async e => {
@@ -1042,8 +1188,7 @@ document.addEventListener("click", async e => {
     if (!b || b.tagName === "SELECT" || (b.tagName === "INPUT" && b.type === "checkbox")) return;
     const act = b.dataset.act;
     if (act === "closeSheet") closeSheet();
-    else if (act === "altaBack") { alta.step = alta.role === "joven" && alta.step === 2 && ageOf(alta.data.birth) >= RULES.adultAge ? 0 : alta.step - 1; render(); }
-    else if (act === "altaSkip") finishTeen();
+    else if (act === "altaBack") { alta.step = Math.max(0, alta.step - 1); render(); }
     else if (act === "lessonAns") { lessonState.answers[+b.dataset.q] = +b.dataset.i; rerender(); }
     else if (act === "lessonDone") { const id = b.dataset.id; if (!S.lessons[id]) { S.lessons[id] = iso(new Date()); save(); toast(`Tema completado · +${MILES.lesson} millas de casa`); } location.hash = "#/aprende"; }
     else if (act === "gameAns") { const q = gameState.qs[gameState.i], i = +b.dataset.i; gameState.ans = i; if (i === q.a) gameState.score++; rerender(); }
@@ -1086,6 +1231,14 @@ document.addEventListener("click", async e => {
     else if (act === "copyVerify") { const u = verifyUrl(diplomaData()); try { await navigator.clipboard.writeText(u); toast("Enlace de verificación copiado"); } catch (err) { prompt("Copia el enlace:", u); } }
     else if (act === "itv") { const t = iso(new Date()); if (S.itv.includes(t)) return toast("Ya has hecho la revisión hoy"); S.itv.push(t); save(); toast(`Revisión anual completada · +${MILES.itv} millas de casa`); location.hash = "#/antidoto"; }
     else if (act === "openContribute") contributeSheet();
+    else if (act === "vRange") {
+        vRange = b.dataset.k; $$(".vc-ranges button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", x === b); });
+        const box = $("[data-vchart]:not(.mini)"); if (box) { box.dataset.range = vRange; drawValueChart(box); }
+    }
+    else if (act === "allMoves") { allMoves = !allMoves; rerender(); }
+    else if (act === "setWeekly") { S.weekly = +b.dataset.v; save(); toast(S.weekly ? `Apartarás ${eur(S.weekly)} cada semana` : "Ahorro semanal desactivado"); rerender(); }
+    else if (act === "openCred") credSheet();
+    else if (act === "theme") setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
     else if (act === "setAmount") { const i = $('#sheet input[name="amount"]'); i.value = b.dataset.v; i.focus(); }
     else if (act === "fear") {
         const id = b.dataset.id;
@@ -1123,9 +1276,9 @@ document.addEventListener("submit", e => {
     if (k === "alta0" || k === "altaF1") {
         const age = ageOf(d.birth);
         Object.assign(alta.data, d);
-        alta.step = k === "altaF1" ? 2 : age >= RULES.adultAge ? 2 : 1; render();
-    } else if (k === "alta1") { Object.assign(alta.data, d); alta.step = 2; render(); }
-    else if (k === "alta2") { alta.data.paga = d.paga; finishTeen(); }
+        if (k === "alta0" && age >= RULES.adultAge) { finishTeen(); return; }
+        alta.step = k === "altaF1" ? 2 : 1; render();
+    } else if (k === "alta1") { Object.assign(alta.data, d); finishTeen(); }
     else if (k === "altaF0") { Object.assign(alta.data, d); alta.step = 1; render(); }
     else if (k === "altaF2") {
         const a = alta.data;
@@ -1150,7 +1303,7 @@ document.addEventListener("submit", e => {
     } else if (k === "goal") {
         S.goal = { price: Math.max(30000, +d.price), age: Math.max(ageOf() + 2, +d.age) }; save(); toast("Objetivo guardado"); rerender();
     } else if (k === "profile") {
-        S.teen = { name: d.name.trim(), surname: d.surname.trim(), birth: d.birth }; S.paga = Math.max(0, Math.round(+d.paga || 0)); save(); toast("Cambios guardados"); rerender();
+        S.teen = { name: d.name.trim(), surname: d.surname.trim(), birth: d.birth }; save(); toast("Cambios guardados"); rerender();
     } else if (k === "ask") { askQ(d.q); f.reset(); }
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#sheet.open")) closeSheet(); });
