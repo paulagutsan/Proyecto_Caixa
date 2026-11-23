@@ -169,7 +169,16 @@ function streak() {
     return { current, thisWeek, bonus };
 }
 /* Etapas del Certificado Horizonte */
-const STAGES = ["Fundamentos", "Primer año acompañado", "Inversor certificado"];
+const STAGES = ["Fundamentos", "Fundamentos superados", "Inversor certificado"];
+/* Los dos hitos del certificado: superar Fundamentos y, a los 18, ser inversor certificado */
+function milestones() {
+    const passed = S.exam?.passed, adult = ageOf() >= RULES.adultAge, done = Object.keys(S.lessons).length;
+    return [
+        { t: "Fundamentos", sub: passed ? `Superado con ${S.exam.score}/${S.exam.total} el ${fmtD(S.exam.date)}` : `${done} de ${LESSONS.length} temas`, st: passed ? "done" : "on" },
+        { t: "Inversor certificado", sub: adult ? "La cuenta es solo tuya" : `A los ${RULES.adultAge} años`, st: passed && adult ? "done" : passed ? "on" : "" },
+    ];
+}
+const msList = (cls) => `<ol class="${cls}">${milestones().map((x, i) => `<li class="${x.st}"><span>${x.st === "done" ? ic("check") : i + 1}</span><div><b>${x.t}</b><small>${x.sub}</small></div></li>`).join("")}</ol>`;
 const stageOf = () => !S.exam?.passed ? 0 : ageOf() >= RULES.adultAge ? 2 : 1;
 const lastItv = () => S.itv.length ? S.itv[S.itv.length - 1] : S.diploma?.date;
 
@@ -514,11 +523,6 @@ function credSheet() {
     const st = stageOf(), passed = S.exam?.passed && S.diploma, done = Object.keys(S.lessons).length, age = ageOf(), m = money();
     const name = `${S.teen?.name || ""} ${S.teen?.surname || ""}`.trim();
     const d = passed ? diplomaData() : { n: name, i: "HZ-····-····", f: iso(new Date()), s: "—", v: iso(addMonths(new Date(), 12)) };
-    const stageSub = [
-        passed ? `Superado el ${fmtD(S.exam.date)}` : `${done} de ${LESSONS.length} temas`,
-        passed ? (m.protect?.active ? `En curso · ${m.protect.daysLeft} días` : m.protect ? "Completado" : "Empieza con tu primera aportación") : "Al superar Fundamentos",
-        age >= RULES.adultAge ? "La cuenta es solo tuya" : `A los ${RULES.adultAge} años`,
-    ];
     const el = $("#sheet");
     el.innerHTML = `<div class="sheet-bg" data-act="closeSheet"></div><div class="sheet-card cert-sheet" role="dialog" aria-modal="true" aria-labelledby="sheetT">
       <button class="icon-btn cs-close" data-act="closeSheet" aria-label="Cerrar">${ic("close")}</button>
@@ -534,7 +538,7 @@ function credSheet() {
           </dl>
           ${passed ? "" : bar(done, LESSONS.length + 1, "blue")}
           <h3 class="cs-h">Etapas</h3>
-          <ol class="cs-stages">${STAGES.map((t, i) => `<li class="${i < st ? "done" : i === st ? "on" : ""}"><span>${i < st ? ic("check") : i + 1}</span><div><b>${t}</b><small>${stageSub[i]}</small></div></li>`).join("")}</ol>
+          ${msList("cs-stages")}
           <h3 class="cs-h">Lo que ${passed ? "has aprendido" : "aprenderás"}</h3>
           <div class="cs-skills">${LESSONS.map(l => `<span class="${S.lessons[l.id] ? "ok" : ""}">${S.lessons[l.id] ? ic("check") : ""}${l.title}</span>`).join("")}</div>
           <div class="cs-acts">${passed
@@ -562,21 +566,36 @@ function vInicio() {
         [!!S.family || m.gifts > 0, "Invita a tu familia", "Pueden regalarte dinero para tu casa.", "#/familia"],
     ];
     const done = tasks.filter(t => t[0]).length, recent = [...S.money].reverse().slice(0, 4), has = S.money.length > 0;
+    const w = weekSummary(), can = S.geminiOk || isAdult(), sg = v => `${v >= 0 ? "+" : "−"}${pct(Math.abs(v), 1)}`;
+    const next = tasks.find(t => !t[0]);
     return `<header class="page-h home-h"><div><h1>${g.hi}, ${esc(teenName())}</h1><p>${g.sub}</p></div>${credChip()}</header>
-    <div class="grid">
-      ${card(`<ol class="loop">${steps.map(([id, t, ok, sub, h], i) => `<li class="${ok ? "done" : i === cur ? "on" : ""} ${id}"><a href="${h}"><span class="lp-dot">${ok ? ic("check") : i + 1}</span><b>${t}</b><small>${sub}</small></a></li>`).join("")}</ol>`, "c-12 loop-card")}
-      ${card(`<div class="vhead sm" data-vhead><div class="vh-main"><span class="vh-k">Tu dinero</span><b class="vh-v" data-o="val">${eur(m.value, true)}</b>
-          ${has ? `<p class="vh-chg"><span data-o="chg"></span> <small data-o="when"></small></p>` : `<p class="vh-chg"><small>Aún no has invertido</small></p>`}</div></div>
-        ${has ? `<a href="#/dinero" class="vchart mini" data-vchart data-range="1M" aria-label="Ver tu dinero"></a>` : `<div class="mini-empty"></div>`}
-        <div class="actions">${btn(`${ic("plus")}Aportar`, "openContribute", "primary")}${lnk("Ver detalle", "#/dinero", "ghost")}</div>`, "c-5 home-money")}
-      ${weekCard("c-7")}
-      ${card(`${stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos menos de diferencial`)}${bar(mi.cut, MILES.maxCut, "gold")}`, "c-4")}
-      ${card(`${stat("Racha", `${st.current} ${st.current === 1 ? "semana" : "semanas"}`, st.thisWeek ? "Esta semana ya cuenta" : "Haz algo esta semana para no perderla")}<div class="streak">${Array.from({ length: 4 }, (_, i) => `<i class="${i < st.current % 4 || (st.current && st.current % 4 === 0) ? "on" : ""}"></i>`).join("")}<small>+${MILES.streak4} millas cada 4</small></div>`, "c-4")}
-      ${card(`${stat("Protegido el primer año", eur(m.protect?.base || 0), `de ${RULES.protectCap} € · ${m.protect?.active ? `${m.protect.daysLeft} días restantes` : m.protect ? "periodo terminado" : "empieza con tu primera aportación"}`)}${bar(m.protect?.base || 0, RULES.protectCap, "blue")}`, "c-4")}
-      ${done < tasks.length ? card(`${cardH("Primeros pasos", `${done} de ${tasks.length} completados`)}${bar(done, tasks.length, "blue")}
-        <div class="rows">${tasks.map(([ok, t, d, h]) => `<a class="row ${ok ? "ok" : ""}" href="${h}"><span class="tick">${ok ? ic("check") : ""}</span><div><b>${t}</b><span>${d}</span></div>${ic("chev", "chev")}</a>`).join("")}</div>`, "c-6") : ""}
-      ${card(`${cardH("Actividad reciente", "", recent.length ? lnk("Ver todo", "#/dinero", "ghost sm") : "")}
-        ${recent.length ? `<div class="rows">${recent.map(moveRow).join("")}</div>` : empty("chart", "Sin movimientos todavía", "Tus aportaciones y los regalos de tu familia aparecerán aquí.")}`, done < tasks.length ? "c-6" : "c-12")}
+    <div class="home">
+      <ol class="hsteps">${steps.map(([id, t, ok, sub, h], i) => `<li class="${ok ? "done" : i === cur ? "on" : ""}"><a href="${h}"><span class="hs-dot">${ok ? ic("check") : ""}</span><b>${t}</b><small>${sub}</small></a></li>`).join("")}</ol>
+
+      <section class="h-hero">
+        <div class="h-money"><div class="vhead sm" data-vhead><div class="vh-main"><span class="vh-k">Tu dinero</span><b class="vh-v" data-o="val">${eur(m.value, true)}</b>
+            ${has ? `<p class="vh-chg"><span data-o="chg"></span> <small data-o="when"></small></p>` : `<p class="vh-chg"><small>Aún no has invertido</small></p>`}</div></div>
+          ${has ? `<a href="#/dinero" class="vchart mini" data-vchart data-range="1M" aria-label="Ver tu dinero"></a>` : `<div class="mini-empty"></div>`}
+          <div class="h-acts">${btn(`${ic("plus")}Aportar`, "openContribute", "primary sm")}${lnk(`Ver detalle${ic("arrow")}`, "#/dinero", "ghost sm")}</div></div>
+        <div class="h-week"><span class="h-k">${ic("spark")}Tu dinero hoy · semana del ${fmtD(weekOf(new Date()))}</span>
+          ${w.lines.map(l => `<p>${l}</p>`).join("")}
+          <p class="h-funds">${(w.parts.length ? w.parts : [{ fund: "global" }]).map(p => `<span>${sw(p.fund)}${FUNDS[p.fund].name} <b class="${w.mv[p.fund] >= 0 ? "up" : "down"}">${sg(w.mv[p.fund])}</b></span>`).join("")}</p>
+          ${can ? `<button class="h-link" data-act="goAsk">Pregúntale a Gemini${ic("arrow")}</button>` : ""}</div>
+      </section>
+
+      <dl class="h-stats">
+        <div><dt>Millas de casa</dt><dd>${num(mi.total)}</dd><small>${pts(mi.cut)} puntos menos de diferencial</small></div>
+        <div><dt>Racha</dt><dd>${st.current} <span>${st.current === 1 ? "semana" : "semanas"}</span></dd><small>${st.thisWeek ? "Esta semana ya cuenta" : "Haz algo esta semana"}</small></div>
+        <div><dt>Protegido el primer año</dt><dd>${eur(m.protect?.base || 0)} <span>de ${RULES.protectCap} €</span></dd><small>${m.protect?.active ? `${m.protect.daysLeft} días restantes` : m.protect ? "Periodo terminado" : "Empieza con tu primera aportación"}</small></div>
+      </dl>
+
+      <section class="h-cols">
+        ${done < tasks.length ? `<div><h2 class="h-h">Primeros pasos <small>${done} de ${tasks.length}</small></h2>
+          <div class="h-list">${tasks.map(([ok, t, d, h]) => `<a class="h-item ${ok ? "ok" : ""} ${t === next?.[1] ? "next" : ""}" href="${h}"><span class="h-tick">${ok ? ic("check") : ""}</span><div><b>${t}</b><span>${d}</span></div>${ic("chev", "chev")}</a>`).join("")}</div></div>` : ""}
+        <div><h2 class="h-h">Actividad reciente ${recent.length ? `<a href="#/dinero">Ver todo</a>` : ""}</h2>
+          ${recent.length ? `<div class="h-list">${recent.map(c => `<div class="h-item"><span class="h-tick ${isGift(c) ? "gift" : "own"}">${ic(isGift(c) ? "gift" : c.src === "premio" ? "card" : "plus")}</span><div><b>${SOURCES[c.src].label}${c.from ? ` · ${esc(c.from)}` : ""}</b><span>${fmtD(c.date)}</span></div><b class="amt">+${eur(c.amount, c.amount % 1 !== 0)}</b></div>`).join("")}</div>`
+            : `<p class="h-none">Tus aportaciones y los regalos de tu familia aparecerán aquí.</p>`}</div>
+      </section>
     </div>`;
 }
 
@@ -615,11 +634,6 @@ function linkedinUrl(d) {
 }
 function vAprende() {
     const done = Object.keys(S.lessons).length, all = done === LESSONS.length, age = ageOf(), m = money(), passed = S.exam?.passed, st = stageOf();
-    const stages = [
-        [STAGES[0], passed ? `Superado con ${S.exam.score}/${S.exam.total}` : `${done} de ${LESSONS.length} temas`],
-        [STAGES[1], passed ? (m.protect?.active ? `${m.protect.daysLeft} días de protección` : m.protect ? "Primer año completado" : "Empieza con tu primera aportación") : `Tus primeros ${RULES.protectCap} € protegidos`],
-        [STAGES[2], age >= RULES.adultAge ? "La cuenta es solo tuya" : `A los ${RULES.adultAge} años`],
-    ];
     const today = iso(new Date()), played = S.games[today];
     let dip = "";
     if (passed && S.diploma) {
@@ -634,7 +648,7 @@ function vAprende() {
     }
     return `${pageH("Aprende", "Lo esencial para invertir con criterio. Cada paso suma millas de casa.")}
     <div class="grid">
-      ${card(`<div class="cred-hero">${credVisual(true)}<ol class="stages">${stages.map(([t, sub], i) => `<li class="${i < st ? "done" : i === st ? "on" : ""}"><span>${i < st ? ic("check") : i + 1}</span><div><b>${t}</b><small>${sub}</small></div></li>`).join("")}</ol></div>`, "c-12")}
+      ${card(`<div class="cred-hero">${credVisual(true)}${msList("stages")}</div>`, "c-12")}
       ${card(`${cardH("Fundamentos", `Cinco temas de unos tres minutos. Cada tema suma ${MILES.lesson} millas de casa.`, `<span class="count">${done}/${LESSONS.length}</span>`)}
         <div class="rows">${LESSONS.map((l, i) => `<a class="row ${S.lessons[l.id] ? "ok" : ""}" href="#/tema/${l.id}/0"><span class="tick num">${S.lessons[l.id] ? ic("check") : i + 1}</span><div><b>${l.title}</b><span>${l.sub} · ${l.min} min</span></div>${ic("chev", "chev")}</a>`).join("")}</div>
         <div class="exam"><span class="mv-ic own">${ic("star")}</span><div><b>Prueba final</b><span>${passed ? `Superada el ${fmtD(S.exam.date)}.` : all ? `${RULES.examSize} preguntas; puedes fallar ${RULES.examMaxErrors}. Al superarla, CaixaBank invierte ${RULES.prize} € a tu nombre.` : `Disponible al completar los ${LESSONS.length} temas.`}</span></div>
@@ -741,7 +755,7 @@ function vExamen() {
         const ok = e.errors <= RULES.examMaxErrors;
         return focus("#/aprende", 0, 0, `<div class="center"><div class="result ${ok ? "ok" : "ko"}">${ic(ok ? "check" : "close")}</div>
           <h1>${ok ? "Fundamentos superados" : "Esta vez no ha sido"}</h1>
-          <p>${ok ? `${RULES.examSize - e.errors} de ${RULES.examSize} respuestas correctas. Ya tienes tu Certificado Horizonte, ${RULES.prize} € invertidos a tu nombre y ${MILES.theory} millas de casa. Empieza tu primer año acompañado.` : `Has fallado ${e.errors} preguntas y el máximo es ${RULES.examMaxErrors}. Repasa los temas y vuelve a intentarlo cuando quieras.`}</p>
+          <p>${ok ? `${RULES.examSize - e.errors} de ${RULES.examSize} respuestas correctas. Ya tienes tu Certificado Horizonte, ${RULES.prize} € invertidos a tu nombre y ${MILES.theory} millas de casa.` : `Has fallado ${e.errors} preguntas y el máximo es ${RULES.examMaxErrors}. Repasa los temas y vuelve a intentarlo cuando quieras.`}</p>
           <div class="focus-nav center">${ok ? lnk("Ver mi certificado", "#/aprende", "primary lg") : btn("Repetir la prueba", "examRetry", "primary lg")}</div></div>`);
     }
     const q = e.qs[e.i];
@@ -790,10 +804,11 @@ function valueSeries() {
         const h = hourly(k), hi = (1 - f) * 48, j = Math.floor(hi), hf = hi - j;
         return sd * (d0 + (d1 - d0) * f) + sh * ((h[j] ?? 0) + ((h[j + 1] ?? 0) - (h[j] ?? 0)) * hf);
     };
+    const n0 = noise(start), noiseAt = t => noise(t) - n0 * (now - t) / Math.max(1, now - start);   // anclado a 0 en la primera aportación y hoy
     const at = t => {
         let trend = 0, put = 0;
         for (const d of deps) if (d.t <= t) { trend += d.a * (1 + m.r * Math.max(0, t - d.g) / YEAR); put += d.a; }
-        return { t, v: t >= now ? m.value : trend * Math.exp(noise(t)), put };
+        return { t, v: t >= now ? m.value : trend * Math.exp(noiseAt(t)), put };
     };
     return { at, start, now, deps, m };
 }
@@ -818,6 +833,7 @@ const fmtWhen = (t, key) => {
 function drawValueChart(box) {
     const vs = valueSeries(); if (!vs) return;
     const key = box.dataset.range || vRange, pts = rangePoints(vs, key), { chg, pct: p } = rangeChange(pts);
+    const span = RANGES.find(r => r[0] === key)[2], label = span !== Infinity && vs.start > vs.now - span ? "desde tu primera aportación" : RANGES.find(r => r[0] === key)[1];
     const mini = box.classList.contains("mini"), W = Math.max(mini ? 120 : 280, box.clientWidth), H = mini ? Math.max(70, box.clientHeight) : W < 560 ? 200 : 260, padR = box.classList.contains("mini") ? 0 : 64, padT = 12, padB = 12;
     const vals = pts.flatMap(x => [x.v, x.put]), lo0 = Math.min(...vals), hi0 = Math.max(...vals), pad = Math.max((hi0 - lo0) * .12, hi0 * .004, .5);
     const lo = Math.max(0, lo0 - pad), hi = hi0 + pad;
@@ -835,14 +851,14 @@ function drawValueChart(box) {
       <g class="vc-hover" style="display:none"><line y1="0" y2="${H}"/><circle r="5" style="fill:${col}"/></g>
       <circle cx="${X(pts[pts.length - 1].t).toFixed(1)}" cy="${Y(pts[pts.length - 1].v).toFixed(1)}" r="3.5" style="fill:${col}"/>
     </svg>`;
-    const head = box.closest(".card")?.querySelector("[data-vhead]");
+    const head = box.closest(".card, .h-money")?.querySelector("[data-vhead]");
     const setHead = (q, live) => {
         if (!head) return;
         const c = live ? { chg, pct: p } : rangeChange(pts.filter(x => x.t <= q.t));
         $("[data-o=val]", head).textContent = eur(q.v, true);
         const o = $("[data-o=chg]", head); o.className = c.chg >= 0 ? "up" : "down";
         o.textContent = `${signed(c.chg)} (${c.pct >= 0 ? "+" : "−"}${pct(Math.abs(c.pct), 2)})`;
-        $("[data-o=when]", head).textContent = live ? RANGES.find(r => r[0] === key)[1] : fmtWhen(q.t, key);
+        $("[data-o=when]", head).textContent = live ? label : fmtWhen(q.t, key);
     };
     setHead(pts[pts.length - 1], true);
     if (box.classList.contains("mini")) return;
@@ -883,10 +899,13 @@ function vDinero() {
           <div class="auto-row"><div><b>Cada semana</b><span>${S.weekly ? `≈ ${eur(S.weekly * 52 / 12)} al mes` : "Elige una cantidad"}</span></div>
             <div class="seg" role="radiogroup" aria-label="Euros a la semana">${weeklyOpts.map(v => `<button role="radio" aria-checked="${S.weekly === v}" class="${S.weekly === v ? "on" : ""}" data-act="setWeekly" data-v="${v}">${v ? `${v} €` : "No"}</button>`).join("")}</div></div>
           <div class="auto-row"><div><b>Redondeo de compras</b><span>Cada compra con tu tarjeta se redondea al euro.</span></div>${toggle("roundup", S.roundup, "Redondeo de compras")}</div>
-        </div>`, "c-6")}
-      ${metasCard()}
+        </div>`, "c-12")}
       ${card(`${cardH("Dónde está tu dinero", m.al.active ? `Cartera base ${pct(RULES.base * 100)} · Antídoto ${pct(RULES.antidote * 100)}` : m.al.pending ? "Tu Antídoto espera la aprobación de tu familia." : "Todo en la cartera base.", m.al.active ? "" : lnk(S.fears.length ? "Ver Antídoto" : "Elegir Antídoto", "#/antidoto", "sm ghost"))}
         ${stack(m.parts)}<div class="rows">${m.parts.map(pp => `<div class="row">${sw(pp.fund)}<div><b>${FUNDS[pp.fund].name}</b><span>${pp.fear ? "Antídoto · " + esc(pp.fear.label) : FUNDS[pp.fund].sub}</span></div><b class="amt">${eur(pp.amount, true)}</b></div>`).join("")}</div>`, "c-12")}
+      ${card(`${cardH("Primer año acompañado", `Los primeros ${RULES.protectCap} € que inviertes tú no pueden perder valor durante ${RULES.protectMonths} meses. Si al cumplirse valen menos, CaixaBank pone la diferencia.`)}
+        <div class="protect"><div class="pr-num"><b>${eur(m.protect?.base || 0)}</b><span>de ${RULES.protectCap} € protegidos</span></div>${bar(m.protect?.base || 0, RULES.protectCap, "blue")}
+        <p class="note">${m.protect ? (m.protect.active ? `Del ${fmtD(m.protect.start)} al ${fmtD(m.protect.end)} · quedan ${m.protect.daysLeft} días` : `Tu periodo de protección terminó el ${fmtD(m.protect.end)}.`) : "Empieza con tu primera aportación."}</p></div>
+        <details class="terms"><summary>Condiciones${ic("plus")}</summary><ul><li>Tope de ${RULES.protectCap} € por persona.</li><li>Solo cubre si no vendes antes de los ${RULES.protectMonths} meses.</li><li>Es una bonificación promocional de CaixaBank, no un producto garantizado.</li></ul></details>`, "c-12")}
     </div>
     <p class="note center-note">Movimientos de mercado simulados en esta versión de demostración.</p>`;
 }
@@ -923,8 +942,7 @@ function contributeSheet() {
     sheet("Aportar", `<form data-form="contribute" class="form">
       <div class="amount-in"><input name="amount" type="number" min="1" max="3000" step="0.01" inputmode="decimal" required placeholder="0" aria-label="Importe en euros"><span>€</span></div>
       <div class="chips">${[1, 5, 10, 20, 50].map(v => `<button type="button" class="chip" data-act="setAmount" data-v="${v}">${v} €</button>`).join("")}</div>
-      <div class="form two"><label class="field"><span>Origen del dinero</span><select name="src"><option value="paga">Mi paga</option><option value="verano">Un trabajo de verano</option><option value="otro">Otro ingreso</option></select></label>
-      <label class="field"><span>Para</span><select name="meta"><option value="">Tu casa</option>${S.metas.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></label></div>
+      <label class="field"><span>¿De dónde sale?</span><select name="src"><option value="paga">Mi paga</option><option value="verano">Un trabajo de verano</option><option value="otro">Otro ingreso</option></select></label>
       <button class="btn primary lg block">Confirmar aportación</button></form>`);
 }
 /* ---------------- Antídoto */
@@ -1299,7 +1317,7 @@ document.addEventListener("submit", e => {
     } else if (k === "contribute") {
         const amount = Math.round(+d.amount * 100) / 100;
         if (!(amount > 0)) return;
-        closeSheet(); addMoney({ amount, src: d.src, ...(d.meta ? { meta: d.meta } : {}) }); rerender();
+        closeSheet(); addMoney({ amount, src: d.src }); rerender();
     } else if (k === "meta") {
         const target = Math.round(+d.target); if (!(target > 0)) return;
         S.metas.push({ id: "m" + Date.now().toString(36), name: d.name.trim(), target }); save(); closeSheet(); toast("Meta creada"); rerender();
