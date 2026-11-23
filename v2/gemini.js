@@ -160,13 +160,24 @@ function localGemini(question, c) {
     }
 }
 
-async function askGemini(question, ctx) {
-    const ep = window.HZ2_CONFIG && window.HZ2_CONFIG.geminiEndpoint;
+/* Si hay intermediario (Supabase Edge Function con la clave guardada como secreto), responde Gemini;
+   si no responde a tiempo o se agota la cuota, se usa la respuesta local. Nunca se envía el nombre. */
+async function askGemini(question, ctx, history = []) {
+    const cfg = window.HZ2_CONFIG || {}, ep = cfg.geminiEndpoint, local = localGemini(question, ctx);
     if (ep) {
+        const { name, ...anon } = ctx;
+        const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 12000);
         try {
-            const r = await fetch(ep, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, context: ctx }) });
-            if (r.ok) { const d = await r.json(); if (d.answer) return { kind: "remote", title: d.title || "", text: d.answer, facts: d.facts || [], actions: d.actions || [], used: d.used || [] }; }
-        } catch (e) { /* se usa la respuesta local */ }
+            const headers = { "Content-Type": "application/json" };
+            if (cfg.supabaseAnonKey && ep.includes(".supabase.co")) headers.apikey = cfg.supabaseAnonKey;
+            const r = await fetch(ep, { method: "POST", headers, signal: ctl.signal,
+                body: JSON.stringify({ question, context: anon, history: history.slice(-6).map(m => ({ r: m.r, t: m.r === "u" ? m.t : `${m.title ? m.title + ". " : ""}${m.text || ""}` })) }) });
+            if (r.ok) {
+                const d = await r.json();
+                if (d.answer) return { kind: "remote", title: d.title || "", text: d.answer, facts: d.facts?.length ? d.facts : local.facts || [], actions: local.actions || [], used: ["Gemini", ...(local.used || [])] };
+            }
+        } catch (e) { /* sin conexión o tiempo agotado: respuesta local */ }
+        finally { clearTimeout(timer); }
     }
-    return localGemini(question, ctx);
+    return local;
 }

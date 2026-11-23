@@ -1162,7 +1162,7 @@ async function askQ(q) {
     if (!q || !q.trim() || typing) return;
     S.chat.push({ r: "u", t: q.trim(), ts: Date.now() }); save();
     typing = true; rerender();
-    const t0 = Date.now(), res = await askGemini(q, geminiContext());
+    const t0 = Date.now(), res = await askGemini(q, geminiContext(), S.chat.slice(0, -1));
     await new Promise(r => setTimeout(r, Math.max(0, 650 - (Date.now() - t0))));   // una pausa breve, como en un asistente real
     typing = false;
     S.chat.push({ r: "g", ...res, ts: Date.now() });
