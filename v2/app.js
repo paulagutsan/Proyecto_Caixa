@@ -235,35 +235,42 @@ function vLanding() {
     const lpYear = 8, lpNews = MKT_NEWS[lpYear];
     return `<div class="lp">
     <header class="lp-nav"><div class="lp-in">${brand("#/")}
-      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#familias">Familias</a><a href="#valores">Valores</a><a href="#preguntas">Preguntas</a></nav>
+      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#por-que">Por qué Horizonte</a><a href="#aprende">Aprende</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#familias">Familias</a><a href="#preguntas">Preguntas</a></nav>
       ${lnk("Crear cuenta", "#/alta/joven", "primary sm")}</div></header>
 
     <section class="hz-hero"><div class="lp-in hz-hero-in">
       <div class="hz-copy">
-        <h1>Del primer euro<br>a tu <em>primera casa</em></h1>
+        <h1>Hoy, tu primer euro.<br>Mañana, <em>tu casa</em>.</h1>
         <p class="hz-lead">Formación financiera, inversión acompañada durante el primer año y ventajas en tu primera hipoteca con CaixaBank. Un camino pensado para jóvenes y sus familias.</p>
         <div class="lp-cta">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "primary lg")}${lnk("Soy familia", "#/alta/familia", "lg")}</div>
         <ul class="hz-trust"><li>${ic("check")}Sin cuotas ni comisión de apertura</li><li>${ic("family")}Con el apoyo de tu familia</li><li>${ic("shield")}Primer año acompañado</li></ul>
       </div>
       <div class="hz-visual">
         <div class="hz-chart" data-hero>
-          <div class="hch-top"><div><b>Tu dinero crece contigo</b><small>Ahorro mensual durante ${GOAL_DEFAULT.age - 15} años</small></div>
-            <div class="hch-chips" role="group" aria-label="Cuánto ahorras al mes">${[10, 25, 50, 100].map(v => `<button type="button" class="${v === 25 ? "on" : ""}" data-hero-amt="${v}">${v} €</button>`).join("")}</div></div>
+          <div class="hch-ask"><span>Si apartas al mes</span><div class="hch-chips" role="group" aria-label="Cuánto apartas al mes">${[10, 25, 50, 100].map(v => `<button type="button" class="${v === 25 ? "on" : ""}" data-hero-amt="${v}">${v} €</button>`).join("")}</div></div>
+          <div class="hch-big"><b data-o="v"></b><span>en ${GOAL_DEFAULT.age - 15} años, para la entrada de tu casa</span></div>
           <div class="hch-plot" data-o="plot"></div>
-          <ul class="hch-legend"><li><i class="l1"></i>Lo que aportas<b data-o="c"></b></li><li><i class="l2"></i>Interés acumulado<b data-o="i"></b></li></ul>
-          <div class="hch-foot"><div><span>En ${GOAL_DEFAULT.age - 15} años reúnes</span><b data-o="v"></b></div><div><span>Rebaja en tu hipoteca</span><b data-o="cut"></b></div></div>
-          <div class="hch-rate"><span>Rentabilidad estimada al año</span><div class="hch-chips" role="group" aria-label="Escenario de rentabilidad">${[3, 5, 8].map(v => `<button type="button" class="${v === 5 ? "on" : ""}" data-hero-rate="${v}">${v} %</button>`).join("")}</div></div>
-          <p class="note" data-o="nt"></p>
+          <div class="hch-key"><span><i class="l1"></i>Lo que pones tú</span><span><i class="l2"></i>Lo que gana tu dinero</span></div>
+          <p class="note">Estimación con una rentabilidad del 5 % anual. No es una promesa de rentabilidad.</p>
         </div>
       </div>
     </div></section>
-
-    <section class="hz-stats"><div class="lp-in"><dl><div><dt>${RULES.prize} €</dt><dd>invertidos a tu nombre al aprobar Fundamentos</dd></div><div><dt>${RULES.protectCap} €</dt><dd>protegidos durante tu primer año</dd></div><div><dt>−${pts(MILES.maxCut)}</dt><dd>puntos de interés como máximo en tu primera hipoteca</dd></div></dl></div></section>
 
     <section class="lp-sec" id="ciclo"><div class="lp-in">
       <p class="kicker">Cómo funciona</p><h2 class="serif">Un solo ciclo. Cada paso alimenta el siguiente.</h2>
       <ol class="cycle">${CYCLE.map((c, i) => `<li class="${c.id}"><span class="cy-n">${String(i + 1).padStart(2, "0")}</span><span class="cy-ic">${ic(c.ic)}</span><h3>${c.t}</h3><p>${c.p}</p></li>`).join("")}</ol>
       <p class="cycle-foot">${ic("switch")}Cada año, una revisión: lo aprendido, tus preocupaciones y tu Antídoto, al día. Y el ciclo vuelve a empezar.</p>
+    </div></section>
+
+    <section class="lp-sec why" id="por-que"><div class="lp-in">
+      <div class="why-head"><div><p class="kicker">Por qué Horizonte</p><h2 class="serif">Empezar a invertir, por fin, sin miedo.</h2></div>
+        <p class="lp-lead">Detrás está CaixaBank Asset Management, la mayor gestora de fondos de España. Y unas ventajas pensadas para quien da sus primeros pasos.</p></div>
+      <dl class="why-stats">
+        <div><dt>${RULES.prize} €</dt><dd><b>Tu primera inversión, de regalo</b>Los invertimos a tu nombre cuando superas Fundamentos.</dd></div>
+        <div><dt>${RULES.protectCap} €</dt><dd><b>Un primer año sin perder</b>Si a los ${RULES.protectMonths} meses valen menos de lo que pusiste, ponemos la diferencia.</dd></div>
+        <div><dt>−${pts(MILES.maxCut)}</dt><dd><b>Puntos menos en tu hipoteca</b>Tus millas de casa rebajan el interés de tu primera hipoteca.</dd></div>
+        <div><dt>0 €</dt><dd><b>Sin cuotas de mantenimiento</b>Ni comisión de apertura. Empiezas desde 1 €.</dd></div>
+      </dl>
     </div></section>
 
     <section class="lp-sec alt" id="aprende"><div class="lp-in lp-split">
@@ -278,23 +285,17 @@ function vLanding() {
       </div>
     </div></section>
 
-    <section class="lp-sec" id="primer-ano"><div class="lp-in lp-split">
-      <div class="big-num"><span>${RULES.protectCap} €</span><p>Tu primer año, los primeros ${RULES.protectCap} € que inviertes no pueden perder valor. Si a los ${RULES.protectMonths} meses valen menos de lo que pusiste, CaixaBank pone la diferencia.</p></div>
-      <div class="lp-sim" data-lpsim>
-        <label>Si la bolsa cayera en tu primer año <output data-o="d"></output><input type="range" min="-40" max="20" step="5" value="-20" data-i="d"></label>
-        <div class="ls-row"><span>Tus ${RULES.protectCap} € valdrían</span><b data-o="val"></b></div>
-        <div class="ls-row hi"><span>CaixaBank pondría</span><b data-o="pay"></b></div>
-        <div class="ls-row"><span>Tú recuperas</span><b data-o="you"></b></div>
-        <p class="note">Bonificación promocional con tope de ${RULES.protectCap} € y ${RULES.protectMonths} meses, si no vendes antes.</p>
-      </div>
-    </div></section>
-
     <section class="hz-dark" id="antidoto"><div class="lp-in">
       <p class="kicker gold">El Antídoto</p><h2 class="serif">Invierte en lo que te preocupa.</h2>
-      <p class="lp-lead">No te preguntamos cuánto riesgo quieres. Te preguntamos qué te quita el sueño de tu futuro. Una parte de tu dinero invierte justo ahí: si ocurre, esa parte gana.</p>
+      <p class="lp-lead">Si inviertes en aquello que te da miedo y ese miedo se cumple, esa parte de tu dinero gana valor justo cuando más lo necesitas. Así, lo que te preocupa pesa menos en tu bolsillo y tu dinero queda mejor protegido.</p>
+      <ol class="anti-steps">
+        <li><span>1</span><div><b>Eliges lo que te preocupa</b><p>Por ejemplo, que la IA cambie el trabajo que quieres o no poder pagarte nunca una casa.</p></div></li>
+        <li><span>2</span><div><b>Una parte se invierte ahí</b><p>El ${Math.round(RULES.antidote * 100)} % va a empresas de ese tema; el ${Math.round(RULES.base * 100)} %, a un fondo global diversificado.</p></div></li>
+        <li><span>3</span><div><b>Si ocurre, compensa</b><p>Si la IA avanza o los pisos suben, esas empresas suelen ganar más, y esa parte de tu dinero sube con ellas.</p></div></li>
+      </ol>
       <div class="lp-fears">${FEARS.map((f, i) => `<button class="lf ${i === 0 ? "on" : ""}" data-act="lpFear" data-id="${f.id}"><span>${ic(f.id)}</span>${f.label}</button>`).join("")}</div>
       <div class="lf-out" data-o="lf"><b>${FUNDS[FEARS[0].fund].name}</b><p>${FEARS[0].why}</p></div>
-      <p class="hz-small">${Math.round(RULES.base * 100)} % en un fondo global diversificado y ${Math.round(RULES.antidote * 100)} % en tu Antídoto, dentro de una selección cerrada de fondos de CaixaBank AM. Reduce el golpe; no es una garantía. Gemini te lo explica con tus propios números.</p>
+      <p class="hz-small">Funciona como una cobertura, no como una garantía: reduce el golpe, pero tu dinero puede bajar. Siempre dentro de una selección cerrada de fondos de CaixaBank AM, y Gemini te lo explica con tus propios números.</p>
     </div></section>
 
     <section class="lp-sec" id="casa"><div class="lp-in lp-split">
@@ -314,16 +315,7 @@ function vLanding() {
         <p class="lp-lead">Regalos con un mensaje o una aportación cada mes, sus decisiones aprobadas por ti hasta los 18 y su progreso, siempre a la vista.</p>
         ${lnk("Crear cuenta familiar", "#/alta/familia", "primary lg")}</div>
       <ul class="lp-checks"><li><span>${ic("gift")}</span><div><b>Regalos con mensaje</b><small>Cumpleaños, Navidad o cuando quieras. También cada mes.</small></div></li>
-        <li><span>${ic("key")}</span><div><b>Tú apruebas</b><small>El Antídoto y el uso de sus datos necesitan tu permiso hasta los 18.</small></div></li>
         <li><span>${ic("house")}</span><div><b>Suman a su casa</b><small>Tus regalos generan millas de casa, con un tope mensual.</small></div></li></ul>
-    </div></section>
-
-    <section class="lp-sec" id="valores"><div class="lp-in">
-      <p class="kicker">Nuestros valores</p><h2 class="serif">Los valores de CaixaBank, llevados a tu primer euro.</h2>
-      <p class="lp-lead">El propósito de CaixaBank es estar cerca de las personas para todo lo que importa, y se apoya en tres valores: calidad, confianza y compromiso social. En Horizonte los unimos a los nuestros para que se noten en lo que haces cada semana.</p>
-      <div class="vals-key"><span class="cb">Valor de CaixaBank</span><span class="hz">Valor de Horizonte</span></div>
-      <div class="vals">${VALUES.map(v => `<article><div class="val-pair">${v.cb ? `<span class="cb">${v.cb}</span><i>+</i>` : ""}<span class="hz">${v.hz}</span></div><h3>${v.t}</h3><p>${v.p}</p></article>`).join("")}</div>
-      <p class="note vals-src">Valores de CaixaBank según su <a href="https://www.caixabank.com/informacioncorporativa/misionvisionyvalores_es.html" target="_blank" rel="noopener">web corporativa</a>. Gemini solo usa tu información con la autorización de tu familia y nunca para publicidad.</p>
     </div></section>
 
     <section class="lp-sec alt" id="preguntas"><div class="lp-in lp-narrow">
@@ -331,69 +323,44 @@ function vLanding() {
       <div class="faq">${FAQ.map(f => `<details><summary>${f.q}${ic("plus")}</summary><p>${f.a}</p></details>`).join("")}</div>
     </div></section>
 
-    <section class="hz-final"><div class="lp-in"><h2 class="serif">Tu primer euro empieza hoy.</h2><p class="hz-lead">Crea tu cuenta en dos minutos. Tu familia, en otros dos.</p><div class="lp-cta center">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "white lg")}${lnk("Soy familia", "#/alta/familia", "lg light")}</div></div></section>
+    <section class="hz-final"><div class="lp-in"><h2 class="serif">Da el primer paso hoy.</h2><p class="hz-lead">Crea tu cuenta en dos minutos. Tu familia, en otros dos.</p><div class="lp-cta center">${lnk(`Empieza ahora${ic("arrow")}`, "#/alta/joven", "white lg")}${lnk("Soy familia", "#/alta/familia", "lg light")}</div></div></section>
     <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}</div>
     </div>`;
 }
-/* Portada: lo que aportas y el interés acumulado, con el diploma al empezar y la casa al final */
+/* Portada: lo que pones tú y lo que gana tu dinero, hasta tu casa */
 function heroPlot(m, N, rate = 5) {
-    const W = 560, H = 300, ml = 12, mr = 16, mt = 84, mb = 32, S = 4;
-    const val = t => fv(m, t, 0, rate / 100), put = t => m * 12 * t, yMax = val(N) * 1.05;
+    const W = 520, H = 230, ml = 4, mr = 46, mt = 18, mb = 26, S = 4;
+    const val = t => fv(m, t, 0, rate / 100), put = t => m * 12 * t, yMax = val(N) * 1.04;
     const X = t => ml + (W - ml - mr) * t / N, Y = v => H - mb - (H - mt - mb) * v / yMax;
     const P = f => Array.from({ length: N * S + 1 }, (_, k) => [X(k / S), Y(f(k / S))]);
     const L = a => a.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
     const tot = P(val), con = P(put), y0 = Y(0), xs = X(0), xe = X(N), ye = Y(val(N));
-    const midT = N * 0.68, yMid = (Y(val(midT)) + Y(put(midT))) / 2, thick = Y(put(midT)) - Y(val(midT));
-    const grid = [.25, .5, .75, 1].map(k => { const y = Y(yMax / 1.05 * k).toFixed(1); return `<line x1="${ml}" x2="${W - mr}" y1="${y}" y2="${y}" stroke="#e6edf2" stroke-width="1"/>`; }).join("");
-    const ticks = [0, 3, 6, 9, 12].filter(t => t <= N).map(t => `<text x="${X(t).toFixed(1)}" y="${H - 9}" text-anchor="${t === 0 ? "start" : t === N ? "end" : "middle"}" font-size="13" fill="#6b7580">${t === 0 ? "Hoy" : `${t} años`}</text>`).join("");
-    const halo = 'paint-order="stroke" stroke="#fff" stroke-width="4" stroke-linejoin="round"';
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfica a ${N} años: lo que aportas y el interés acumulado">
-      <defs><linearGradient id="hgi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b500" stop-opacity=".95"/><stop offset="1" stop-color="#ee7b1f" stop-opacity=".8"/></linearGradient>
-        <linearGradient id="hgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007eae" stop-opacity=".24"/><stop offset="1" stop-color="#007eae" stop-opacity=".06"/></linearGradient></defs>
-      ${grid}<line x1="${ml}" x2="${W - mr}" y1="${y0}" y2="${y0}" stroke="#cfd8e0" stroke-width="1.2"/>
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="En ${N} años, lo que pones tú y lo que gana tu dinero">
+      <defs><linearGradient id="hgi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b500"/><stop offset="1" stop-color="#ee7b1f" stop-opacity=".85"/></linearGradient>
+        <linearGradient id="hgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007eae" stop-opacity=".28"/><stop offset="1" stop-color="#007eae" stop-opacity=".06"/></linearGradient></defs>
+      <line x1="${ml}" x2="${xe}" y1="${y0}" y2="${y0}" stroke="#d5dee6" stroke-width="1.2"/>
       <polygon points="${L(con)} ${xe.toFixed(1)},${y0.toFixed(1)} ${xs.toFixed(1)},${y0.toFixed(1)}" fill="url(#hgc)"/>
       <polygon points="${L(tot)} ${L([...con].reverse())}" fill="url(#hgi)"/>
-      <polyline points="${L(tot)}" fill="none" stroke="#007eae" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>
-      ${thick > 26 ? `<text x="${X(midT).toFixed(1)}" y="${(yMid + 5).toFixed(1)}" text-anchor="middle" font-size="14" font-weight="700" fill="#4a2e00">Interés acumulado</text>` : ""}
-      <line x1="${xs + 24}" y1="62" x2="${xs + 24}" y2="${y0}" stroke="#007eae" stroke-width="1.3" stroke-dasharray="3 4" opacity=".6"/><circle cx="${xs + 24}" cy="${y0}" r="4.5" fill="#fff" stroke="#007eae" stroke-width="2"/>
-      <g transform="translate(${xs} 4)"><rect width="206" height="58" rx="12" fill="#fff" stroke="#cfe3ee"/>
-        <g transform="translate(14 12)"><rect width="26" height="34" rx="3.5" fill="#eaf4f9" stroke="#007eae" stroke-width="1.7"/><line x1="6" y1="9" x2="20" y2="9" stroke="#007eae" stroke-width="1.7" stroke-linecap="round"/><line x1="6" y1="15" x2="17" y2="15" stroke="#8fc0d8" stroke-width="1.7" stroke-linecap="round"/><circle cx="19" cy="26" r="6" fill="#f7b500"/><text x="19" y="30" text-anchor="middle" font-size="9" fill="#6b4300">★</text></g>
-        <text x="54" y="26" font-size="15" font-weight="700" fill="#0f1419">Tu diploma</text><text x="54" y="44" font-size="12.5" fill="#6b7580">Certificado Horizonte</text></g>
-      <line x1="${xe}" y1="62" x2="${xe}" y2="${ye.toFixed(1)}" stroke="#005b82" stroke-width="1.3" stroke-dasharray="3 4" opacity=".65"/>
+      <polyline points="${L(tot)}" fill="none" stroke="#007eae" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${xs}" cy="${y0}" r="4.5" fill="#fff" stroke="#007eae" stroke-width="2"/>
       <circle cx="${xe}" cy="${ye.toFixed(1)}" r="6" fill="#007eae" stroke="#fff" stroke-width="2.5"/>
-      <text x="${(xe - 12).toFixed(1)}" y="${(ye + 22).toFixed(1)}" text-anchor="end" font-size="15" font-weight="700" fill="#005b82" ${halo}>${eur(val(N))}</text>
-      <g transform="translate(${xe - 206} 4)"><rect width="206" height="58" rx="12" fill="#fff" stroke="#cfe3ee"/>
-        <g transform="translate(14 14) scale(1.02)"><path d="M0 14 L15 1 L30 14 M5 11 V27 H25 V11 M12 27 V19 H18 V27" fill="none" stroke="#005b82" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></g>
-        <text x="60" y="26" font-size="15" font-weight="700" fill="#0f1419">Tu primera casa</text><text x="60" y="44" font-size="12.5" fill="#6b7580">Dentro de ${N} años</text></g>
-      ${ticks}</svg>`;
+      <g transform="translate(${xe + 8} ${(ye - 17).toFixed(1)})"><rect width="34" height="34" rx="10" fill="#fff4dc" stroke="#f2d08a"/><path transform="translate(7 7)" d="M1 9.5 L10 2 L19 9.5 M4 8 V18 H16 V8 M8.5 18 V13 H11.5 V18" fill="none" stroke="#b36b00" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></g>
+      <text x="${xs}" y="${H - 6}" font-size="13" fill="#6b7580">Hoy</text>
+      <text x="${xe}" y="${H - 6}" text-anchor="end" font-size="13" fill="#6b7580">Dentro de ${N} años</text></svg>`;
 }
 function bindLanding() {
     const hero = $("[data-hero]");
     if (hero) {
         const yrs = GOAL_DEFAULT.age - 15;
-        const ml = MILES.lesson * LESSONS.length + MILES.theory + MILES.firstOwn + yrs * (MILES.monthOwn * 12 + MILES.itv + 13 * MILES.streak4), cut = cutOf(ml);
         let amt = 25, rate = 5;
         const show = () => {
-            const m = amt, total = fv(m, yrs, 0, rate / 100), put = m * 12 * yrs;
+            const m = amt, total = fv(m, yrs, 0, rate / 100);
             $('[data-o="plot"]', hero).innerHTML = heroPlot(m, yrs, rate);
-            $('[data-o="nt"]', hero).textContent = `Escenario ${{ 3: "prudente", 5: "moderado", 8: "favorable" }[rate]}: rentabilidad estimada del ${rate} % anual, antes de comisiones. No es una promesa de rentabilidad.`;
-            $$("[data-hero-rate]", hero).forEach(b => b.classList.toggle("on", +b.dataset.heroRate === rate));
-            $('[data-o="c"]', hero).textContent = eur(put); $('[data-o="i"]', hero).textContent = eur(total - put);
-            $('[data-o="v"]', hero).textContent = eur(total); $('[data-o="cut"]', hero).textContent = `−${pts(cut)} puntos`;
+            $('[data-o="v"]', hero).textContent = eur(total);
             $$("[data-hero-amt]", hero).forEach(b => b.classList.toggle("on", +b.dataset.heroAmt === m));
         };
         $$("[data-hero-amt]", hero).forEach(b => b.addEventListener("click", () => { amt = +b.dataset.heroAmt; show(); }));
-        $$("[data-hero-rate]", hero).forEach(b => b.addEventListener("click", () => { rate = +b.dataset.heroRate; show(); }));
         show();
-    }
-    const sim = $("[data-lpsim]");
-    if (sim) {
-        const upd = () => {
-            const d = +$('[data-i="d"]', sim).value, val = RULES.protectCap * (1 + d / 100), pay = Math.max(0, RULES.protectCap - val);
-            $('[data-o="d"]', sim).textContent = `${d > 0 ? "+" : d < 0 ? "−" : ""}${Math.abs(d)} %`;
-            $('[data-o="val"]', sim).textContent = eur(val); $('[data-o="pay"]', sim).textContent = eur(pay); $('[data-o="you"]', sim).textContent = eur(val + pay);
-        };
-        $('[data-i="d"]', sim).addEventListener("input", upd); upd();
     }
     const mi = $("[data-lpmiles]");
     if (mi) {
@@ -1209,7 +1176,7 @@ function downloadDiploma() {
 }
 
 window.addEventListener("hashchange", () => {
-    if (/^#(ciclo|aprende|primer-ano|antidoto|casa|familias|seguridad|preguntas)$/.test(location.hash)) return;
+    if (/^#(ciclo|por-que|aprende|antidoto|casa|familias|preguntas)$/.test(location.hash)) return;
     closeSheet(); render(); scrollTo(0, 0);
 });
 render();
