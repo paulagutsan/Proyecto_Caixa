@@ -1087,15 +1087,28 @@ function vCasa() {
     ];
     return `${pageH("Tu casa", "Tus millas de casa se convierten en una rebaja del interés de tu primera hipoteca con CaixaBank.")}
     <div class="grid">
+      ${card(`${cardH("Tu camino a casa", "Mueve los valores y mira a dónde llegarías.")}
+        <div class="pj" data-proj>
+          <div class="pj-ctrl">
+            <label><span>Aportas al mes</span><output data-o="mon"></output><input type="range" min="0" max="400" step="5" value="${Math.round(m.monthly / 5) * 5}" data-i="mon"></label>
+            <label><span>Precio de la vivienda</span><output data-o="price"></output><input type="range" min="60000" max="600000" step="5000" value="${Math.min(600000, Math.max(60000, S.goal.price))}" data-i="price"></label>
+            <label><span>Edad a la que compras</span><output data-o="age"></output><input type="range" min="${minAge}" max="45" step="1" value="${Math.max(S.goal.age, minAge)}" data-i="age"></label>
+          </div>
+          <div class="pj-out">
+            <span class="pj-k" data-o="when"></span>
+            <p class="pj-big"><b data-o="down"></b> ahorrados para la entrada</p>
+            <div class="pj-bar">${bar(0, 1, "up")}<small data-o="need"></small></div>
+            <p class="pj-tip" data-o="tip"></p>
+            <dl class="pj-list">
+              <div><dt>Millas de casa</dt><dd data-o="miles"></dd></div>
+              <div><dt>Rebaja en tu hipoteca</dt><dd data-o="cut"></dd></div>
+              <div><dt>Ahorro en intereses</dt><dd data-o="save"></dd></div>
+            </dl>
+          </div>
+        </div>
+        <p class="note">Estimación con una rentabilidad del 5 % anual, entrada del 20 % del precio, hipoteca a ${MORTGAGE_YEARS} años y tipo de referencia del ${pct(MORTGAGE_RATE, 1)}. El aval del ICO para menores de 35 puede reducir la entrada necesaria.</p>`, "c-12")}
       ${card(`<div class="miles-hero"><div>${stat("Millas de casa", num(mi.total))}<p>Equivalen a <b>${pts(mi.cut)} puntos</b> menos de diferencial: unos <b>${eur(mortgageSaving(mi.cut))}</b> menos de intereses en la hipoteca de tu casa.</p></div>
         <div class="mh-meter"><span>Rebaja acumulada</span>${bar(mi.cut, MILES.maxCut, "gold")}<small>${pts(mi.cut)} de ${pts(MILES.maxCut)} puntos posibles</small></div></div>`, "c-12")}
-      ${card(`${cardH("Proyección", "Mueve los valores y mira cómo llegarías a tu casa.")}
-        <div class="viz proj" data-proj>
-          <div class="proj-in"><label>Aportas al mes <output data-o="mon"></output><input type="range" min="0" max="400" step="5" value="${Math.round(m.monthly / 5) * 5}" data-i="mon"></label>
-            <label>Precio de la vivienda <output data-o="price"></output><input type="range" min="60000" max="600000" step="5000" value="${Math.min(600000, Math.max(60000, S.goal.price))}" data-i="price"></label>
-            <label>Edad de compra <output data-o="age"></output><input type="range" min="${minAge}" max="45" step="1" value="${Math.max(S.goal.age, minAge)}" data-i="age"></label></div>
-          <div class="split four">${stat("Para la entrada", '<span data-o="down"></span>', '<span data-o="need"></span>')}${stat("Millas de casa", '<span data-o="miles"></span>', '<span data-o="at"></span>')}${stat("Rebaja", '<span data-o="cut"></span>', "puntos de diferencial")}${stat("Ahorro en intereses", '<span data-o="save"></span>', '<span data-o="mort"></span>')}</div>
-          <p class="note">Estimación con una rentabilidad del 5 % anual, entrada del 20 %, hipoteca a ${MORTGAGE_YEARS} años y tipo de referencia del ${pct(MORTGAGE_RATE, 1)}. El aval del ICO para menores de 35 puede reducir la entrada necesaria.</p></div>`, "c-12")}
       ${card(`${cardH("Cómo se ganan")}<div class="rows">${rules.map(([t, n, s]) => `<div class="row"><div><b>${t}</b>${s ? `<span>${s}</span>` : ""}</div><b class="amt gold">${n}</b></div>`).join("")}</div>
         <p class="note">${num(MILES.perPoint / 100)} millas equivalen a 0,01 puntos menos de diferencial, hasta un máximo de ${pts(MILES.maxCut)} puntos.</p>`, "c-6")}
       ${card(`${cardH("Condiciones")}<ul class="plain"><li>Se canjean en tu primera hipoteca con CaixaBank.</li><li>No caducan. Si no compras vivienda, no pierdes nada: tu dinero sigue siendo tuyo.</li><li>Son una rebaja sobre las condiciones vigentes al firmar, nunca un precio cerrado ni una obligación de contratar otros productos (Ley 5/2019).</li><li>Los regalos tienen un tope mensual de millas.</li></ul>`, "c-6")}
@@ -1111,11 +1124,15 @@ function bindProj() {
         S.goal = { price, age: goalAge }; clearTimeout(t); t = setTimeout(save, 300);
         const giftM = Math.min(MILES.giftMonthCap, Math.floor(S.schedules.reduce((a, x) => a + x.amount, 0) / 5));
         const mt = base + ((mon > 0 ? MILES.monthOwn * 12 : 0) + giftM * 12 + MILES.itv) * yrs, c = cutOf(mt);
-        const o = (k, txt) => { $(`[data-o="${k}"]`, v).textContent = txt; };
+        const need = price * DOWN_PCT, got = fv(mon, yrs, value), gap = need - got;
+        const perMonth = yrs > 0 ? Math.max(0, Math.ceil((need - fv(0, yrs, value)) / fv(1, yrs) / 5) * 5) : 0;
+        const o = (k, txt) => { $(`[data-o="${k}"]`, v).innerHTML = txt; };
         o("mon", eur(mon)); o("price", eur(price)); o("age", `${goalAge} años`);
-        o("down", eur(fv(mon, yrs, value))); o("need", `de ${eur(price * DOWN_PCT)}`);
-        o("miles", num(mt)); o("at", `a los ${goalAge} años`); o("cut", pts(c));
-        o("save", eur(mortgageSaving(c))); o("mort", `en una hipoteca de ${eur(mortgageAmount())}`);
+        o("when", `A los ${goalAge} años, dentro de ${yrs} ${yrs === 1 ? "año" : "años"}`);
+        o("down", eur(got)); o("need", `de ${eur(need)} de entrada (20 % de ${eur(price)})`);
+        $(".bar i", v).style.width = `${Math.min(100, got / need * 100).toFixed(1)}%`;
+        o("tip", gap <= 0 ? `<b>Llegas a la entrada.</b> Te sobrarían ${eur(-gap)}.` : `Te faltarían <b>${eur(gap)}</b>. Para llegar, necesitarías apartar unos <b>${eur(perMonth)} al mes</b>.`);
+        o("miles", num(mt)); o("cut", `−${pts(c)} puntos`); o("save", eur(mortgageSaving(c)));
     };
     $$("input", v).forEach(i => i.addEventListener("input", upd)); upd();
 }

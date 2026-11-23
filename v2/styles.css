@@ -1120,3 +1120,27 @@ body[data-view="app"] .card-h .gem .ic { width: 17px; height: 17px; }
 .proj .split { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 26px; }
 .proj .split .stat > b { font-size: 26px; }
 @media (max-width: 860px) { .proj-in { grid-template-columns: minmax(0, 1fr); gap: 18px; } .proj .split { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------------------------------------------------------------- Tu casa: camino a casa */
+.pj { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 56px; align-items: start; }
+.pj-ctrl { display: grid; gap: 26px; padding-top: 4px; }
+.pj-ctrl label { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 8px 12px; }
+.pj-ctrl span { font-size: 14px; color: var(--ink-2); font-weight: 500; }
+.pj-ctrl output { font-size: 17px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.pj-ctrl input { grid-column: 1 / -1; width: 100%; accent-color: var(--blue); }
+.pj-out { padding-left: 56px; border-left: 1px solid var(--line-2); }
+.pj-k { display: block; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.pj-big { margin-top: 8px; font-size: 17px; color: var(--ink-2); }
+.pj-big b { display: block; font-size: 44px; font-weight: 650; letter-spacing: -.03em; color: var(--ink); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pj-bar { margin-top: 14px; display: grid; gap: 8px; } .pj-bar .bar { height: 10px; } .pj-bar small { font-size: 13px; color: var(--ink-3); }
+.pj-tip { margin-top: 14px; font-size: 15px; line-height: 1.55; color: var(--ink-2); } .pj-tip b { color: var(--ink); }
+.pj-list { margin: 22px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); padding-top: 18px; }
+.pj-list > div + div { padding-left: 20px; border-left: 1px solid var(--line); }
+.pj-list dt { font-size: 12.5px; color: var(--ink-3); } .pj-list dd { margin: 4px 0 0; font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+@media (max-width: 860px) {
+    .pj { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+    .pj-out { padding: 24px 0 0; border-left: 0; border-top: 1px solid var(--line-2); }
+    .pj-big b { font-size: 36px; }
+    .pj-list { grid-template-columns: minmax(0, 1fr); gap: 12px; } .pj-list > div + div { padding-left: 0; border-left: 0; }
+    .pj-list > div { display: flex; justify-content: space-between; align-items: baseline; } .pj-list dd { margin: 0; font-size: 17px; }
+}
