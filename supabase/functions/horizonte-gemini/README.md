@@ -12,7 +12,8 @@ Intermediario entre la web de Horizonte (v2) y Gemini. La clave de Google AI Stu
 3. **Edge Functions → Secrets** (o Project Settings → Edge Functions): añade
    - `GEMINI_API_KEY` = tu clave de Google AI Studio.
    - (Opcional) `GEMINI_MODEL` = el ID exacto del modelo que veas en AI Studio, por ejemplo uno Flash o Flash-Lite.
-     Si no lo pones, se usa `gemini-flash-latest`.
+     Si no lo pones, se usa `gemini-flash-latest`; si está saturado, la función reintenta y pasa a
+     `gemini-flash-lite-latest` (cámbialo con el secreto `GEMINI_FALLBACK`).
 4. Listo. La web ya apunta a `https://norfjljehjyjovgmshdr.supabase.co/functions/v1/horizonte-gemini`
    (ver `v2/config.js`). Si la función falla o se agota la cuota gratuita, el asistente usa sus respuestas locales.
 

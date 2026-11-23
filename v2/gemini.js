@@ -166,7 +166,7 @@ async function askGemini(question, ctx, history = []) {
     const cfg = window.HZ2_CONFIG || {}, ep = cfg.geminiEndpoint, local = localGemini(question, ctx);
     if (ep) {
         const { name, ...anon } = ctx;
-        const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 12000);
+        const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20000);
         try {
             const headers = { "Content-Type": "application/json" };
             if (cfg.supabaseAnonKey && ep.includes(".supabase.co")) headers.apikey = cfg.supabaseAnonKey;

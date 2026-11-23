@@ -1,10 +1,13 @@
 // Horizonte · intermediario con Gemini (Supabase Edge Function)
 // La clave de Gemini vive SOLO aquí, como secreto de Supabase (GEMINI_API_KEY). Nunca en la web.
-// Secretos opcionales: GEMINI_MODEL (por defecto "gemini-flash-latest") y ALLOWED_ORIGINS (separados por comas).
+// Secretos opcionales: GEMINI_MODEL (modelo preferido), GEMINI_FALLBACK (modelo de reserva) y ALLOWED_ORIGINS.
+// Si Google responde que el modelo está saturado (503) o con un error temporal, reintenta y pasa al modelo de reserva.
 // Al crear la función, desactiva "Verify JWT" (la web la llama sin sesión de usuario).
 
 const KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
-const MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest";
+const MODELS = [Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest", Deno.env.get("GEMINI_FALLBACK") ?? "gemini-flash-lite-latest"]
+  .filter((m, i, a) => m && a.indexOf(m) === i);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ??
   "https://paulagutsan.github.io,http://localhost:8099,http://127.0.0.1:8099").split(",").map((s) => s.trim());
 
@@ -73,23 +76,34 @@ Deno.serve(async (req) => {
     contents: [...history, { role: "user", parts: [{ text: `Contexto de su cuenta (JSON): ${context}\n\nPregunta: ${question}` }] }],
     generationConfig: { temperature: 0.4, maxOutputTokens: 600, responseMimeType: "application/json", responseSchema: SCHEMA },
   };
-  try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": KEY },
-      body: JSON.stringify(payload),
-    });
-    if (!r.ok) return json({ error: "gemini", status: r.status }, 502, h);
-    const d = await r.json();
-    const txt = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
-    const out = JSON.parse(txt);
-    return json({
-      title: String(out.title ?? "").slice(0, 80),
-      answer: String(out.answer ?? "").slice(0, 900),
-      facts: (out.facts ?? []).slice(0, 3).map((f: { label: string; value: string }) => [String(f.label), String(f.value)]),
-      model: MODEL,
-    }, 200, h);
-  } catch (_e) {
-    return json({ error: "parse" }, 502, h);
+  let last = { status: 0, message: "" };
+  for (const model of MODELS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": KEY },
+          body: JSON.stringify(payload),
+        });
+        if (!r.ok) {
+          const e = await r.json().catch(() => ({}));
+          last = { status: r.status, message: String(e?.error?.message ?? "").slice(0, 200) };
+          if ([429, 500, 503, 504].includes(r.status)) { await sleep(700 * (attempt + 1)); continue; }   // temporal: reintenta
+          break;                                                                                            // 400/403/404: prueba el siguiente modelo
+        }
+        const d = await r.json();
+        const txt = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
+        const out = JSON.parse(txt);
+        return json({
+          title: String(out.title ?? "").slice(0, 80),
+          answer: String(out.answer ?? "").slice(0, 900),
+          facts: (out.facts ?? []).slice(0, 3).map((f: { label: string; value: string }) => [String(f.label), String(f.value)]),
+          model,
+        }, 200, h);
+      } catch (_e) {
+        last = { status: 0, message: "respuesta no válida" };
+      }
+    }
   }
+  return json({ error: "gemini", status: last.status, message: last.message, tried: MODELS }, 502, h);
 });
