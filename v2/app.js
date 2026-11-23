@@ -655,6 +655,7 @@ function vAprende() {
           ${all || passed ? lnk(passed ? "Repetir" : "Empezar", "#/prueba", passed ? "" : "primary") : `<button class="btn" disabled>Empezar</button>`}</div>`, "c-7")}
       ${card(`${cardH("Juegos con datos reales", `25 años de mercados, en partidas de un minuto. Una al día suma ${MILES.game} millas.`, played ? badge(`${ic("check")}Hoy: ${played.score}/${GAMES.find(g => g.id === played.id)?.rounds}`, "ok") : "")}
         <div class="games">${GAMES.map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div>
+        <button class="h-link fr-jump" data-act="frJump">${ic("family")}Compara tus resultados con tus amigos${ic("arrow")}</button>
         <p class="note">Datos anuales aproximados entre ${MKT_FROM} y ${MKT_FROM + MKT[0].r.length - 1}. Rentabilidades pasadas no garantizan las futuras.</p>`, "c-5")}
       ${friendsCard()}
       ${dip}
@@ -1022,7 +1023,7 @@ function vCasa() {
         ["Revisión anual", `+${MILES.itv}`, S.itv.length ? `${S.itv.length} completada${S.itv.length > 1 ? "s" : ""}` : ""],
         ["Regalos de tu familia", `+${MILES.giftPer5} cada 5 €`, `Máximo ${MILES.giftMonthCap} al mes`],
     ];
-    return `${pageH("Casa", "Tus millas de casa se convierten en una rebaja del interés de tu primera hipoteca con CaixaBank.")}
+    return `${pageH("Tu casa", "Tus millas de casa se convierten en una rebaja del interés de tu primera hipoteca con CaixaBank.")}
     <div class="grid">
       ${card(`<div class="miles-hero"><div>${stat("Millas de casa", num(mi.total))}<p>Equivalen a <b>${pts(mi.cut)} puntos</b> menos de diferencial: unos <b>${eur(mortgageSaving(mi.cut))}</b> menos de intereses en la hipoteca de tu objetivo.</p></div>
         <div class="mh-meter"><span>Rebaja acumulada</span>${bar(mi.cut, MILES.maxCut, "gold")}<small>${pts(mi.cut)} de ${pts(MILES.maxCut)} puntos posibles</small></div></div>`, "c-12")}
@@ -1081,7 +1082,7 @@ function vFResumen() {
     <div class="grid">
       ${card(`<div class="hero-cred">${credVisual()}<div class="hc-copy"><span class="kicker">Su Certificado Horizonte</span><h2>${STAGES[stageOf()]}</h2>
         <p>${S.exam?.passed ? `Superó Fundamentos el ${fmtD(S.exam.date)} con ${S.exam.score}/${S.exam.total}.` : `Lleva ${Object.keys(S.lessons).length} de ${LESSONS.length} temas de Fundamentos.`} ${m.firstOwn ? `Puso su primer euro propio el ${fmtD(m.firstOwn.date)}.` : "Aún no ha puesto su primer euro propio."}</p></div></div>`, "c-8")}
-      ${card(stat("Valor estimado", eur(m.value, true), `${eur(m.gifts, true)} aportados por la familia`), "c-4 stat-card")}
+      ${card(stat("Su dinero", eur(m.value, true), `${eur(m.gifts, true)} aportados por la familia`), "c-4 stat-card")}
       ${card(stat(`Aportado por ${n}`, eur(Math.max(0, m.ownReal), true), "Con su propio dinero"), "c-4")}
       ${card(stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos menos de diferencial`), "c-4")}
       ${card(stat("Protegido", eur(m.protect?.base || 0), `de ${RULES.protectCap} € en su primer año`), "c-4")}

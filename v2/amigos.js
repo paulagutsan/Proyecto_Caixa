@@ -143,6 +143,7 @@ function friendsToday(id) {
     return xs.length ? `<div class="fr-today"><span>Hoy, tus amigos:</span>${xs.slice(0, 4).map(p => `<b>${esc(p.nombre)} ${p.aciertos}/${p.rondas}</b>`).join("")}</div>` : "";
 }
 async function friendsAct(act, b) {
+    if (act === "frJump") return $(".friends")?.scrollIntoView({ behavior: "smooth", block: "start" });
     if (act === "frOn") return activateFriends();
     if (act === "frAdd") return friendsSheet();
     if (act === "frShare") {

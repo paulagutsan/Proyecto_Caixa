@@ -871,7 +871,7 @@ body[data-view="app"] #toasts { left: calc(50% + var(--side) / 2); }
 [data-theme="dark"] .sheet-bg { background: rgba(0, 0, 0, .6); }
 
 /* ---------------------------------------------------------------- amigos en los juegos */
-.fr-code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-weight: 700; letter-spacing: .08em; color: var(--ink); }
+.fr-code { font-weight: 700; letter-spacing: .1em; color: var(--ink); }
 .fr-err { font-size: 13.5px; color: var(--red); background: var(--red-50); padding: 10px 14px; border-radius: 12px; margin-bottom: 12px; }
 .fr-intro { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .fr-intro ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14.5px; color: var(--ink-2); }
@@ -977,3 +977,58 @@ a.h-item:hover .chev { transform: translateX(3px); color: var(--blue); } a.h-ite
 .h-week .h-funds b.up { color: var(--green); } .h-week .h-funds b.down { color: var(--red); }
 .h-money .vchart.mini { height: 140px; }
 @media (max-width: 860px) { .h-money .vchart.mini { height: 110px; } }
+
+/* ---------------------------------------------------------------- toda la app sin cajas: filetes, aire y tipografía */
+body[data-view="app"] .grid { column-gap: 56px; row-gap: 0; }
+body[data-view="app"] .card { background: none; border: 0; border-radius: 0; box-shadow: none; padding: 32px 0; border-top: 1px solid var(--line-2); }
+body[data-view="app"] .page-h { margin-bottom: 8px; }
+body[data-view="app"] .card-h { margin-bottom: 16px; }
+body[data-view="app"] .card-h h2 { font-size: 19px; font-weight: 650; }
+body[data-view="app"] .card-h .gem .ic { width: 17px; height: 17px; }
+/* piezas interiores sin fondo */
+.mv-ic { background: none !important; width: 26px; height: 26px; border-radius: 0; }
+.mv-ic .ic { width: 19px; height: 19px; }
+.fi { background: none; border: 1px solid var(--line-2); border-radius: 50%; }
+.dip-wrap { background: none; padding: 0; }
+.exam { background: none; border-radius: 0; padding: 16px 0 0; border-top: 1px solid var(--line); }
+.games { gap: 0; }
+.game { border: 0; border-radius: 0; padding: 14px 0; border-top: 1px solid var(--line); }
+.game:first-child { border-top: 0; padding-top: 0; }
+.game:hover { background: none; } .game:hover b { color: var(--blue); }
+.game > span { width: 38px; height: 38px; border-radius: 50%; background: none; border: 1px solid var(--line-2); color: var(--ink-2); }
+.game > span .ic { width: 18px; height: 18px; }
+.sim { background: none; padding: 16px 0 0; border-top: 1px solid var(--line); border-radius: 0; }
+.vh-added { border: 0; border-radius: 0; overflow: visible; }
+.vh-added .tot { background: none; }
+.vh-added > div { padding: 2px 22px; } .vh-added > div:first-child { padding-left: 0; }
+.vh-added > div + div { border-left: 1px solid var(--line-2); }
+.vc-foot { border-top: 0; padding-top: 6px; }
+.fr-inv { background: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 12px 0; margin: 0 0 6px; }
+.fr-empty, .fr-mycode { background: none; border: 0; padding: 4px 0; border-radius: 0; }
+.fr-mycode { border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.fr-board li.me { background: none; } .fr-board li.me b { color: var(--blue); }
+.fr-board li { padding: 10px 0; }
+/* Antídoto: las preocupaciones como lista seleccionable, no como baldosas */
+.fears { gap: 0 40px; grid-template-columns: repeat(2, 1fr); }
+.fear { grid-template-columns: 40px 1fr 24px; column-gap: 14px; align-items: center; padding: 14px 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: none; }
+.fear:nth-child(-n + 2) { border-top: 0; }
+.fear:hover { box-shadow: none; border-color: var(--line); } .fear:hover b { color: var(--blue); }
+.fear .fi { grid-row: span 2; margin: 0; }
+.fear b { padding-right: 0; } .fear small { grid-column: 2; }
+.fcheck { position: static; grid-column: 3; grid-row: 1 / span 2; }
+.fear.on { background: none; border-color: var(--line); } .fear.on b { color: var(--blue); }
+.fear.on .fi { background: var(--blue); border-color: var(--blue); }
+/* el certificado en Aprende y en el área familiar, sin marco */
+.hero-cred, .cred-hero { gap: 48px; }
+@media (max-width: 860px) {
+    body[data-view="app"] .card { padding: 26px 0; }
+    .fears { grid-template-columns: 1fr; } .fear:nth-child(2) { border-top: 1px solid var(--line); }
+    .vh-added > div { padding: 8px 12px; } .vh-added > div:nth-child(odd) { padding-left: 0; border-left: 0; }
+}
+.fr-jump { margin-top: 16px; } .fr-jump .ic:first-child { width: 17px; height: 17px; }
+.am-body { background: none; border: 0; padding: 4px 0 0; }
+.am-facts { display: flex; flex-wrap: wrap; gap: 10px 0; }
+.am-facts > div { background: none; border: 0; border-radius: 0; padding: 0 18px; border-left: 1px solid var(--line-2); }
+.am-facts > div:first-child { padding-left: 0; border-left: 0; }
+.empty-ic { background: none; border: 1px solid var(--line-2); border-radius: 50%; }
+.legal { background: none; border-radius: 0; padding: 22px 0 0; border-top: 1px solid var(--line-2); }
