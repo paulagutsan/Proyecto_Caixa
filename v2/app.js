@@ -28,6 +28,7 @@ const P = {
     chart: '<path d="M4 17l5-5 4 3 7-8"/><path d="M15 7h5v5"/>',
     shield: '<path d="M12 3l7.5 3v6c0 4.6-3.2 8-7.5 9.3C7.7 20 4.5 16.6 4.5 12V6z"/><path d="M9 12.2l2.1 2.1L15.3 10"/>',
     house: '<path d="M3 11 12 4l9 7"/><path d="M5 9.8V20h14V9.8"/><path d="M10 20v-5.5h4V20"/>',
+    trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7M10 17h4"/>',
     up: '<path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/>',
     down: '<path d="M12 5v14M5.5 12.5 12 19l6.5-6.5"/>',
     updown: '<path d="M8 4v14M4.5 7.5 8 4l3.5 3.5M16 20V6M12.5 16.5 16 20l3.5-3.5"/>',
@@ -703,7 +704,7 @@ function vAprende() {
         <div class="exam"><span class="mv-ic own">${ic("star")}</span><div><b>Prueba final</b><span>${passed ? `Superada el ${fmtD(S.exam.date)}.` : all ? `${RULES.examSize} preguntas; puedes fallar ${RULES.examMaxErrors}. Al superarla, CaixaBank invierte ${RULES.prize} € a tu nombre.` : `Disponible al completar los ${LESSONS.length} temas.`}</span></div>
           ${all || passed ? lnk(passed ? "Repetir" : "Empezar", "#/prueba", passed ? "" : "primary") : `<button class="btn" disabled>Empezar</button>`}</div>`, "c-7")}
       ${card(`${cardH("Juegos con datos reales", `25 años de mercados, en partidas de un minuto. Una al día suma ${MILES.game} millas.`, played ? badge(`${ic("check")}Hoy: ${played.score}/${GAMES.find(g => g.id === played.id)?.rounds}`, "ok") : "")}
-        <div class="games">${GAMES.map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : g.id === "masomenos" ? "updown" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div>
+        <div class="games">${GAMES.map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : g.id === "masomenos" ? "updown" : g.id === "liga" ? "trophy" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div>
         <button class="h-link fr-jump" data-act="frJump">${ic("family")}Compara tus resultados con tus amigos${ic("arrow")}</button>
         <p class="note">Datos anuales aproximados entre ${MKT_FROM} y ${MKT_FROM + MKT[0].r.length - 1}. Rentabilidades pasadas no garantizan las futuras.</p>`, "c-5")}
       ${friendsCard()}
@@ -732,6 +733,7 @@ function newGame(id) {
 function vJuego(id) {
     const g = GAMES.find(x => x.id === id); if (!g) return null;
     if (id === "masomenos") return vMasMenos();
+    if (id === "liga") return vLiga();
     if (!gameState || gameState.id !== id) newGame(id);
     const e = gameState;
     if (e.over) {
@@ -743,6 +745,67 @@ function vJuego(id) {
     const q = e.qs[e.i];
     return focus("#/aprende", e.i + 1, e.qs.length, `<span class="kicker">${q.kick} · ${e.score} aciertos</span><h1 class="${id === "titular" ? "serif-q" : ""}">${esc(q.q)}</h1>${q.sub ? `<p class="lead-q">${q.sub}</p>` : ""}${opts(q, e.ans, "gameAns")}
       ${e.ans !== null ? `${why(e.ans === q.a, q.why)}<div class="focus-nav"><span></span>${btn(e.i === e.qs.length - 1 ? "Ver resultado" : `Siguiente${ic("arrow")}`, "gameNext", "primary")}</div>` : ""}`);
+}
+
+/* ---------------- Liga del lunes: cada semana, ¿el IBEX, la bolsa mundial y el oro acaban arriba o abajo?
+   Por ahora el resultado de cada semana es simulado (la bolsa mundial es la misma que «Tu dinero hoy»).
+   Con datos reales: cerrar el lunes a las 9:00 y resolver con el cierre del viernes. */
+const LIGA_DEMO = true;
+function ligaWeek(wk) { const d = T(wk); d.setHours(0, 0, 0, 0); const open = new Date(d); open.setHours(9, 0, 0, 0); const close = new Date(d); close.setDate(close.getDate() + 4); close.setHours(17, 35, 0, 0); return { open, close }; }
+function ligaMoves(wk) {
+    const g = weekMoves(wk).global, r = prng(hashStr(wk + "|liga"));
+    return { mundo: g, ibex: 0.7 * g + 2.0 * gauss(r) + 0.1, oro: 1.9 * gauss(r) + 0.15 };
+}
+function ligaNow(wk, k) {                                          // cómo va el mercado en este momento de la semana
+    const { open, close } = ligaWeek(wk), now = Date.now(), fin = ligaMoves(wk)[k];
+    if (now >= close) return { v: fin, done: true };
+    if (now <= open) return { v: 0, done: false, f: 0 };
+    const f = (now - open) / (close - open), r = prng(hashStr(wk + k + Math.floor(f * 60)));
+    return { v: fin * f + 1.2 * Math.sqrt(f * (1 - f)) * gauss(r) * .6, done: false, f };
+}
+const ligaOpen = wk => LIGA_DEMO ? Date.now() < ligaWeek(wk).close : Date.now() < ligaWeek(wk).open;
+function ligaHits(wk) { const p = S.liga?.[wk]?.picks || {}, mv = ligaMoves(wk); return LIGA.reduce((a, m) => a + (p[m.k] && (p[m.k] === "up") === (mv[m.k] >= 0) ? 1 : 0), 0); }
+function ligaSeason() {
+    const weeks = Object.keys(S.liga || {}).filter(w => Object.keys(S.liga[w].picks || {}).length && Date.now() >= ligaWeek(w).close).sort();
+    let pts = 0, streak = 0, best = 0;
+    weeks.forEach(w => { const h = ligaHits(w); pts += h; streak = h >= 2 ? streak + 1 : 0; best = Math.max(best, streak); });
+    return { weeks, pts, streak, best };
+}
+/* al ver la liga tras el cierre: se apunta el resultado (millas de juego y amigos) una sola vez */
+function ligaSettle() {
+    Object.entries(S.liga || {}).forEach(([w, e]) => {
+        if (e.done || !Object.keys(e.picks || {}).length || Date.now() < ligaWeek(w).close) return;
+        e.done = true; e.hits = ligaHits(w); save();
+        if (Date.now() - ligaWeek(w).close < 2 * 864e5) friendsAfterGame("liga", e.hits, LIGA.length);
+    });
+}
+const sgnPct = v => `${v >= 0 ? "+" : "−"}${pct(Math.abs(v), 1)}`;
+function vLiga() {
+    S.liga ||= {}; ligaSettle();
+    const wk = weekOf(new Date()), e = S.liga[wk] || { picks: {} }, open = ligaOpen(wk), { close } = ligaWeek(wk), done = Date.now() >= close;
+    const n = Object.keys(e.picks).length, season = ligaSeason();
+    const past = season.weeks.filter(w => w !== wk).slice(-6).reverse();
+    const friends = friendsOn() ? soc.partidas.filter(p => p.juego === "liga" && !p.yo) : [];
+    const rows = LIGA.map(m => {
+        const pick = e.picks[m.k], now = ligaNow(wk, m.k), hit = done && pick ? (pick === "up") === (now.v >= 0) : null;
+        return `<div class="lg-row ${hit === true ? "ok" : hit === false ? "ko" : ""}">
+          <span class="mm-code" style="--c:${m.color}">${m.code}</span>
+          <div><b>${m.name}</b><small>${m.sub}</small></div>
+          <span class="lg-now ${now.v >= 0 ? "up" : "down"}">${done ? `Cerró ${sgnPct(now.v)}` : now.f ? `Va ${sgnPct(now.v)}` : "Aún no ha abierto"}</span>
+          <div class="lg-pick">${open ? `<button class="${pick === "up" ? "on up" : ""}" data-act="ligaPick" data-k="${m.k}" data-v="up" aria-pressed="${pick === "up"}">${ic("up")}Arriba</button><button class="${pick === "down" ? "on down" : ""}" data-act="ligaPick" data-k="${m.k}" data-v="down" aria-pressed="${pick === "down"}">${ic("down")}Abajo</button>`
+            : pick ? `<span class="lg-mine">${pick === "up" ? "Dijiste arriba" : "Dijiste abajo"}${hit === null ? "" : hit ? ic("check") : ic("close")}</span>` : `<span class="lg-mine none">Sin predicción</span>`}</div></div>`;
+    }).join("");
+    return focus("#/aprende", 0, 0, `<div class="lg">
+        <span class="kicker">Liga del lunes · semana del ${fmtD(wk)}</span>
+        <h1>¿Cómo acabará la semana?</h1>
+        <p class="lead-q">${done ? `Semana cerrada: has acertado <b>${ligaHits(wk)} de ${LIGA.length}</b>. El lunes empieza otra.` : open ? `Elige arriba o abajo para cada mercado. Se resuelve el viernes a las 17:35, con el cierre.${n ? ` Llevas ${n} de ${LIGA.length}.` : ""}` : "Las predicciones de esta semana ya están cerradas. Se resuelve el viernes a las 17:35."}</p>
+        <div class="lg-rows">${rows}</div>
+        <dl class="lg-stats"><div><dt>Aciertos en la temporada</dt><dd>${season.pts}</dd></div><div><dt>Semanas jugadas</dt><dd>${season.weeks.length}</dd></div><div><dt>Racha (2+ aciertos)</dt><dd>${season.streak}<small> · mejor ${season.best}</small></dd></div></dl>
+        ${past.length ? `<h2 class="lg-h">Tus últimas semanas</h2><div class="lg-past">${past.map(w => `<div><span>${fmtD(w)}</span><b>${ligaHits(w)}/${LIGA.length}</b></div>`).join("")}</div>` : ""}
+        ${friends.length ? `<h2 class="lg-h">Tus amigos esta semana</h2><div class="lg-past">${friends.slice(0, 6).map(p => `<div><span>${esc(p.nombre)}</span><b>${p.aciertos}/${p.rondas}</b></div>`).join("")}</div>` : ""}
+        <p class="mm-learn">Acertar la bolsa a una semana es casi una moneda al aire, incluso para los profesionales. Por eso Horizonte invierte a largo plazo y no intenta adivinar.</p>
+        ${LIGA_DEMO ? `<p class="note center-note">Resultados simulados en esta versión de demostración. Con datos reales, las predicciones cerrarán el lunes a las 9:00.</p>` : ""}
+        <div class="focus-nav center">${lnk("Volver", "#/aprende", "lg")}</div></div>`);
 }
 
 /* ---------------- Más o menos (de la versión 1): ¿la nueva carta acaba con más o con menos que la anterior? */
@@ -1426,6 +1489,14 @@ document.addEventListener("click", async e => {
     }
     else if (act === "gameAgain") { newGame(b.dataset.id); render(); }
     else if (act === "mmGuess") mmGuess(b.dataset.v);
+    else if (act === "ligaPick") {
+        const wk = weekOf(new Date());
+        if (!ligaOpen(wk)) { toast("Las predicciones de esta semana están cerradas"); return; }
+        S.liga ||= {}; const e = S.liga[wk] ||= { picks: {} }, t = iso(new Date());
+        e.picks[b.dataset.k] = b.dataset.v; e.at = new Date().toISOString();
+        if (Object.keys(e.picks).length === LIGA.length && !S.games[t]) { S.games[t] = { id: "liga", score: 0 }; toast(`Predicción guardada · +${MILES.game} millas por jugar hoy`); }
+        save(); render();
+    }
     else if (act === "mmAgain") { mmNew(); render(); }
     else if (act === "lpFear") { const f = FEARS.find(x => x.id === b.dataset.id); $$(".lf").forEach(x => x.classList.toggle("on", x === b)); $('[data-o="lf"]').innerHTML = `<b>${FUNDS[f.fund].name}</b><p>${f.why}</p>`; }
     else if (act === "lpGame") {

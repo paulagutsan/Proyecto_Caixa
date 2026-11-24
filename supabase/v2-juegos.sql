@@ -1,4 +1,4 @@
--- Horizonte v2 · añade el juego «Más o menos» a Amigos. Ejecutar una vez en SQL Editor → Run.
+-- Horizonte v2 · añade los juegos «Más o menos» y «Liga del lunes» a Amigos. Ejecutar en SQL Editor → Run (se puede repetir).
 
 -- Juegos y límites (se puede ejecutar aunque la tabla ya existiera): «Más o menos» guarda la racha, sin tope de 10
 do $$ declare c record; begin
@@ -6,5 +6,5 @@ do $$ declare c record; begin
         execute format('alter table public.v2_partidas drop constraint %I', c.conname);
     end loop;
 end $$;
-alter table public.v2_partidas add constraint v2_partidas_juego_check check (juego in ('titular', 'duelo', 'masomenos'));
+alter table public.v2_partidas add constraint v2_partidas_juego_check check (juego in ('titular', 'duelo', 'masomenos', 'liga'));
 alter table public.v2_partidas add constraint v2_partidas_limites check (aciertos between 0 and 500 and rondas between 1 and 501 and aciertos <= rondas);

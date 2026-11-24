@@ -365,7 +365,14 @@ const MKT_NEWS = [
 const GAMES = [
     { id: "titular", t: "El titular", p: "Un titular real de un año. ¿La bolsa mundial acabó ese año arriba o abajo?", rounds: 5 },
     { id: "duelo", t: "¿Cuál rindió más?", p: "Dos inversiones, un año. Elige la que más subió (o la que menos cayó).", rounds: 5 },
+    { id: "liga", t: "Liga del lunes", p: "Cada semana: ¿el IBEX, la bolsa mundial y el oro acabarán arriba o abajo? Se resuelve el viernes con el cierre.", rounds: 3, weekly: true },
     { id: "masomenos", t: "Más o menos", p: "¿La segunda inversión acabó con más o con menos dinero? Encadena aciertos con cada vez menos tiempo.", rounds: 0, endless: true },
+];
+/* Liga del lunes: tres mercados, una predicción por semana */
+const LIGA = [
+    { k: "ibex", code: "ESP", name: "IBEX 35", sub: "Las 35 mayores empresas de la bolsa española", color: "#c8102e" },
+    { k: "mundo", code: "MUN", name: "Bolsa mundial", sub: "MSCI World: unas 1.400 empresas de 23 países", color: "#007eae" },
+    { k: "oro", code: "ORO", name: "Oro", sub: "Precio de la onza en euros", color: "#c99a2e" },
 ];
 /* Más o menos: además de inversiones reales, algunas cartas con conceptos (inflación, interés, comisiones, apuestas) */
 const MM_CONCEPTS = [

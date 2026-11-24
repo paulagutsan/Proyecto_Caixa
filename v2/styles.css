@@ -1309,3 +1309,28 @@ fieldset.field { border: 0; padding: 0; margin: 0; } fieldset.field legend { fon
 .btn.mm-down { color: var(--red); border-color: color-mix(in srgb, var(--red) 45%, transparent); background: none; } .btn.mm-down:hover { background: var(--red-50); }
 .mm-big { font-size: 88px !important; font-weight: 700; letter-spacing: -.04em; line-height: 1; margin: 8px 0; }
 .mm-learn { font-size: 14.5px; color: var(--ink-2); max-width: 460px; margin: 12px auto 0; }
+/* Liga del lunes */
+.lg { max-width: 760px; margin: 0 auto; }
+.lg-rows { margin-top: 22px; border-top: 1px solid var(--line); }
+.lg-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; gap: 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.lg-row b { display: block; font-size: 16px; } .lg-row small { font-size: 12.5px; color: var(--ink-3); }
+.lg-now { font-size: 13.5px; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lg-now.up { color: var(--green); } .lg-now.down { color: var(--red); }
+.lg-pick { display: flex; gap: 6px; }
+.lg-pick button { font: inherit; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-2); background: none; color: var(--ink-2); cursor: pointer; }
+.lg-pick button .ic { width: 15px; height: 15px; }
+.lg-pick button.on.up { border-color: var(--green); background: var(--green-50); color: var(--green); }
+.lg-pick button.on.down { border-color: var(--red); background: var(--red-50); color: var(--red); }
+.lg-mine { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); } .lg-mine .ic { width: 16px; height: 16px; }
+.lg-row.ok .lg-mine { color: var(--green); } .lg-row.ko .lg-mine { color: var(--red); } .lg-mine.none { color: var(--ink-4); font-weight: 500; }
+.lg-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 26px 0 0; }
+.lg-stats > div + div { padding-left: 20px; border-left: 1px solid var(--line); }
+.lg-stats dt { font-size: 12.5px; color: var(--ink-3); } .lg-stats dd { margin: 4px 0 0; font-size: 26px; font-weight: 650; } .lg-stats dd small { font-size: 13px; font-weight: 500; color: var(--ink-3); }
+.lg-h { font-size: 15px; font-weight: 650; margin: 28px 0 8px; }
+.lg-past { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.lg-past > div { display: flex; gap: 10px; align-items: baseline; font-size: 14px; color: var(--ink-3); } .lg-past b { color: var(--ink); }
+@media (max-width: 640px) {
+    .lg-row { grid-template-columns: 40px minmax(0, 1fr) auto; } .lg-pick { grid-column: 1 / -1; } .lg-pick button { flex: 1; justify-content: center; }
+    .lg-stats { grid-template-columns: minmax(0, 1fr); gap: 10px; } .lg-stats > div + div { padding-left: 0; border-left: 0; }
+}
+.lg .mm-learn { margin: 22px 0 0; max-width: none; }
