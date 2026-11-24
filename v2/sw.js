@@ -3,7 +3,7 @@
    cambio publicado se ve al momento; si no hay conexión, usa la última copia guardada.
    Solo actúa dentro de /v2/: la versión 1 y el resto del sitio no se ven afectados.
    Nunca guarda nada de Supabase ni de Gemini (datos de cuenta, amigos, asistente). */
-const CACHE = "horizonte-v2-51";
+const CACHE = "horizonte-v2-52";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./brand/horizonte-icono.svg", "./brand/horizonte-logo.png"];
 
 self.addEventListener("install", e => {
@@ -22,7 +22,8 @@ self.addEventListener("fetch", e => {
         e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return res; })));
         return;
     }
-    e.respondWith(fetch(req).then(res => {                                       // lo demás: primero la red
+    // la página y el código se revalidan siempre: GitHub Pages deja guardar 10 minutos y parecía que no se actualizaba
+    e.respondWith(fetch(req.mode === "navigate" ? new Request(req.url, { cache: "no-cache", credentials: "same-origin" }) : req, req.mode === "navigate" ? {} : { cache: "no-cache" }).then(res => {   // lo demás: primero la red
         if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
         return res;
     }).catch(() => caches.match(req).then(hit => hit || caches.match(req, { ignoreSearch: true })
