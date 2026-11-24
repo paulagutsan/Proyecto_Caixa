@@ -344,11 +344,10 @@ function vLanding() {
       </div>
       <div class="hz-visual">
         <div class="hz-chart" data-hero>
-          <div class="hch-ask"><span>Si apartas al mes</span><div class="hch-chips" role="group" aria-label="Cuánto apartas al mes">${[10, 25, 50, 100].map(v => `<button type="button" class="${v === 25 ? "on" : ""}" data-hero-amt="${v}">${v} €</button>`).join("")}</div></div>
-          <div class="hch-scn" role="group" aria-label="Escenario de mercado">${EST.scenarios.map(([r, l]) => `<button type="button" class="${r === EST.gross ? "on" : ""}" data-hero-rate="${r}">${l} · ${r} %</button>`).join("")}</div>
+          <div class="hch-head"><span class="hch-lab">Si apartas al mes</span><div class="seg-lite" role="group" aria-label="Cuánto apartas al mes">${[10, 25, 50, 100].map(v => `<button type="button" class="${v === 25 ? "on" : ""}" data-hero-amt="${v}">${v} €</button>`).join("")}</div></div>
+          <div class="hch-tabs" role="group" aria-label="Escenario de mercado">${EST.scenarios.map(([r, l]) => `<button type="button" class="${r === EST.gross ? "on" : ""}" data-hero-rate="${r}">${l} · ${r} %</button>`).join("")}</div>
           <div class="hch-big"><b data-o="v"></b><span data-o="sub"></span></div>
           <div class="hch-plot" data-o="plot"></div>
-          <div class="hch-key"><span><i class="l1"></i>Lo que pones tú</span><span><i class="l2"></i>Lo que gana tu dinero</span></div>
           <p class="hch-gap" data-o="gap"></p>
           <p class="note">Estimación según el escenario elegido. En un mal escenario tu dinero puede valer menos de lo que has puesto. No es una promesa de rentabilidad.</p>
         </div>
@@ -447,25 +446,27 @@ function vLanding() {
     <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}</div>
     </div>`;
 }
-/* Portada: lo que pones tú y lo que gana tu dinero (neto de comisiones), hasta tu casa */
+/* Portada: lo que pones tú y lo que gana tu dinero, hasta tu casa. Líneas finas y rótulos directos, sin leyenda. */
 function heroPlot(m, N, rate) {
-    const W = 520, H = 230, ml = 4, mr = 46, mt = 18, mb = 26, S = 4;
-    const val = t => fv(m, t, 0, rate / 100), put = t => m * 12 * t, yMax = val(N) * 1.04;
-    const X = t => ml + (W - ml - mr) * t / N, Y = v => H - mb - (H - mt - mb) * v / yMax;
+    const W = 560, H = 250, ml = 4, mr = 126, mt = 14, mb = 30, S = 4;
+    const val = t => fv(m, t, 0, rate / 100), put = t => m * 12 * t, top = val(N) * 1.08;
+    const X = t => ml + (W - ml - mr) * t / N, Y = v => H - mb - (H - mt - mb) * v / top;
     const P = f => Array.from({ length: N * S + 1 }, (_, k) => [X(k / S), Y(f(k / S))]);
     const L = a => a.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
-    const tot = P(val), con = P(put), y0 = Y(0), xs = X(0), xe = X(N), ye = Y(val(N));
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="En ${N} años, lo que pones tú y lo que gana tu dinero">
-      <defs><linearGradient id="hgi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b500"/><stop offset="1" stop-color="#ee7b1f" stop-opacity=".85"/></linearGradient>
-        <linearGradient id="hgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#007eae" stop-opacity=".28"/><stop offset="1" stop-color="#007eae" stop-opacity=".06"/></linearGradient></defs>
-      <line x1="${ml}" x2="${xe}" y1="${y0}" y2="${y0}" style="stroke:var(--line-2)" stroke-width="1.2"/>
-      <polygon points="${L(con)} ${xe.toFixed(1)},${y0.toFixed(1)} ${xs.toFixed(1)},${y0.toFixed(1)}" fill="url(#hgc)"/>
-      <polygon points="${L(tot)} ${L([...con].reverse())}" fill="url(#hgi)"/>
-      <polyline points="${L(tot)}" fill="none" stroke="#007eae" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
-      <circle cx="${xs}" cy="${y0}" r="4.5" style="fill:var(--surface)" stroke="#007eae" stroke-width="2"/>
-      <circle cx="${xe}" cy="${ye.toFixed(1)}" r="6" fill="#007eae" style="stroke:var(--surface)" stroke-width="2.5"/>
-      <text x="${xs}" y="${H - 6}" font-size="13" style="fill:var(--ink-3)">Hoy</text>
-      <text x="${xe}" y="${H - 6}" text-anchor="end" font-size="13" style="fill:var(--ink-3)">Dentro de ${N} años</text></svg>`;
+    const tot = P(val), con = P(put), xe = X(N), ye = Y(val(N)), yp = Y(put(N)), y0 = Y(0);
+    const grid = [1, 2, 3].map(i => `<line x1="${ml}" x2="${xe.toFixed(1)}" y1="${Y(top * i / 3.2).toFixed(1)}" y2="${Y(top * i / 3.2).toFixed(1)}" style="stroke:var(--line)" stroke-width="1"/>`).join("");
+    const mid = Math.round(N / 2);
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="En ${N} años, aportarías ${eur(put(N))} y tu dinero podría valer ${eur(val(N))}">
+      ${grid}<line x1="${ml}" x2="${xe.toFixed(1)}" y1="${y0}" y2="${y0}" style="stroke:var(--line-2)" stroke-width="1"/>
+      <polygon points="${L(tot)} ${L([...con].reverse())}" style="fill:var(--blue)" fill-opacity=".1"/>
+      <polyline points="${L(con)}" fill="none" style="stroke:var(--ink-3)" stroke-width="1.4" stroke-dasharray="3 4" stroke-linecap="round"/>
+      <polyline points="${L(tot)}" fill="none" style="stroke:var(--blue)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${xe.toFixed(1)}" cy="${ye.toFixed(1)}" r="4" style="fill:var(--blue);stroke:var(--surface)" stroke-width="2"/>
+      <text x="${(xe + 12).toFixed(1)}" y="${(ye + 4).toFixed(1)}" font-size="13.5" font-weight="650" style="fill:var(--ink)">${eur(val(N))}</text>
+      <text x="${(xe + 12).toFixed(1)}" y="${(yp + 4).toFixed(1)}" font-size="11.5" style="fill:var(--ink-3)">${eur(put(N))} aportado</text>
+      <text x="${ml}" y="${H - 8}" font-size="12" style="fill:var(--ink-3)">Hoy</text>
+      <text x="${X(mid).toFixed(1)}" y="${H - 8}" font-size="12" text-anchor="middle" style="fill:var(--ink-3)">${mid} años</text>
+      <text x="${xe.toFixed(1)}" y="${H - 8}" font-size="12" text-anchor="end" style="fill:var(--ink-3)">${N} años</text></svg>`;
 }
 function bindLanding() {
     const hero = $("[data-hero]");
@@ -476,7 +477,7 @@ function bindLanding() {
             const total = fv(amt, yrs, 0, RATE(rate)), perMonth = Math.ceil(need / fv(1, yrs, 0, RATE(rate)) / 5) * 5, label = EST.scenarios.find(x => x[0] === rate)[1].toLowerCase();
             $('[data-o="plot"]', hero).innerHTML = heroPlot(amt, yrs, RATE(rate) * 100);
             $('[data-o="v"]', hero).textContent = eur(total);
-            $('[data-o="sub"]', hero).textContent = `en ${yrs} años, en un escenario ${label} (${rate} % anual)`;
+            $('[data-o="sub"]', hero).textContent = `en ${yrs} años · escenario ${label} (${rate} % anual)`;
             $('[data-o="gap"]', hero).innerHTML = `Una entrada de <b>${eur(need)}</b> en ${yrs} años necesitaría unos <b>${eur(perMonth)} al mes</b>. Con ${eur(amt)} cubrirías el ${pct(total / need * 100)}; el resto puede venir de tu familia, de otros ahorros o de ayudas como el aval del ICO.`;
             $$("[data-hero-amt]", hero).forEach(b => b.classList.toggle("on", +b.dataset.heroAmt === amt));
             $$("[data-hero-rate]", hero).forEach(b => b.classList.toggle("on", +b.dataset.heroRate === rate));
