@@ -2,12 +2,36 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- GitHub Pages sirve la raíz del repo. Versión actual: /v2/. Versión anterior: /v1/. -->
-    <meta http-equiv="refresh" content="0; url=v2/">
-    <title>Horizonte</title>
-    <script>location.replace("v2/" + location.hash);</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#007eae">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Horizonte">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="description" content="Horizonte, de CaixaBank Asset Management: del primer euro a tu primera casa. Aprende a invertir desde 1 €, con tu familia a tu lado, para jóvenes y sus familias.">
+    <title>Horizonte · Del primer euro a tu primera casa</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..600;1,8..60,300..600&display=swap" rel="stylesheet">
+    <script>try { const t = localStorage.getItem("hz2_theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); document.documentElement.dataset.theme = t; document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b1218" : "#ffffff"; } catch (e) { document.documentElement.dataset.theme = "light"; }</script>
+    <link rel="stylesheet" href="styles.css?v=53">
 </head>
 <body>
-    <p><a href="v2/">Abrir Horizonte</a> · <a href="v1/">Versión 1</a></p>
+    <div id="app"></div>
+    <div id="sheet"></div>
+    <div id="toasts" aria-live="polite"></div>
+    <script src="config.js?v=53"></script>
+    <script src="data.js?v=53"></script>
+    <script src="gemini.js?v=53"></script>
+    <script src="amigos.js?v=53"></script>
+    <script src="comunidad.js?v=53"></script>
+    <script src="cuenta.js?v=53"></script>
+    <script src="regalos.js?v=53"></script>
+    <script src="app.js?v=53"></script>
+    <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {}));</script>
 </body>
 </html>

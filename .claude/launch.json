@@ -16,9 +16,7 @@
       "runtimeArgs": [
         "-m",
         "http.server",
-        "8099",
-        "--directory",
-        "v2"
+        "8099"
       ],
       "port": 8099
     }

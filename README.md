@@ -1,8 +1,9 @@
 # Horizonte
 
-> **Dos versiones publicadas en GitHub Pages**
-> - **Versión 2 (actual):** [paulagutsan.github.io/Proyecto_Caixa/v2](https://paulagutsan.github.io/Proyecto_Caixa/v2/) · carpeta `v2/`. Del primer euro a la primera casa, en un ciclo: aprende (Fundamentos, juegos con datos reales y Certificado Horizonte verificable), invierte con la familia y el primer año protegido, entiende tu dinero cada semana y con el Antídoto (Gemini), gana millas con la constancia y rebaja tu hipoteca. La raíz del sitio abre esta versión.
-> - **Versión 1:** [paulagutsan.github.io/Proyecto_Caixa/v1](https://paulagutsan.github.io/Proyecto_Caixa/v1/) · carpeta `v1/`, sin cambios en su código. Los enlaces antiguos a `/public/` redirigen aquí.
+> **Horizonte:** [paulagutsan.github.io/Proyecto_Caixa](https://paulagutsan.github.io/Proyecto_Caixa/) · archivos en la raíz del repositorio. Los enlaces antiguos a `/v2/` redirigen aquí.
+>
+> **Versión 1 (guardada, no enlazada):** [/v1](https://paulagutsan.github.io/Proyecto_Caixa/v1/) · carpeta `v1/`, sin cambios en su código. Los enlaces antiguos a `/public/` redirigen a ella.
+>
 > - El mapa de miedos de la v2 usa Supabase si se ejecuta una vez `supabase/schema-v2.sql`; si no, muestra datos de ejemplo.
 
 
