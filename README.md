@@ -1,8 +1,8 @@
 # Horizonte
 
-> **Horizonte:** [paulagutsan.github.io/Proyecto_Caixa](https://paulagutsan.github.io/Proyecto_Caixa/) · archivos en la raíz del repositorio. Los enlaces antiguos a `/v2/` redirigen aquí.
+> **Horizonte:** [paulagutsan.github.io/Horizonte](https://paulagutsan.github.io/Horizonte/) · archivos en la raíz del repositorio. Los enlaces antiguos a `/v2/` redirigen aquí.
 >
-> **Versión 1 (guardada, no enlazada):** [/v1](https://paulagutsan.github.io/Proyecto_Caixa/v1/) · carpeta `v1/`, sin cambios en su código. Los enlaces antiguos a `/public/` redirigen a ella.
+> **Versión 1 (guardada, no enlazada):** [/v1](https://paulagutsan.github.io/Horizonte/v1/) · carpeta `v1/`, sin cambios en su código. Los enlaces antiguos a `/public/` redirigen a ella.
 >
 > - El mapa de miedos de la v2 usa Supabase si se ejecuta una vez `supabase/schema-v2.sql`; si no, muestra datos de ejemplo.
 

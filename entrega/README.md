@@ -6,4 +6,4 @@
 
 Los cuatro valores que enseñamos: **aprendizaje**, **adrenalina**, **motivación** y **movimiento de masas**.
 
-La app se puede probar en https://paulagutsan.github.io/Proyecto_Caixa/public/
+La app se puede probar en https://paulagutsan.github.io/Horizonte/
