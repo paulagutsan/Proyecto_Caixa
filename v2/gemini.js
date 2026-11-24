@@ -51,7 +51,7 @@ function gIntent(raw) {
 /* Siguiente paso recomendado según el estado de la cuenta */
 function gNext(c) {
     if (!c.diploma) return { label: `Completar Fundamentos (${c.lessonsDone}/${c.lessonsTotal})`, href: "#/aprende", why: `Al superar la prueba final, CaixaBank invierte ${G_EUR(c.prize)} a tu nombre.` };
-    if (!c.hasOwn) return { label: "Poner tu primer euro", href: "#/dinero", why: `Con 1 € basta, y tus primeros ${G_EUR(c.protectCap)} aportados tienen protección promocional durante 12 meses (con condiciones).` };
+    if (!c.hasOwn) return { label: "Poner tu primer euro", href: "#/dinero", why: `Con 1 € basta, y tus primeros ${G_EUR(c.protectCap)} aportados tienen protección promocional durante 12 meses.` };
     if (!c.fears.length) return { label: "Elegir tu Antídoto", href: "#/antidoto", why: "Si quieres, una parte pequeña de tu cartera en un tema que te importa, tras un test breve." };
     if (!(c.weekly > 0 || c.roundup)) return { label: "Automatizar tu ahorro", href: "#/dinero", why: "Una cantidad semanal fija suma millas cada mes." };
     return { label: "Hacer la revisión anual", href: "#/antidoto", why: `Tu próxima revisión es antes del ${c.itvDue}.` };
@@ -91,8 +91,8 @@ function localGemini(question, c) {
         case "drop": {
             const base = c.protectBase;
             const prot = base > 0
-                ? `Tus ${G_EUR(base)} aportados tienen una protección promocional hasta el ${c.protectEnd}: si a los 12 meses valen menos y no has vendido, CaixaBank repone la diferencia, con tope y condiciones.`
-                : `Los primeros ${G_EUR(c.protectCap)} que se aporten (tuyos o de tu familia) tienen protección promocional durante 12 meses, siempre que no vendas antes y con condiciones.`;
+                ? `Tus ${G_EUR(base)} aportados tienen una protección promocional hasta el ${c.protectEnd}: si a los 12 meses valen menos y no has vendido, CaixaBank repone la diferencia.`
+                : `Los primeros ${G_EUR(c.protectCap)} que se aporten (tuyos o de tu familia) tienen protección promocional durante 12 meses, siempre que no vendas antes.`;
             return R("Si el mercado cae", `${prot} Una caída solo se convierte en pérdida si vendes, pero la decisión es tuya y de tu familia. En el MSCI World, ninguna ventana de 15 años entre 1970 y 2023 acabó en negativo, aunque el pasado no garantiza el futuro.`,
                 [["Con protección", `${G_EUR(base)} de ${G_EUR(c.protectCap)}`], ["Protección hasta", c.protectEnd || "Desde tu primer euro"], ["Margen disponible", G_EUR(c.protectRoom)]],
                 [{ label: "Ver mi primer año", href: "#/dinero", primary: true }, others("drop")[0]], ["tu dinero propio", "tu año de protección"]);

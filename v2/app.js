@@ -337,6 +337,7 @@ function credVisual(big = false, sample = false) {
 /* ------------------------------------------------------------------ página de bienvenida */
 const totalMin = () => Math.round(LESSONS.reduce((a, l) => a + l.min, 0) / 5) * 5;
 const trustBar = () => `<p class="hz-sello">${ic("shield")}<span>CaixaBank Asset Management · Gestora de fondos supervisada por la CNMV · Documento de datos fundamentales (DFI) de cada fondo antes de invertir</span></p>`;
+const protectNote = () => `<p><sup>*</sup> Protección promocional: si a los ${RULES.protectMonths} meses de tu primera aportación tus primeros ${RULES.protectCap} € aportados (tuyos o de tu familia) valen menos y no has vendido ni retirado dinero, CaixaBank repone la diferencia. Máximo ${RULES.protectCap} € por persona y hasta agotar la dotación que fijen las bases. No es un fondo garantizado ni un seguro: tu dinero puede bajar.</p>`;
 function vLanding() {
     const lpYear = 8, lpNews = MKT_NEWS[lpYear];
     return `<div class="lp">
@@ -450,7 +451,7 @@ function vLanding() {
 
     <section class="hz-final"><div class="lp-in"><h2 class="serif">Da el primer paso hoy.</h2><p class="hz-lead">Crea tu cuenta en dos minutos. Si eres menor, tu familia la autoriza en otros dos.</p><div class="lp-cta center">${lnk(`Soy joven${ic("arrow")}`, "#/alta/joven", "white lg")}${lnk("Soy madre, padre o tutor", "#/familias", "lg light")}</div></div></section>
     <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}
-      <div class="lp-ast"><p><sup>*</sup> Protección promocional: si a los ${RULES.protectMonths} meses de tu primera aportación tus primeros ${RULES.protectCap} € aportados (tuyos o de tu familia) valen menos y no has vendido ni retirado dinero, CaixaBank repone la diferencia. Máximo ${RULES.protectCap} € por persona y hasta agotar la dotación que fijen las bases. No es un fondo garantizado ni un seguro: tu dinero puede bajar.</p>
+      <div class="lp-ast">${protectNote()}
       <p><sup>**</sup> Hasta ${pts(MILES.maxCut)} puntos, sobre las condiciones vigentes al firmar tu primera hipoteca con CaixaBank. No es una oferta ni obliga a contratar ningún producto (Ley 5/2019). <a href="#/legal">Ver todas las condiciones</a></p></div></div>
     </div>`;
 }
@@ -509,7 +510,7 @@ function vProbar() {
 }
 function vFamilias() {
     const obj = [
-        ["¿Y si pierde mi dinero?", `Puede bajar: invertir tiene riesgo. Por eso el curso enseña qué hacer en una caída y la cartera base es un fondo global diversificado. Además, como promoción, CaixaBank repone la diferencia de los primeros ${RULES.protectCap} € aportados si a los ${RULES.protectMonths} meses valen menos y no se ha vendido (con tope y condiciones). Veréis el valor en euros cada semana.`],
+        ["¿Y si pierde mi dinero?", `Puede bajar: invertir tiene riesgo. Por eso el curso enseña qué hacer en una caída y la cartera base es un fondo global diversificado. Además, como promoción, CaixaBank repone la diferencia de los primeros ${RULES.protectCap} € aportados si a los ${RULES.protectMonths} meses valen menos y no se ha vendido<sup>*</sup>. Veréis el valor en euros cada semana.`],
         ["¿Quién tiene el control?", "Vosotros. Hasta los 18, la persona titular legal sois vosotros: aprobáis el Antídoto, las retiradas y los permisos (Gemini y amigos) y veis su progreso. Si hay otro progenitor con patria potestad, se le pide también su conformidad."],
         ["¿Qué sacáis vosotros?", `Sin cuotas ni comisión de apertura. Los fondos cobran una comisión de gestión; como referencia, en torno al ${feeTxt} % al año, y el documento de datos fundamentales (DFI) de cada fondo detalla su coste exacto.`],
         ["¿Con 14 años puede invertir?", "La cuenta la abre y la titula su madre, padre o tutor; la persona menor la usa con vuestra autorización. A los 18, pasa a su nombre cuando confirma su identidad."],
@@ -536,7 +537,7 @@ function vFamilias() {
       <div class="faq">${obj.map(([q, a]) => `<details><summary>${q}${ic("plus")}</summary><p>${a}</p></details>`).join("")}</div>
       <div class="lp-cta">${lnk(`Crear cuenta familiar${ic("arrow")}`, "#/alta/familia", "primary lg")}</div>
     </div></section>
-    <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}</div></div>`;
+    <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}<div class="lp-ast">${protectNote()}</div></div></div>`;
 }
 function vLegal() {
     const sec = (t, body) => `<section class="lg-sec"><h2>${t}</h2>${body}</section>`;
@@ -640,7 +641,7 @@ function weekSummary() {
     lines.push(Math.abs(retPct) >= 1.5
         ? (retPct < 0 ? "Una semana mala es normal y no dice nada de un plazo de diez años. Una caída solo se convierte en pérdida si vendes; decidid con calma, no por una semana." : "Una semana buena tampoco cambia el plan: lo que cuenta es la constancia.")
         : "Una semana tranquila. Lo que cuenta es el plazo y la constancia.");
-    if (m.protect?.active && retPct < 0) lines.push(`Además, tus ${eur(m.protect.base)} siguen con protección promocional ${m.protect.daysLeft} días más (con condiciones).`);
+    if (m.protect?.active && retPct < 0) lines.push(`Además, tus ${eur(m.protect.base)} siguen con protección promocional ${m.protect.daysLeft} días más.`);
     return { lines, parts, mv, chg, retPct };
 }
 function weekCard(cls = "c-12") {

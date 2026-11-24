@@ -57,7 +57,7 @@ const VALUES = [
     { cb: "Calidad", hz: "Claridad", t: "Calidad que se entiende",
       p: "Una selección cerrada de fondos de CaixaBank Asset Management, la mayor gestora de fondos de España, explicada sin jerga y con 25 años de datos reales." },
     { cb: "Confianza", hz: "Cercanía", t: "Confianza que se comparte",
-      p: `Tu familia aprueba las decisiones importantes hasta los ${RULES.adultAge}, tus datos solo se usan con permiso y el programa de protección cubre la diferencia si tus primeros ${RULES.protectCap} € valen menos a los ${RULES.protectMonths} meses (con tope y condiciones).` },
+      p: `Tu familia aprueba las decisiones importantes hasta los ${RULES.adultAge}, tus datos solo se usan con permiso y el programa de protección cubre la diferencia si tus primeros ${RULES.protectCap} € valen menos a los ${RULES.protectMonths} meses, hasta ese máximo.` },
     { cb: "Compromiso social", hz: "Constancia", t: "Un futuro que no depende de tu cartera",
       p: "Aprender a invertir con las mismas reglas para todos: las millas premian tu constancia, nunca cuánto dinero tengas." },
     { cb: "", hz: "Futuro", t: "Mirar lejos",
@@ -212,7 +212,7 @@ const LESSONS = [
             "Por eso el dinero que necesitas pronto no se invierte en bolsa, y el de tu casa sí puede." ] },
         { h: "Qué hacer cuando cae", p: [
             "Lo peor que suele hacer un inversor es vender por miedo. Lo mejor: no tocarlo y seguir aportando.",
-            "Además, como promoción, tus primeros 500 € tienen protección el primer año: si valen menos al cumplir 12 meses y no has vendido, CaixaBank repone la diferencia (con tope y condiciones)." ] },
+            "Además, como promoción, tus primeros 500 € tienen protección el primer año: si valen menos al cumplir 12 meses y no has vendido, CaixaBank repone la diferencia, hasta ese máximo." ] },
         { h: "Aportar en las caídas", p: [
             "Si aportas lo mismo cada mes, cuando los precios bajan compras más participaciones con el mismo dinero. Cuando vuelven a subir, tienes más.",
             "Por eso aportar cada mes, pase lo que pase, suaviza los vaivenes." ],
