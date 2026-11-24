@@ -1255,3 +1255,29 @@ fieldset.field { border: 0; padding: 0; margin: 0; } fieldset.field legend { fon
     .vz-btns .btn { min-width: 0; flex: 1; }
     .vz-row { grid-template-columns: minmax(0, 1fr) auto; } .vz-row .vz-bars { grid-column: 1 / -1; }
 }
+
+/* ---------------------------------------------------------------- portada: más contenida y una pantalla por sección */
+/* En pantallas de ordenador todo se reduce un 18 % a la vez (texto, imágenes y márgenes), y cada sección
+   ocupa como mínimo lo que queda de pantalla bajo la barra de navegación, con el contenido centrado. */
+.lp { --z: 1; --navh: 72px; }
+.lp > section { scroll-margin-top: var(--navh); }
+@media (min-width: 1100px) {
+    .lp { --z: .85; zoom: var(--z); }
+    .lp > section .lp-in:not(.lp-narrow), .lp > .lp-foot { max-width: 1340px; }
+    .lp > section:not(.hz-final) { min-height: calc(100vh / var(--z) - var(--navh)); display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
+    .lp > section > .lp-in { width: 100%; box-sizing: border-box; }
+    .hz-hero { min-height: calc(100vh / var(--z) - var(--navh)); }
+    .lp-sec, .lp-sec.why { padding: 64px 0; }
+}
+/* Antídoto de la portada: cabe en una pantalla */
+.hz-dark { padding: 56px 0; }
+.anti-grid { gap: 64px; }
+.anti-l .lp-lead { font-size: 17px; margin-top: 14px; }
+.anti-steps { margin-top: 26px; gap: 0; }
+.anti-steps li { padding: 14px 0; border: 0; border-top: 1px solid rgba(255, 255, 255, .14); border-radius: 0; background: none; align-items: flex-start; }
+.anti-steps li:first-child { border-top: 0; padding-top: 4px; }
+.anti-steps p { font-size: 13.5px; margin-top: 2px; }
+.anti-r .lp-fears { gap: 8px; }
+.anti-r .lf { font-size: 13.5px; padding: 7px 13px 7px 7px; } .anti-r .lf > span { width: 26px; height: 26px; }
+.anti-r .lf-out { margin-top: 16px; padding: 18px 20px; } .anti-r .lf-out p { font-size: 15.5px; line-height: 1.55; }
+.anti-r .hz-small { margin-top: 14px; }
