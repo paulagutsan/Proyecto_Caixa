@@ -1342,3 +1342,32 @@ fieldset.field { border: 0; padding: 0; margin: 0; } fieldset.field legend { fon
     .lp-nav { padding-top: env(safe-area-inset-top); }
     .focus-top { padding-top: calc(14px + env(safe-area-inset-top)); }
 }
+
+/* ---------------------------------------------------------------- móvil y app instalada (no afecta al ordenador) */
+@media (max-width: 860px) {
+    html { -webkit-tap-highlight-color: transparent; }
+    body { overscroll-behavior-y: none; }
+    /* campos a 16 px para que el iPhone no haga zoom al escribir */
+    .field input, .field select, .field textarea, .ask input, .ad-add input { font-size: 16px; }
+    /* portada: la barra cabe en el ancho del móvil */
+    .lp-nav .lp-in { gap: 10px; padding: 0 14px; }
+    .lp-nav .brand-sub { display: none; }
+    .lp-nav .brand-word { font-size: 20px; }
+    .lp-nav .brand-star { width: 40px; height: auto; }
+    .lp-right { gap: 2px; } .lp-right .btn { padding: 0 14px; min-height: 36px; font-size: 13.5px; }
+    .hz-final .hz-lead { white-space: normal; }
+    /* Tu voz: los tres botones sin pisarse */
+    .vz-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .vz-btns .btn { min-width: 0; width: 100%; justify-content: center; }
+    .vz-btns .btn.ghost { grid-column: 1 / -1; grid-row: 2; min-height: 40px; }
+    /* barra superior del área familiar */
+    .topbar .area { font-size: 10px; padding: 3px 8px; }
+    .topbar .brand-sub { display: none; }
+    /* hojas como en las apps: suben desde abajo y ocupan el ancho */
+    #sheet.open { place-items: end stretch; }
+    .sheet-card, .sheet-card.wide { width: 100%; max-width: none; border-radius: 22px 22px 0 0; max-height: 92dvh; padding: 10px 20px calc(20px + env(safe-area-inset-bottom)); animation: sheetUp .26s cubic-bezier(.2, .8, .2, 1); }
+    .sheet-card::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 4px; background: var(--line-2); margin: 0 auto 10px; }
+    .sheet-card.cert-sheet { padding: 0; } .sheet-card.cert-sheet::before { margin: 10px auto 0; }
+    .pj-foot { margin: 0 -20px calc(-20px - env(safe-area-inset-bottom)); padding: 12px 20px calc(14px + env(safe-area-inset-bottom)); bottom: calc(-20px - env(safe-area-inset-bottom)); }
+}
+@keyframes sheetUp { from { transform: translateY(100%); } }
