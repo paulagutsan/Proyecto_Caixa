@@ -62,7 +62,7 @@ const gAsk = t => ({ label: t.label, q: t.q });
 function localGemini(question, c) {
     const intent = gIntent(question), years = Math.max(1, c.goalAge - c.age), next = gNext(c);
     const gen = c.generic ? " Es una respuesta general: con el permiso de tu familia te respondo con tus propios datos." : "";
-    const R = (title, text, facts = [], actions = [], used = []) => ({ kind: intent, title, text: text + gen, facts: c.generic ? [] : facts, actions, used });
+    const R = (title, text, facts = [], actions = [], used = []) => ({ kind: intent, title, text: text + gen, facts: c.generic ? [] : facts, actions, used, generic: !!c.generic });
     const topic = id => gAsk(G_TOPICS.find(t => t.id === id));
     const others = skip => G_TOPICS.filter(t => t.id !== skip && t.id !== "human").slice(0, 2).map(gAsk);
 

@@ -1257,7 +1257,7 @@ function assistantMsg(x) {
       ${x.title ? `<b class="am-t">${esc(x.title)}</b>` : ""}<p>${esc(text)}</p>
       ${x.facts?.length ? `<div class="am-facts">${x.facts.slice(0, 3).map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>` : ""}
       ${acts ? `<div class="am-acts">${acts}</div>` : ""}
-      <small class="am-meta">${gem ? "Gemini · " : ""}Con los datos de tu cuenta${x.ts ? ` · ${hhmm(x.ts)}` : ""}</small></div></div>`;
+      <small class="am-meta">${gem ? "Gemini · " : ""}${x.generic ? "Respuesta general" : "Con los datos de tu cuenta"}${x.ts ? ` · ${hhmm(x.ts)}` : ""}</small></div></div>`;
 }
 function chatHTML() {
     const list = S.chat.length ? S.chat.slice(-8) : [{ r: "g", ...localGemini("hola", assistantCtx()), ts: 0 }];
@@ -1293,15 +1293,9 @@ function vAntidoto() {
             ${btn(ic("close"), "fearDel", "icon-btn", `data-i="${i}" aria-label="Quitar"`)}</div>`).join("")}</div>` : ""}
         <p class="note">No es una garantía: reduce el impacto si lo que temes ocurre, pero las inversiones pueden perder valor. Siempre con fondos de CaixaBank Asset Management.</p>`, "c-12")}
 
-      ${card(`${cardH(`<span class="gem">${ic("spark")}Asistente Horizonte</span>`, can ? "Pregunta lo que quieras sobre tu dinero. Responde con tus datos." : "Pregunta lo que quieras sobre invertir. Respuestas generales.")}
-        <div class="chat" id="chat">${chatHTML()}</div>
-        <div class="sugg">${G_TOPICS.map(t => `<button class="chip" data-act="ask" data-q="${esc(t.q)}">${t.label}</button>`).join("")}</div>
-        <form class="ask" data-form="ask"><input name="q" placeholder="Escribe tu consulta" aria-label="Tu consulta" autocomplete="off" required><button class="icon-btn primary" aria-label="Enviar">${ic("send")}</button></form>
-        ${can ? "" : `<p class="note">Estas respuestas son generales y no usan ningún dato de tu cuenta. Con el permiso de tu familia te responderé con tus propios números. ${btn("Pedir permiso", "askPerm", "sm", 'data-p="gemini"')}</p>`}
-        <p class="note">Información orientativa, no es asesoramiento financiero.</p>`, "c-7")}
       ${card(`${cardH("Lo que preocupa a tu generación", "Ranking anónimo de jóvenes en España.")}
         ${showRank ? `<div class="rank">${rank.map((x, i) => `<div class="rk ${S.fears.some(f => f.id === x.f.id) ? "mine" : ""}"><span class="rk-n">${i + 1}</span><div><b>${x.f.label}</b>${bar(x.n, rank[0].n, "blue")}</div><span class="rk-p">${pct(x.n / r.total * 100)}</span></div>`).join("")}</div><p class="note">${num(r.total)} respuestas anónimas.</p>`
-          : `<p class="ad-soon">Lo publicaremos cuando haya al menos ${RANK_MIN} respuestas, para que sea representativo y nadie pueda ser identificado.${S.voted ? " Tu respuesta ya cuenta." : ""}</p>`}`, "c-5")}
+          : `<p class="ad-soon">Lo publicaremos cuando haya al menos ${RANK_MIN} respuestas, para que sea representativo y nadie pueda ser identificado.${S.voted ? " Tu respuesta ya cuenta." : ""}</p>`}`, "c-12")}
     </div>`;
 }
 /* Mapa del Antídoto: de tu dinero a cada inversión, con ramas tan gruesas como el peso de cada parte */
@@ -1571,7 +1565,7 @@ function render() {
     bindViz(); bindProj(); bindLanding(); bindValueCharts();
     if (r === "juego" && parts[1] === "masomenos") mmStart();
     if (r === "antidoto" && !ranking) loadRanking().then(() => { if (location.hash.startsWith("#/antidoto")) rerender(); });
-    const chat = $("#chat"); if (chat) chat.scrollTop = chat.scrollHeight;
+    gemRender();
 }
 function rerender() { const y = scrollY; render(); scrollTo(0, y); }
 
@@ -1616,7 +1610,7 @@ document.addEventListener("click", async e => {
     }
     else if (act === "openMeta") metaSheet();
     else if (act === "delMeta") { S.metas = S.metas.filter(x => x.id !== b.dataset.id); S.money.forEach(c => { if (c.meta === b.dataset.id) delete c.meta; }); save(); rerender(); }
-    else if (act === "goAsk") { location.hash = "#/antidoto"; setTimeout(() => $('.ask input')?.focus(), 80); }
+    else if (act === "goAsk") gemToggle(true);
     else if (act === "examAns") { const q = examState.qs[examState.i], i = +b.dataset.i; examState.ans = i; if (i !== q.a) examState.errors++; rerender(); }
     else if (act === "examNext") {
         const x = examState;

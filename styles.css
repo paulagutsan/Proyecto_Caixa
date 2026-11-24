@@ -1605,3 +1605,20 @@ body[data-view="app"] .row { padding: 16px 0; }
 .conn-card { border-left: 0 !important; border-right: 0 !important; background: none !important; }
 .demo-banner, .demo-note { background: none; padding-left: 0; padding-right: 0; border-radius: 0; }
 body[data-view="app"] .page-h:not(.home-h) { margin-bottom: 24px; }
+
+/* ---- asistente flotante ---- */
+.gem-fab { position: fixed; right: 28px; bottom: 28px; z-index: 40; display: inline-flex; align-items: center; gap: 10px; height: 54px; padding: 0 22px 0 18px; border: 0; border-radius: 999px; font: inherit; font-size: 15px; font-weight: 650; color: #fff; cursor: pointer; background: linear-gradient(120deg, #6b5fe8, #1f8fd0); box-shadow: 0 16px 34px -12px rgba(40, 60, 170, .6); transition: transform .15s, box-shadow .15s; }
+.gem-fab:hover { transform: translateY(-2px); box-shadow: 0 22px 40px -12px rgba(40, 60, 170, .7); } .gem-fab .ic { width: 22px; height: 22px; }
+.gem-panel { position: fixed; right: 28px; bottom: 28px; z-index: 45; width: 408px; height: min(640px, calc(100vh - 56px)); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line-2); border-radius: 22px; box-shadow: 0 34px 80px -24px rgba(0, 20, 50, .5); overflow: hidden; animation: pop .2s ease-out; }
+.gem-panel header { display: flex; align-items: center; gap: 12px; padding: 16px 14px 14px 18px; border-bottom: 1px solid var(--line); } .gem-panel header > div { flex: 1; min-width: 0; } .gem-panel header b { display: block; font-size: 15.5px; } .gem-panel header small { display: block; font-size: 12.5px; line-height: 1.4; color: var(--ink-3); }
+.gem-panel .chat { flex: 1; min-height: 0; max-height: none; height: auto; overflow-y: auto; padding: 18px; margin: 0; border: 0; overscroll-behavior: contain; }
+.gem-panel .sugg { flex: none; display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; padding: 4px 18px 10px; margin: 0; scrollbar-width: none; } .gem-panel .sugg .chip { flex: none; }
+.gem-panel .ask { flex: none; margin: 0; padding: 0 18px; } .gem-panel .note { flex: none; margin: 10px 18px 14px; font-size: 11.5px; } .gem-perm { all: unset; cursor: pointer; font-weight: 600; color: var(--blue); }
+body[data-view="app"] .page { padding-bottom: 110px; }
+@media (max-width: 860px) {
+    .gem-fab { right: 16px; bottom: calc(var(--tab) + env(safe-area-inset-bottom) + 14px); width: 54px; padding: 0; justify-content: center; } .gem-fab span { display: none; } body[data-view="focus"] .gem-fab { bottom: calc(env(safe-area-inset-bottom) + 16px); }
+    .gem-panel { inset: auto 0 0 0; width: auto; height: min(86dvh, 720px); border-radius: 22px 22px 0 0; border-width: 1px 0 0; padding-bottom: env(safe-area-inset-bottom); z-index: 60; }
+    body[data-view="focus"] .focus-body { padding-bottom: 100px; }
+}
+@media (prefers-reduced-motion: reduce) { .gem-panel { animation: none; } }
+@media print { #gem { display: none; } }
