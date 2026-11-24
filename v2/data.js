@@ -8,8 +8,8 @@ const RULES = {
     prize: 20,                 // € invertidos a su nombre al superar Fundamentos
     protectCap: 500,           // € protegidos durante el primer año
     protectMonths: 12,
-    base: 0.75,                // reparto Base + Antídoto
-    antidote: 0.25,
+    base: 0.9,                 // reparto Base + Antídoto: el Antídoto es una parte pequeña («satélite»), nunca el grueso de la cartera
+    antidote: 0.1,
     maxFears: 2,
     examSize: 10,
     examMaxErrors: 2,          // prueba final: se puede fallar poco
@@ -25,8 +25,7 @@ const MILES = {
     firstOwn: 50,        // tu primer euro propio
     monthOwn: 10,        // cada mes en el que aportas tú
     itv: 50,             // revisión anual
-    game: 5,             // un juego al día con datos reales
-    streak4: 20,         // cada 4 semanas seguidas con actividad
+    streak4: 20,         // cada 4 semanas seguidas aprendiendo o aportando (los juegos dan insignias, nunca millas)
     giftPer5: 1,         // 1 milla por cada 5 € que te regalan…
     giftMonthCap: 20,    // …con un tope de 20 millas al mes, para que no se pueda «comprar» la rebaja
     perPoint: 25000,     // 25.000 millas = 1 punto porcentual menos de diferencial (250 millas = 0,01)
@@ -36,6 +35,11 @@ const MILES = {
 /* Coste orientativo de los fondos (comisión de gestión de CaixaBank AM, % anual). Se muestra siempre en euros. */
 const COST = { fee: 0.9 };
 const feeTxt = String(COST.fee).replace(".", ",");
+/* Proyecciones: tres escenarios (nunca una sola cifra). Las comisiones no se modifican en esta versión. */
+const EST = { gross: 5, scenarios: [[3, "Prudente"], [5, "Medio"], [8, "Optimista"]] };
+const RATE = g => g / 100;
+/* Programa de protección: dotación publicada y limitada */
+const PROMO = { budgetTxt: "la que fijen las bases de la promoción" };
 
 /* Una pregunta cada semana para hablar de dinero en familia (PISA: hablar de dinero en casa con frecuencia mejora la competencia financiera) */
 const TALKS = [
@@ -53,7 +57,7 @@ const VALUES = [
     { cb: "Calidad", hz: "Claridad", t: "Calidad que se entiende",
       p: "Una selección cerrada de fondos de CaixaBank Asset Management, la mayor gestora de fondos de España, explicada sin jerga y con 25 años de datos reales." },
     { cb: "Confianza", hz: "Cercanía", t: "Confianza que se comparte",
-      p: `Tu familia aprueba las decisiones importantes hasta los ${RULES.adultAge}, tus datos solo se usan con permiso y tus primeros ${RULES.protectCap} € no pueden perder valor en ${RULES.protectMonths} meses, si no vendes antes.` },
+      p: `Tu familia aprueba las decisiones importantes hasta los ${RULES.adultAge}, tus datos solo se usan con permiso y el programa de protección cubre la diferencia si tus primeros ${RULES.protectCap} € valen menos a los ${RULES.protectMonths} meses (con tope y condiciones).` },
     { cb: "Compromiso social", hz: "Constancia", t: "Un futuro que no depende de tu cartera",
       p: "Aprender a invertir con las mismas reglas para todos: las millas premian tu constancia, nunca cuánto dinero tengas." },
     { cb: "", hz: "Futuro", t: "Mirar lejos",
@@ -73,16 +77,16 @@ const FUNDS = {
     agua:        { name: "Agua y medio ambiente", sub: "Agua, reciclaje y gestión de residuos", r: 5.0 },
 };
 const FUND_COLOR = { global: "#007eae", tecnologia: "#5b50d6", inmobiliario: "#d9a03a", energia: "#1f9d63", inflacion: "#d4622a", salud: "#d33f73", movilidad: "#11867c", infraestructuras: "#6d7f99", agua: "#1aa3c4" };
-/* Por qué cada fondo es un antídoto: si pasa lo que temes, a estas empresas les suele ir mejor */
+/* Por qué cada fondo se asocia a un tema: es una apuesta temática, no una cobertura. Nunca prometemos que compense nada. */
 const FUND_WHY = {
-    tecnologia: "Si la tecnología y la IA avanzan más de lo esperado, las empresas que las crean y las usan suelen ganar más, y esta parte de tu dinero con ellas.",
-    inmobiliario: "Si la vivienda sigue subiendo, las empresas dueñas de pisos y edificios tienden a valer más, y tu entrada no se queda tan atrás.",
-    energia: "Cuanto más se invierta en energía limpia y en frenar el cambio climático, más pueden crecer las empresas que lo hacen posible.",
-    inflacion: "Estos activos se mueven con los precios: cuando todo se encarece, protegen lo que vale tu dinero.",
-    salud: "El gasto en salud crece con los años; invertir en el sector es estar del lado de quien encuentra soluciones.",
-    movilidad: "Si moverse en coche se encarece, a las empresas de energía y movilidad les suele ir mejor, y a esta parte de tu dinero también.",
-    infraestructuras: "Cuando hay que arreglar carreteras, puentes o redes, alguien cobra por hacerlo: las empresas que construyen y mantienen infraestructuras.",
-    agua: "Si el agua escasea o hay que limpiar lo que contaminamos, crecen las empresas que depuran, reciclan y gestionan residuos.",
+    tecnologia: "Si la tecnología y la IA avanzan más de lo esperado, las empresas que las crean y las usan podrían ganar más. Pero también pueden caer con fuerza: es un fondo de riesgo alto.",
+    inmobiliario: "Si la vivienda sigue subiendo, las empresas dueñas de pisos y edificios podrían valer más. No es lo mismo que el precio del piso que tú quieres comprar, y también sufre cuando suben los tipos.",
+    energia: "Cuanto más se invierta en energía limpia, más podrían crecer las empresas que la hacen posible. También hay años de caídas fuertes en el sector.",
+    inflacion: "Estos activos suelen moverse con los precios, pero no siempre lo hacen: en algunos años de subida de precios también han bajado.",
+    salud: "El gasto en salud crece con los años, y el sector suele ser más estable. Aun así, un fondo sectorial puede perder valor.",
+    movilidad: "Si moverse en coche se encarece, las empresas de energía y movilidad podrían ir mejor. Pero si el petróleo baja, este fondo baja con él.",
+    infraestructuras: "Cuando hay que arreglar carreteras, puentes o redes, alguien cobra por hacerlo. Son empresas muy ligadas a los tipos de interés y a los presupuestos públicos.",
+    agua: "Si el agua escasea o hay que limpiar lo que contaminamos, podrían crecer las empresas que depuran, reciclan y gestionan residuos. Sin garantía.",
 };
 /* De lo que escribes a un fondo: palabras clave (sin tildes). El orden importa: lo más concreto primero. */
 const FEAR_KEYS = [
@@ -115,18 +119,12 @@ const ICONS = {
 
 /* El Antídoto: en vez de preguntar cuánto riesgo quieres, preguntamos qué te da miedo */
 const FEARS = [
-    { id: "ia", label: "Que la IA haga el trabajo que quiero", fund: "tecnologia",
-      why: "Si la IA avanza más de lo esperado, las empresas que la crean y la usan suelen ganar más, y esta parte de tu dinero con ellas." },
-    { id: "casa", label: "No poder pagarme nunca una casa", fund: "inmobiliario",
-      why: "Si los pisos siguen subiendo, las empresas dueñas de viviendas tienden a valer más, y tu entrada no se queda tan atrás." },
-    { id: "clima", label: "El cambio climático", fund: "energia",
-      why: "Cuanto más se invierta en energía limpia para frenar el clima, más pueden crecer las empresas que la producen." },
-    { id: "precios", label: "Que todo suba de precio", fund: "inflacion",
-      why: "Estos activos están pensados para moverse con los precios, así que protegen tu dinero cuando todo se encarece." },
-    { id: "salud", label: "La salud de mi familia", fund: "salud",
-      why: "El gasto en salud crece con los años; invertir en el sector es una forma de estar del lado de quien encuentra soluciones." },
-    { id: "coche", label: "No poder pagar el coche y la gasolina", fund: "movilidad",
-      why: "Si la energía y el coche se encarecen cuando lo necesites, esta parte de tu dinero tiende a subir con ellos." },
+    { id: "ia", label: "Que la IA haga el trabajo que quiero", fund: "tecnologia", why: FUND_WHY.tecnologia },
+    { id: "casa", label: "No poder pagarme nunca una casa", fund: "inmobiliario", why: FUND_WHY.inmobiliario },
+    { id: "clima", label: "El cambio climático", fund: "energia", why: FUND_WHY.energia },
+    { id: "precios", label: "Que todo suba de precio", fund: "inflacion", why: FUND_WHY.inflacion },
+    { id: "salud", label: "La salud de mi familia", fund: "salud", why: FUND_WHY.salud },
+    { id: "coche", label: "No poder pagar el coche y la gasolina", fund: "movilidad", why: FUND_WHY.movilidad },
 ];
 
 /* Objetivo de vivienda por defecto (el joven lo ajusta en Casa) */
@@ -138,23 +136,25 @@ const RANK_MIN = 100;          // el mapa de miedos se publica a partir de 100 r
 
 /* El ciclo de Horizonte: cada paso alimenta al siguiente */
 const CYCLE = [
-    { id: "aprende", t: "Aprende", p: "Un curso elaborado para aprender todo lo necesario sobre invertir, desde lo más básico. Al superarlo, recibes un diploma que acredita tu nivel.", ic: "book" },
-    { id: "invierte", t: "Invierte", p: `Desde 1 €, con tu familia detrás. Tu primer año, los primeros ${RULES.protectCap} € no pueden perder.`, ic: "chart" },
-    { id: "entiende", t: "Anticípate", p: "Cada semana, qué ha pasado con tu dinero y por qué. Y tu Antídoto: invierte en lo que te preocupa.", ic: "spark" },
-    { id: "millas", t: "Gana millas", p: "Aprender, aportar y ser constante suma millas. Nunca por tener más dinero que nadie.", ic: "star" },
-    { id: "casa", t: "Tu casa", p: "Las millas rebajan el interés de tu primera hipoteca con CaixaBank.", ic: "house" },
+    { id: "aprende", t: "Aprende", p: "Cinco temas cortos y una prueba final, sin jerga. Al superarla, recibes un certificado que puedes comprobar y compartir.", ic: "book" },
+    { id: "invierte", t: "Invierte", p: `Desde 1 €, con tu familia detrás. Tus primeros ${RULES.protectCap} € tienen protección promocional durante el primer año (con condiciones).`, ic: "chart" },
+    { id: "entiende", t: "Anticípate", p: "Cada semana, qué ha pasado con tu dinero y por qué. Y, si quieres, una parte pequeña de tu cartera en un tema que te importa.", ic: "spark" },
+    { id: "millas", t: "Gana millas", p: "Aprender, aportar con constancia y revisar tu plan cada año suma millas. Nunca por tener más dinero que nadie, ni por jugar.", ic: "star" },
+    { id: "casa", t: "Tu casa", p: "Si un día pides tu primera hipoteca con CaixaBank, tus millas pueden convertirse en una bonificación, según las condiciones de ese momento.", ic: "house" },
 ];
 const FAQ = [
-    { q: "¿Hay una edad para empezar?", a: "Aprender no tiene edad: puedes probar los juegos y recorrer la web cuando quieras. Para abrir una cuenta e invertir, una persona menor de edad necesita la autorización de su madre, padre o tutor legal. Hasta los 18, la cuenta está a su nombre y su familia aprueba las decisiones importantes; a los 18 pasa a ser solo suya." },
-    { q: "¿Puedo perder dinero?", a: `Invertir siempre tiene riesgo y el valor puede bajar. Por eso, durante tu primer año, los primeros ${RULES.protectCap} € que inviertes tú están protegidos: si al cumplir los 12 meses valen menos de lo que pusiste, CaixaBank pone la diferencia, siempre que no hayas vendido antes.` },
-    { q: "¿Qué es el Certificado Horizonte?", a: `Una acreditación de CaixaBank Asset Management que demuestra que sabes lo esencial antes de invertir: interés compuesto, riesgo y plazo, diversificación y cómo evitar estafas. Al superar Fundamentos recibes ${RULES.prize} € invertidos y un certificado verificable que puedes añadir a LinkedIn a partir de los 16.` },
-    { q: "¿Qué es el Antídoto?", a: `En lugar de preguntarte cuánto riesgo quieres, te preguntamos qué te preocupa de tu futuro. El ${Math.round(RULES.base * 100)} % de tu dinero va a un fondo global diversificado y el ${Math.round(RULES.antidote * 100)} % a los temas que eliges, dentro de una selección cerrada de fondos de CaixaBank Asset Management. Reduce el golpe si lo que temes ocurre; no es una garantía.` },
-    { q: "¿Cómo funcionan las millas de casa?", a: "Las ganas al aprender, al jugar con datos reales, al aportar cada mes, al mantener tu racha y con los regalos de tu familia (con un tope mensual). Nunca por tener más dinero. Se canjean como rebaja del diferencial de tu primera hipoteca con CaixaBank, no caducan y, si nunca compras casa, no pierdes nada." },
-    { q: "¿Qué hace Gemini con mis datos?", a: "Solo con el permiso de tu familia (y a partir de los 18, el tuyo), Gemini usa la información de tu cuenta para explicarte tu dinero con tus propios números. Nunca se usa para publicidad y puedes retirar el permiso cuando quieras." },
-    { q: "¿Cómo puede ayudar mi familia?", a: "Desde el área familiar pueden hacer regalos puntuales o aportaciones mensuales con un mensaje, aprobar tu Antídoto, decidir los permisos y ver tu progreso." },
+    { q: "¿Hay una edad para empezar?", a: "Aprender no tiene edad: puedes hacer los temas y los juegos sin crear cuenta. Para abrir una cuenta e invertir, una persona menor de edad necesita que su madre, padre o tutor legal la abra y la autorice con su propia identidad. Hasta los 18, esa persona es la titular legal y tú eres la persona usuaria; a los 18, la cuenta pasa a tu nombre cuando confirmas tu identidad." },
+    { q: "¿Puedo perder dinero?", a: `Sí. Invertir siempre tiene riesgo y el valor puede bajar. Como promoción, durante tu primer año CaixaBank repone la diferencia si tus primeros ${RULES.protectCap} € aportados (tuyos o de tu familia) valen menos a los ${RULES.protectMonths} meses, siempre que no hayas vendido antes. Tiene tope de ${RULES.protectCap} € por persona, dotación limitada (${PROMO.budgetTxt}) y no cubre nada más.` },
+    { q: "¿Qué es el Certificado Horizonte?", a: `Una acreditación de CaixaBank Asset Management que demuestra que sabes lo esencial antes de invertir: interés compuesto, riesgo y plazo, diversificación y cómo evitar estafas. Al superar Fundamentos, CaixaBank invierte ${RULES.prize} € a tu nombre (uno por persona, una vez verificada tu identidad) y recibes un certificado con un código que cualquiera puede comprobar en nuestra página de verificación. Puedes añadirlo a LinkedIn a partir de los 16.` },
+    { q: "¿Qué es el Antídoto?", a: `Una parte pequeña de tu cartera (el ${Math.round(RULES.antidote * 100)} %) que puedes dedicar a un tema que te preocupa, como la IA o la vivienda; el ${Math.round(RULES.base * 100)} % restante va a un fondo global diversificado. No es un seguro ni una cobertura: ese fondo puede ganar o perder, y a veces irá en tu contra. Solo se activa después de un test breve sobre tu situación y con la aprobación de tu familia si eres menor.` },
+    { q: "¿Cómo funcionan las millas de casa?", a: "Las ganas al aprender, al aportar cada mes, al mantener tu constancia semanal, con la revisión anual y con los regalos de tu familia (con un tope mensual). Los juegos dan insignias, no millas. Si un día pides tu primera hipoteca con CaixaBank, las millas pueden convertirse en una bonificación sobre las condiciones de ese momento, según las condiciones de vinculación voluntaria que se ofrezcan. No obligan a contratar nada, no caducan y, si nunca compras casa, no pierdes nada." },
+    { q: "¿Qué hace Gemini con mis datos?", a: "Sin permiso, Gemini responde solo con información general y sin ningún dato tuyo. Con el permiso de tu familia (y a partir de los 18, el tuyo), usa la información de tu cuenta, sin tu nombre, para explicarte tu dinero con tus propios números. Nunca se usa para publicidad y puedes retirar el permiso cuando quieras." },
+    { q: "¿Cómo puede ayudar mi familia?", a: "Desde el área familiar pueden hacer regalos puntuales o aportaciones mensuales con un mensaje, aprobar tu Antídoto y tus retiradas, decidir los permisos y ver tu progreso. También pueden pedir que un gestor de CaixaBank les llame." },
+    { q: "¿Puedo sacar mi dinero?", a: "Sí. Si eres mayor de edad, pides la retirada y listo. Si eres menor, la solicitud llega a tu familia para que la apruebe. Si retiras antes de los 12 meses, pierdes la protección promocional del primer año. Mientras no vendas, una caída es solo un número en pantalla." },
+    { q: "¿Esto es un juego de apuestas?", a: "No. Los juegos usan datos históricos de hace años, no predicen el futuro y no dan dinero ni millas: solo insignias. En Horizonte no hay predicciones semanales ni cuenta atrás." },
     { q: "¿Cuánto cuesta Horizonte?", a: `Horizonte no cobra cuotas ni comisión de apertura, pero invertir tiene un coste. Los fondos de CaixaBank Asset Management cobran una comisión de gestión; como referencia, en torno al ${feeTxt} % al año, es decir, unos ${feeTxt} € por cada 100 € invertidos. Te la mostramos siempre en euros, y el documento de datos fundamentales de cada fondo detalla su coste exacto.` },
 ];
-const LEGAL = "Horizonte es un servicio de CaixaBank Asset Management, propuesto en el reto CaixaBank AM × Google. Invertir conlleva riesgos, incluida la pérdida del capital invertido. Los valores que se muestran son estimaciones con fines informativos y no garantizan rentabilidades futuras. La protección del primer año es una bonificación promocional sujeta a condiciones: tope de 500 € por persona, 12 meses y solo si no se vende antes. Las millas de casa son una rebaja sobre las condiciones vigentes en el momento de la firma y no obligan a contratar ningún producto (Ley 5/2019).";
+const LEGAL = "Horizonte es un servicio de CaixaBank Asset Management, propuesto en el reto CaixaBank AM × Google. Invertir conlleva riesgos, incluida la pérdida del capital invertido. Los valores que se muestran son estimaciones con fines informativos y no garantizan rentabilidades futuras. La protección del primer año es una promoción sujeta a condiciones: tope de 500 € por persona, 12 meses, solo si no se vende antes y hasta agotar la dotación publicada. Las millas de casa son una bonificación posible sobre las condiciones vigentes en el momento de la firma de una hipoteca, según las condiciones de vinculación voluntaria que entonces se ofrezcan, y no obligan a contratar ningún producto (Ley 5/2019). Antes de invertir, consulta el documento de datos fundamentales (DFI) de cada fondo.";
 
 const SOURCES = {
     premio: { label: "Primera inversión (Fundamentos)", own: true },
@@ -164,6 +164,7 @@ const SOURCES = {
     otro: { label: "Otro ingreso tuyo", own: true },
     regalo: { label: "Regalo", own: false },
     mensual: { label: "Aportación de la familia", own: false },
+    retiro: { label: "Retirada", own: false },
 };
 
 /* ---------------------------------------------------------------- Fundamentos (5 temas) */
@@ -211,7 +212,7 @@ const LESSONS = [
             "Por eso el dinero que necesitas pronto no se invierte en bolsa, y el de tu casa sí puede." ] },
         { h: "Qué hacer cuando cae", p: [
             "Lo peor que suele hacer un inversor es vender por miedo. Lo mejor: no tocarlo y seguir aportando.",
-            "Tu primer año, además, va acompañado: si tus primeros 500 € valen menos al cumplir 12 meses, CaixaBank te abona la diferencia." ] },
+            "Además, como promoción, tus primeros 500 € tienen protección el primer año: si valen menos al cumplir 12 meses y no has vendido, CaixaBank repone la diferencia (con tope y condiciones)." ] },
         { h: "Aportar en las caídas", p: [
             "Si aportas lo mismo cada mes, cuando los precios bajan compras más participaciones con el mismo dinero. Cuando vuelven a subir, tienes más.",
             "Por eso aportar cada mes, pase lo que pase, suaviza los vaivenes." ],
@@ -245,8 +246,8 @@ const LESSONS = [
             "Tener cinco criptomonedas o tres empresas tecnológicas no es diversificar: suelen subir y bajar a la vez.",
             "Diversificar de verdad es tener cosas que no dependen de lo mismo." ] },
         { h: "Base + Antídoto", p: [
-            "En Horizonte, la mayor parte de tu dinero (75 %) va a un <b>fondo global</b> muy diversificado.",
-            "Solo una parte (25 %) va a tu <b>Antídoto</b>: los temas que te preocupan de tu futuro." ] },
+            "En Horizonte, la mayor parte de tu dinero (90 %) va a un <b>fondo global</b> muy diversificado.",
+            "Solo una parte pequeña (10 %) puede ir a tu <b>Antídoto</b>: un tema que te importa. Es una apuesta temática, no un seguro: puede ir bien o mal." ] },
       ],
       check: [
         { q: "¿Para qué sirve diversificar?", o: ["Para ganar siempre", "Para que una mala noticia no lo hunda todo", "Para pagar menos impuestos"], a: 1, why: "Repartir reduce el impacto de que a una empresa le vaya mal." },
@@ -287,25 +288,25 @@ const LESSONS = [
             `Al superar Fundamentos, CaixaBank ingresa <b>${RULES.prize} €</b> invertidos a tu nombre. No es un regalo: te lo has ganado.`,
             "Después, el objetivo es que pongas tu <b>primer euro propio</b>: de tu paga, del redondeo de tus compras o de un trabajo de verano." ] },
         { h: "Tu dinero, en dos partes", p: [
-            "El <b>75 %</b> va a la cartera base: un fondo global con miles de empresas de todo el mundo.",
-            "El <b>25 %</b> es tu Antídoto: lo inviertes en lo que te preocupa de tu futuro, para que si pasa, tu dinero gane." ] },
+            "El <b>90 %</b> va a la cartera base: un fondo global con miles de empresas de todo el mundo.",
+            "El <b>10 %</b> puede ser tu Antídoto: un tema que te importa. Si ese tema va bien, esa parte puede ganar; si va mal, puede perder. Por eso es pequeña." ] },
         { h: "Tu primer año, acompañado", p: [
-            `Durante tus primeros 12 meses, los primeros <b>${RULES.protectCap} €</b> que inviertes tú están acompañados: si al cumplir el año valen menos, CaixaBank te abona la diferencia.`,
-            "Solo cuenta si no vendes antes de los 12 meses." ] },
+            `Durante tus primeros 12 meses, los primeros <b>${RULES.protectCap} €</b> aportados (tuyos o de tu familia) tienen una protección promocional: si al cumplir el año valen menos, CaixaBank repone la diferencia.`,
+            "Solo cuenta si no vendes antes de los 12 meses, tiene tope y hay una dotación limitada. No cubre nada más." ] },
         { h: "Millas de casa", p: [
-            "Cada tema que completas, cada juego, cada mes que aportas y cada regalo de tu familia suman <b>millas de casa</b>.",
-            "Años después se convierten en una rebaja del interés de tu primera hipoteca con CaixaBank. No caducan." ] },
+            "Cada tema que completas, cada mes que aportas, tu constancia semanal y cada regalo de tu familia suman <b>millas de casa</b>. Los juegos no: dan insignias.",
+            "Años después, si pides tu primera hipoteca con CaixaBank, pueden convertirse en una bonificación sobre las condiciones de ese momento. No caducan ni te obligan a nada." ] },
         { h: "Tu familia te acompaña", p: [
-            "Hasta los 18, tu madre, padre o tutor aprueba tu Antídoto y los permisos de la app, y puede regalarte dinero para tu casa.",
-            "A los 18, la cuenta pasa a ser solo tuya y te conviertes en inversor certificado." ] },
+            "Hasta los 18, tu madre, padre o tutor es la persona titular de la cuenta: aprueba tu Antídoto, tus retiradas y los permisos de la app, y puede regalarte dinero para tu casa.",
+            "A los 18, la cuenta pasa a tu nombre cuando confirmas tu identidad, y tu certificado pasa a «Inversor certificado»." ] },
         { h: "Tu revisión anual", p: [
             `Una vez al año, diez minutos para repasar tu plan: cuánto llevas, si tu Antídoto sigue teniendo sentido y si quieres cambiar tu aportación. Suma <b>${MILES.itv} millas</b>.`,
             "Así tu certificado sigue al día." ] },
       ],
       check: [
-        { q: "¿Qué parte de tu dinero va a la cartera base?", o: ["El 25 %", "El 75 %", "Todo"], a: 1, why: "La base global (75 %) reparte el riesgo; el Antídoto es el otro 25 %." },
-        { q: "¿Qué cubre el primer año acompañado?", o: ["Todo tu dinero para siempre", "Tus primeros 500 € durante 12 meses, si no vendes", "Solo el dinero que te regalan"], a: 1, why: "Tiene tope: 500 € y 12 meses, si no vendes antes." },
-        { q: "¿Para qué sirven las millas de casa?", o: ["Para viajar gratis", "Para rebajar el interés de tu futura hipoteca", "Para comprar videojuegos"], a: 1, why: "Se canjean en una hipoteca con CaixaBank como rebaja del diferencial." },
+        { q: "¿Qué parte de tu dinero va a la cartera base?", o: ["El 10 %", "El 90 %", "Todo"], a: 1, why: "La base global (90 %) reparte el riesgo; el Antídoto, si lo eliges, es como máximo el otro 10 %." },
+        { q: "¿Qué cubre el primer año acompañado?", o: ["Todo tu dinero para siempre", "Tus primeros 500 € durante 12 meses, si no vendes", "Solo el dinero que te regalan"], a: 1, why: "Es una promoción con tope: 500 € y 12 meses, si no vendes antes." },
+        { q: "¿Para qué sirven las millas de casa?", o: ["Para viajar gratis", "Para una posible bonificación en tu futura hipoteca", "Para comprar videojuegos"], a: 1, why: "Se canjean en una hipoteca con CaixaBank como rebaja del diferencial." },
         { q: "Si tienes 16 años, ¿quién aprueba tu Antídoto?", o: ["Nadie", "Tu madre, padre o tutor", "Tus amigos"], a: 1, why: "Hasta los 18, tu familia aprueba las decisiones de la cuenta." },
       ] },
 ];
@@ -315,9 +316,16 @@ const EXAM = [
     ...LESSONS.flatMap(l => l.check),
     { q: "Necesitas el dinero para el viaje de fin de curso dentro de 6 meses. ¿Dónde tiene más sentido?", o: ["En bolsa, para que crezca más", "En un sitio estable y disponible", "En criptomonedas"], a: 1, why: "A corto plazo una caída podría coincidir justo con el momento en que lo necesitas." },
     { q: "Una persona ahorra 20 € al mes desde hoy y otra empieza dentro de diez años con 40 € al mes. Pasado el tiempo, ¿quién suele llegar más lejos?", o: ["Siempre la que ahorra 40 €", "La que empieza antes puede llegar a más", "Las dos igual"], a: 1, why: "Diez años más de interés compuesto pueden compensar aportar la mitad." },
-    { q: "¿Qué parte de tu dinero va al Antídoto?", o: ["Todo", "Una parte: el 25 %", "Nada, es solo un juego"], a: 1, why: "La base global (75 %) reparte el riesgo; el Antídoto es una parte." },
-    { q: "El Antídoto invierte en lo que te preocupa. ¿Qué garantiza?", o: ["Que nunca pierdas", "Nada: reduce el golpe, no es una garantía", "Que ganes el doble"], a: 1, why: "Si lo que temes pasa, esa parte tiende a subir, pero no hay garantías." },
+    { q: "¿Qué parte de tu dinero va al Antídoto?", o: ["Todo", "Una parte pequeña: como máximo el 10 %", "Nada, es solo un juego"], a: 1, why: "La base global (90 %) reparte el riesgo; el Antídoto es una parte pequeña." },
+    { q: "El Antídoto invierte en un tema que te importa. ¿Qué garantiza?", o: ["Que nunca pierdas", "Nada: no es un seguro y puede ir en tu contra", "Que ganes el doble"], a: 1, why: "Es una apuesta temática: puede ganar o perder, y por eso es solo una parte pequeña." },
     { q: "Las comisiones de un fondo…", o: ["No importan", "Se cobran cada año y se acumulan con el tiempo", "Solo se pagan al principio"], a: 1, why: "Un punto al año de diferencia puede suponer bastante menos dinero tras muchos años." },
+    { q: "Tu fondo baja un 15 % en un mes y alguien te dice que vendas «por si acaso». Antes de decidir, ¿qué conviene hacer?", o: ["Vender enseguida para evitar que siga bajando más", "Mirar para qué era ese dinero y cuándo lo vas a necesitar", "Meter más dinero de golpe para aprovechar la caída"], a: 1, why: "La decisión depende de tu plazo y de tu plan, no del susto del mes. Vender convierte la caída en pérdida." },
+    { q: "Un fondo cobra un 1 % al año y otro parecido un 0,2 %. Tras 30 años, ¿qué ocurre de media?", o: ["La diferencia de comisiones se come una parte notable de lo ganado", "Casi no se nota la diferencia entre los dos fondos", "El más caro rinde siempre más porque cuesta más"], a: 0, why: "Las comisiones se cobran cada año y se acumulan como el interés, pero en tu contra. Que un fondo cueste más no garantiza que rinda más." },
+    { q: "Un influencer dice: «Este fondo temático subirá seguro porque la IA es el futuro». ¿Qué significa ese «seguro»?", o: ["Nada: nadie puede asegurar lo que hará un mercado", "Que el fondo cuenta con una garantía legal de rentabilidad", "Que la CNMV lo recomienda a los jóvenes de tu edad"], a: 0, why: "Ninguna inversión con riesgo puede prometer que subirá. Quien lo dice con tanta seguridad suele querer venderte algo." },
+    { q: "Aportas 30 € al mes y el precio del fondo cae un tiempo. ¿Qué pasa con las participaciones que compras durante la caída?", o: ["Se anulan si no has vendido antes de los 12 meses", "Valen cero porque las compraste en mala época", "Cuestan menos, así que compras más con el mismo dinero"], a: 2, why: "Con la misma aportación, cuando el precio baja compras más participaciones. Si luego se recupera, tienes más." },
+    { q: "¿En qué caso tiene más sentido tener dinero en un fondo de bolsa?", o: ["Cuando lo necesitas para pagar el alquiler del mes que viene", "Cuando te han dicho que va a subir en este trimestre", "Cuando no lo vas a necesitar en años y aguantarías una caída"], a: 2, why: "La bolsa es para el largo plazo. El dinero que necesitas pronto no debe depender de un mercado que puede estar bajo justo entonces." },
+    { q: "Hasta los 18 años, ¿quién es la persona titular de la cuenta de Horizonte?", o: ["Su madre, padre o tutor legal; tú eres la persona usuaria", "Tu mejor amigo, si tiene más de 18 años", "Nadie hasta que cumplas los 18 años"], a: 0, why: "Hasta los 18 la cuenta la autoriza y la titula tu familia. A los 18 pasa a tu nombre al confirmar tu identidad." },
+    { q: "Un fondo temático tiene un indicador de riesgo más alto que el global. ¿Qué significa?", o: ["Puede oscilar más, tanto hacia arriba como hacia abajo", "Tiene garantizada la rentabilidad durante varios años", "Rinde siempre más que el global cada año"], a: 0, why: "El indicador mide cuánto puede moverse el valor, no cuánto va a ganar. Más riesgo implica más vaivenes, en las dos direcciones." },
 ];
 
 /* ---------------------------------------------------------------- Juegos con datos reales
@@ -363,16 +371,9 @@ const MKT_NEWS = [
     "Récords en bolsa impulsados por la tecnología."
 ];
 const GAMES = [
-    { id: "titular", t: "El titular", p: "Un titular real de un año. ¿La bolsa mundial acabó ese año arriba o abajo?", rounds: 5 },
+    { id: "titular", t: "El titular", p: "Un titular real de un año pasado. ¿La bolsa mundial acabó ese año arriba o abajo?", rounds: 5 },
     { id: "duelo", t: "¿Cuál rindió más?", p: "Dos inversiones, un año. Elige la que más subió (o la que menos cayó).", rounds: 5 },
-    { id: "liga", t: "Liga del lunes", p: "Cada semana: ¿el IBEX, la bolsa mundial y el oro acabarán arriba o abajo? Se resuelve el viernes con el cierre.", rounds: 3, weekly: true },
-    { id: "masomenos", t: "Más o menos", p: "¿La segunda inversión acabó con más o con menos dinero? Encadena aciertos con cada vez menos tiempo.", rounds: 0, endless: true },
-];
-/* Liga del lunes: tres mercados, una predicción por semana */
-const LIGA = [
-    { k: "ibex", code: "ESP", name: "IBEX 35", sub: "Las 35 mayores empresas de la bolsa española", color: "#c8102e" },
-    { k: "mundo", code: "MUN", name: "Bolsa mundial", sub: "MSCI World: unas 1.400 empresas de 23 países", color: "#007eae" },
-    { k: "oro", code: "ORO", name: "Oro", sub: "Precio de la onza en euros", color: "#c99a2e" },
+    { id: "masomenos", t: "Más o menos", p: "¿La segunda inversión acabó con más o con menos dinero? Sin prisas: encadena aciertos con datos de años pasados.", rounds: 0, endless: true },
 ];
 /* Más o menos: además de inversiones reales, algunas cartas con conceptos (inflación, interés, comisiones, apuestas) */
 const MM_CONCEPTS = [
@@ -383,4 +384,31 @@ const MM_CONCEPTS = [
     { code: "INT", t: "1.000 € al 3 % anual", s: "durante 20 años, sin tocarlos", v: 1000 * Math.pow(1.03, 20) },
     { code: "COM", t: "1.000 € al 5 % con un 2 % de comisiones", s: "durante 20 años", v: 1000 * Math.pow(1.03, 20) },
     { code: "APU", t: "1.000 € en apuestas deportivas", s: "apostándolo todo 20 veces seguidas (la casa se queda de media un 5 %)", v: 1000 * Math.pow(.95, 20) },
+];
+
+/* Test breve antes del Antídoto (conocimientos, experiencia, situación, objetivos y tolerancia a pérdidas).
+   Resultado: «base» = solo el fondo global; «sat» = fondo global + Antídoto (10 %). Si el plazo es corto, se avisa y no se recomienda invertir. */
+const SUIT = [
+    { id: "plazo", q: "¿Cuándo vas a necesitar este dinero?", o: [["Antes de 3 años", 0], ["Entre 3 y 5 años", 1], ["Entre 5 y 10 años", 2], ["Dentro de más de 10 años", 3]] },
+    { id: "exp", q: "¿Has invertido antes?", o: [["Nunca", 0], ["He aprendido o simulado, pero no con dinero", 1], ["Sí, con mi dinero o el de mi familia", 2]] },
+    { id: "caida", q: "Tu cartera baja un 20 % en un mes. ¿Qué harías?", o: [["Vender todo para no perder más", 0], ["Vender una parte", 1], ["Esperar y seguir con mi plan", 2], ["Aportar un poco más", 3]] },
+    { id: "capacidad", q: "Si este dinero valiera un 20 % menos durante un tiempo, ¿cambiarían tus planes?", o: [["Sí, lo necesito entero", 0], ["Me afectaría algo", 1], ["No, es dinero que no necesito en años", 2]] },
+    { id: "riesgo", q: "¿Entiendes que puedes recuperar menos de lo que has puesto?", o: [["No lo tengo claro", 0], ["Sí, lo entiendo", 2]] },
+    { id: "obj", q: "¿Para qué es este dinero?", o: [["Para algo en pocos meses (viaje, móvil…)", 0], ["Para un objetivo a medio plazo", 1], ["Para la entrada de una casa u otro objetivo a largo plazo", 2]] },
+];
+function suitResult(ans) {
+    const g = id => ans[id] ?? 0, score = SUIT.reduce((a, q) => a + g(q.id), 0);
+    const short = g("plazo") < 1 || g("obj") === 0;
+    const base = !short && g("riesgo") >= 2;
+    const sat = base && g("plazo") >= 2 && g("caida") >= 2 && g("capacidad") >= 1 && g("exp") >= 1;
+    return { score, short, ok: sat, level: short ? "corto" : sat ? "sat" : base ? "base" : "revisar", date: new Date().toISOString().slice(0, 10) };
+}
+
+/* Insignias de los juegos: reconocimiento, nunca millas ni dinero */
+const BADGES = [
+    { id: "primera", t: "Primera partida", d: "Has jugado tu primera partida con datos reales.", test: n => n.days >= 1 },
+    { id: "cinco", t: "Cinco días", d: "Has jugado en cinco días distintos.", test: n => n.days >= 5 },
+    { id: "veinte", t: "Veinte días", d: "Has jugado en veinte días distintos.", test: n => n.days >= 20 },
+    { id: "pleno", t: "Pleno", d: "Has acertado todas las preguntas de una partida.", test: n => n.perfect },
+    { id: "racha5", t: "Racha de 5", d: "Has encadenado 5 aciertos en «Más o menos».", test: n => n.mm >= 5 },
 ];

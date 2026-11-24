@@ -51,9 +51,9 @@ function gIntent(raw) {
 /* Siguiente paso recomendado según el estado de la cuenta */
 function gNext(c) {
     if (!c.diploma) return { label: `Completar Fundamentos (${c.lessonsDone}/${c.lessonsTotal})`, href: "#/aprende", why: `Al superar la prueba final, CaixaBank invierte ${G_EUR(c.prize)} a tu nombre.` };
-    if (!c.hasOwn) return { label: "Poner tu primer euro", href: "#/dinero", why: `Con 1 € basta, y los primeros ${G_EUR(c.protectCap)} que inviertes tú quedan protegidos durante 12 meses.` };
-    if (!c.fears.length) return { label: "Elegir tu Antídoto", href: "#/antidoto", why: "Dinos qué te preocupa de tu futuro y preparamos tu reparto." };
-    if (!(c.weekly > 0 || c.roundup)) return { label: "Automatizar tu ahorro", href: "#/dinero", why: "Una cantidad semanal o el redondeo de tus compras suma millas cada mes." };
+    if (!c.hasOwn) return { label: "Poner tu primer euro", href: "#/dinero", why: `Con 1 € basta, y tus primeros ${G_EUR(c.protectCap)} aportados tienen protección promocional durante 12 meses (con condiciones).` };
+    if (!c.fears.length) return { label: "Elegir tu Antídoto", href: "#/antidoto", why: "Si quieres, una parte pequeña de tu cartera en un tema que te importa, tras un test breve." };
+    if (!(c.weekly > 0 || c.roundup)) return { label: "Automatizar tu ahorro", href: "#/dinero", why: "Una cantidad semanal fija suma millas cada mes." };
     return { label: "Hacer la revisión anual", href: "#/antidoto", why: `Tu próxima revisión es antes del ${c.itvDue}.` };
 }
 
@@ -61,7 +61,8 @@ const gAsk = t => ({ label: t.label, q: t.q });
 
 function localGemini(question, c) {
     const intent = gIntent(question), years = Math.max(1, c.goalAge - c.age), next = gNext(c);
-    const R = (title, text, facts = [], actions = [], used = []) => ({ kind: intent, title, text, facts, actions, used });
+    const gen = c.generic ? " Es una respuesta general: con el permiso de tu familia te respondo con tus propios datos." : "";
+    const R = (title, text, facts = [], actions = [], used = []) => ({ kind: intent, title, text: text + gen, facts: c.generic ? [] : facts, actions, used });
     const topic = id => gAsk(G_TOPICS.find(t => t.id === id));
     const others = skip => G_TOPICS.filter(t => t.id !== skip && t.id !== "human").slice(0, 2).map(gAsk);
 
@@ -90,31 +91,31 @@ function localGemini(question, c) {
         case "drop": {
             const base = c.protectBase;
             const prot = base > 0
-                ? `Tus ${G_EUR(base)} protegidos, hasta el ${c.protectEnd}, no pueden perder valor al cumplirse el año: tras una caída del 20 %, CaixaBank repondría ${G_EUR(base * 0.2)}. La condición es no vender antes.`
-                : `Los primeros ${G_EUR(c.protectCap)} que inviertas tú quedan protegidos durante 12 meses, siempre que no vendas antes.`;
-            return R("Si el mercado cae", `${prot} Una caída solo se convierte en pérdida si vendes. En el MSCI World, ninguna ventana de 15 años entre 1970 y 2023 acabó en negativo, aunque el pasado no garantiza el futuro.`,
-                [["Protegido", `${G_EUR(base)} de ${G_EUR(c.protectCap)}`], ["Protección hasta", c.protectEnd || "Desde tu primer euro"], ["Margen disponible", G_EUR(c.protectRoom)]],
+                ? `Tus ${G_EUR(base)} aportados tienen una protección promocional hasta el ${c.protectEnd}: si a los 12 meses valen menos y no has vendido, CaixaBank repone la diferencia, con tope y condiciones.`
+                : `Los primeros ${G_EUR(c.protectCap)} que se aporten (tuyos o de tu familia) tienen protección promocional durante 12 meses, siempre que no vendas antes y con condiciones.`;
+            return R("Si el mercado cae", `${prot} Una caída solo se convierte en pérdida si vendes, pero la decisión es tuya y de tu familia. En el MSCI World, ninguna ventana de 15 años entre 1970 y 2023 acabó en negativo, aunque el pasado no garantiza el futuro.`,
+                [["Con protección", `${G_EUR(base)} de ${G_EUR(c.protectCap)}`], ["Protección hasta", c.protectEnd || "Desde tu primer euro"], ["Margen disponible", G_EUR(c.protectRoom)]],
                 [{ label: "Ver mi primer año", href: "#/dinero", primary: true }, others("drop")[0]], ["tu dinero propio", "tu año de protección"]);
         }
         case "antidote": {
             if (!c.fears.length) {
-                return R("Tu Antídoto", "Todavía no has elegido qué te preocupa de tu futuro. Marca hasta dos temas y preparo el reparto: una parte de tu dinero invierte justo en lo que temes.",
+                return R("Tu Antídoto", "Todavía no has elegido qué te preocupa de tu futuro. Antes hay un test de seis preguntas; si encaja, puedes marcar hasta dos temas y como máximo el 10 % de tu cartera irá a ellos. Es una apuesta temática, no un seguro.",
                     [["Reparto", `${Math.round(RULES.base * 100)} % fondo global · ${Math.round(RULES.antidote * 100)} % Antídoto`]],
                     [{ label: "Elegir mi Antídoto", href: "#/antidoto", primary: true }], ["tu reparto"]);
             }
             return R("Tu Antídoto",
                 `${c.fears.map(f => `${f.fundName} por «${f.label.toLowerCase()}» (${G_EUR(f.amount)})`).join(" y ")}. ${c.fears[0].why} ` +
-                `${c.antidoteActive ? "" : "Tu familia aún tiene que aprobarlo. "}Reduce el golpe si lo que temes ocurre; no es una garantía.`,
+                `${c.antidoteActive ? "" : "Tu familia aún tiene que aprobarlo. "}No es un seguro ni una cobertura: esa parte puede ganar o perder.`,
                 [["Fondo global", G_EUR(c.baseAmount)], ["Antídoto", G_EUR(c.antidoteAmount)], ["Estado", c.antidoteActive ? "Activo" : "Pendiente de aprobación"]],
                 [{ label: "Ver mi reparto", href: "#/dinero", primary: true }, topic("drop")], ["tus preocupaciones", "tu reparto"]);
         }
         case "miles": {
             if (c.miles === 0) {
-                return R("Millas de casa", `Aún no tienes millas. Cada tema de Fundamentos suma ${MILES.lesson}, superar la prueba final ${MILES.theory} y tu primer euro propio ${MILES.firstOwn}. Se canjean como rebaja del interés de tu primera hipoteca con CaixaBank, hasta ${pts(MILES.maxCut)} puntos.`,
+                return R("Millas de casa", `Aún no tienes millas. Cada tema de Fundamentos suma ${MILES.lesson}, superar la prueba final ${MILES.theory} y tu primer euro propio ${MILES.firstOwn}. Si pides tu primera hipoteca con CaixaBank, pueden convertirse en una bonificación de hasta ${pts(MILES.maxCut)} puntos, según las condiciones de ese momento.`,
                     [["Rebaja máxima", `${pts(MILES.maxCut)} puntos`], ["Por tema", `${MILES.lesson} millas`], ["Prueba final", `${MILES.theory} millas`]],
                     [{ label: "Empezar Fundamentos", href: "#/aprende", primary: true }], ["tus millas"]);
             }
-            return R("Millas de casa", `A tu ritmo sumas unas ${G_NUM(c.milesYear)} millas al año. A los ${c.goalAge} tendrías unas ${G_NUM(c.milesAtGoal)}: ${c.cutAtGoalTxt} puntos menos de diferencial, unos ${G_EUR(c.savingAtGoal)} menos de intereses en la hipoteca de tu objetivo.`,
+            return R("Millas de casa", `A tu ritmo sumas unas ${G_NUM(c.milesYear)} millas al año. A los ${c.goalAge} tendrías unas ${G_NUM(c.milesAtGoal)}: ${c.cutAtGoalTxt} puntos de bonificación posible en el diferencial, unos ${G_EUR(c.savingAtGoal)} menos de intereses en una hipoteca de ejemplo. Es una ilustración, no una oferta.`,
                 [["Millas hoy", G_NUM(c.miles)], ["Rebaja hoy", `${c.cutTxt} puntos`], [`Millas a los ${c.goalAge}`, G_NUM(c.milesAtGoal)]],
                 [{ label: "Ver mis millas", href: "#/casa", primary: true }, topic("house")], ["tus millas", "tu ritmo de aportación"]);
         }
@@ -129,7 +130,7 @@ function localGemini(question, c) {
                 ? R("Certificado Horizonte", `Tienes tu certificado desde el ${c.diploma}. Tu próxima revisión anual es antes del ${c.itvDue}. ${c.age >= 16 ? "Puedes añadirlo a LinkedIn desde Aprende." : "Podrás añadirlo a LinkedIn a partir de los 16."}`,
                     [["Racha actual", `${c.streak} semanas`], ["Próxima revisión", c.itvDue], ["Cada 4 semanas", `+${MILES.streak4} millas`]],
                     [{ label: "Ir a Aprende", href: "#/aprende", primary: true }], ["tu certificado", "tu racha"])
-                : R("Fundamentos", `Llevas ${c.lessonsDone} de ${c.lessonsTotal} temas. Al superar la prueba final, CaixaBank invierte ${G_EUR(c.prize)} a tu nombre y recibes el Certificado Horizonte. Un juego al día suma ${MILES.game} millas.`,
+                : R("Fundamentos", `Llevas ${c.lessonsDone} de ${c.lessonsTotal} temas. Al superar la prueba final, CaixaBank invierte ${G_EUR(c.prize)} a tu nombre y recibes el Certificado Horizonte.`,
                     [["Temas", `${c.lessonsDone} de ${c.lessonsTotal}`], ["Premio", `${G_EUR(c.prize)} invertidos`], ["Prueba final", `+${MILES.theory} millas`]],
                     [{ label: "Continuar Fundamentos", href: "#/aprende", primary: true }], ["tu certificado", "tu racha"]);
         }
@@ -140,12 +141,12 @@ function localGemini(question, c) {
                 [{ label: "Ver costes en euros", href: "#/dinero", primary: true }], ["tu dinero invertido"]);
         }
         case "withdraw":
-            return R("Retirar tu dinero", `El dinero es tuyo y está a tu nombre. Si vendes antes de 12 meses, pierdes la protección del primer año. Hasta los ${RULES.adultAge}, tu familia aprueba las decisiones importantes de la cuenta. En esta versión de demostración todavía no hay retiradas.`,
-                [["Protección", "Solo si no vendes antes de 12 meses"], ["Hasta los 18", "Decide tu familia"]],
-                [{ label: "Ver permisos", href: "#/familia", primary: true }, topic("drop")], ["tu año de protección"]);
+            return R("Retirar tu dinero", `Puedes pedir una retirada desde Dinero. Si eres mayor de edad, se hace directamente; si eres menor, la aprueba tu familia. Si retiras antes de 12 meses, pierdes la protección promocional del primer año. En esta versión de demostración no se mueve dinero real.`,
+                [["Protección", "Solo si no retiras antes de 12 meses"], ["Hasta los 18", "Aprueba tu familia"]],
+                [{ label: "Ir a Dinero", href: "#/dinero", primary: true }, topic("drop")], ["tu año de protección"]);
         case "human":
-            return R("Atención personal", `Un gestor de CaixaBank te acompaña al cumplir ${RULES.adultAge} años y cuando pidas tu primera hipoteca. Mientras tanto, tu familia puede ayudarte desde el área familiar.`,
-                [["A los 18", "Gestor de CaixaBank"], ["Primera hipoteca", "Gestor de CaixaBank"]], [{ label: "Ir a Familia", href: "#/familia", primary: true }], []);
+            return R("Hablar con una persona", `Tu familia puede pedir desde Familia que un gestor de CaixaBank le llame para resolver dudas, sin compromiso. En esta demostración la solicitud se simula.`,
+                [["Quién la pide", "Tu madre, padre o tutor"]], [{ label: "Ir a Familia", href: "#/familia", primary: true }], []);
         case "family":
             return R("Tu familia", `Tu familia puede regalarte dinero, puntual o cada mes, con un mensaje, aprobar tu Antídoto y ver tu progreso. Los regalos suman millas de casa: ${MILES.giftPer5} por cada 5 €, con un tope de ${MILES.giftMonthCap} al mes.`,
                 [["Regalos recibidos", G_EUR(c.gifts || 0)], ["Millas por regalos", `${MILES.giftPer5} por cada 5 €`], ["Tope mensual", `${MILES.giftMonthCap} millas`]],
@@ -160,7 +161,7 @@ function localGemini(question, c) {
    si no responde a tiempo o se agota la cuota, se usa la respuesta local. Nunca se envía el nombre. */
 async function askGemini(question, ctx, history = []) {
     const cfg = window.HZ2_CONFIG || {}, ep = cfg.geminiEndpoint, local = localGemini(question, ctx);
-    if (ep) {
+    if (ep && !ctx.generic) {                       // sin permiso de la familia no sale ningún dato de la cuenta
         const { name, ...anon } = ctx;
         const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20000);
         try {

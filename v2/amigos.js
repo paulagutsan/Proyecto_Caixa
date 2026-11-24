@@ -95,6 +95,8 @@ async function connectCode(raw) {
 }
 
 /* ---------------------------------------------------------------- vistas */
+const FAM_REL = ["Madre", "Padre", "Hermano o hermana", "Abuela", "Abuelo", "Otro familiar"];
+const famTag = code => (S.famTags || {})[code] || "";
 const initials = n => esc(String(n || "?").trim().charAt(0).toUpperCase());
 function weekBoard() {
     const by = {};
@@ -108,8 +110,10 @@ function weekBoard() {
 }
 function friendsCard() {
     const head = t => cardH(`<span class="gem">${ic("family")}Amigos</span>`, t);
-    if (!friendsAllowed()) return card(`${head("Compara tus resultados en los juegos con tus amigos.")}
-      ${empty("lock", "Necesitas el permiso de tu familia", `Hasta los ${RULES.adultAge}, tu madre, padre o tutor decide si puedes conectar con amigos en los juegos.`, lnk("Ver permisos", "#/familia", "primary"))}`, "c-12 friends");
+    if (!friendsAllowed()) return card(`${head("Compara tus resultados en los juegos con tus amigos y con tu familia.")}
+      <div class="fr-intro"><ul><li>${ic("check")}Solo se comparten tus resultados en los juegos y tu nombre con la inicial del apellido.</li><li>${ic("check")}Tu madre, padre, hermanos o abuelos también pueden salir en el ranking si los conectas.</li><li>${ic("check")}Nada de tu dinero, tu Antídoto ni tus millas.</li></ul>
+      <p class="note">Hasta los ${RULES.adultAge}, tu madre, padre o tutor decide si puedes conectar.</p>
+      ${btn("Pedir permiso a mi familia", "invite", "primary", `data-text="${esc(`Hola, ¿me das permiso para jugar con mis amigos y mi familia en Horizonte? Entra en el área familiar y mira «Permisos»: ${location.origin}${location.pathname}`)}"`)}</div>`, "c-12 friends");
     if (!friendsOn()) return card(`${head("Conecta con tus amigos y mirad quién acierta más cada semana.")}
       <div class="fr-intro"><ul><li>${ic("check")}Solo se comparten tus resultados en los juegos.</li><li>${ic("check")}Te verán como «${esc(publicName())}».</li><li>${ic("check")}Nada de tu dinero, tu Antídoto ni tus millas.</li></ul>
       ${btn("Activar amigos", "frOn", "primary")}</div>`, "c-12 friends");
@@ -123,8 +127,8 @@ function friendsCard() {
       ${inv && inv !== S.friends.code ? `<div class="fr-inv"><span class="fr-av">${ic("send")}</span><div><b>Te han invitado</b><span>Código ${esc(inv)}</span></div><div class="fr-btns">${btn("Ignorar", "frInvNo", "sm ghost")}${btn("Conectar", "frInvYes", "sm primary")}</div></div>` : ""}
       ${recib.map(x => `<div class="fr-inv"><span class="fr-av">${initials(x.nombre)}</span><div><b>${esc(x.nombre)}</b><span>Quiere conectar contigo</span></div><div class="fr-btns">${btn("Ignorar", "frResp", "sm ghost", `data-c="${esc(x.codigo)}" data-ok="0"`)}${btn("Aceptar", "frResp", "sm primary", `data-c="${esc(x.codigo)}" data-ok="1"`)}</div></div>`).join("")}
       ${!soc.loaded ? `<p class="note">Cargando…</p>` : amigos.length ? `<div class="fr-grid">
-        <div><h3 class="fr-h">Esta semana</h3><ol class="fr-board">${board.map((x, i) => `<li class="${x.yo ? "me" : ""}"><span class="fr-pos">${i + 1}</span><span class="fr-av">${initials(x.nombre)}</span><div><b>${x.yo ? "Tú" : esc(x.nombre)}</b><span>${x.partidas ? `${x.partidas} ${x.partidas === 1 ? "partida" : "partidas"}` : "Sin jugar"}</span></div><b class="fr-pts">${x.aciertos}<small> aciertos</small></b></li>`).join("")}</ol></div>
-        <div><h3 class="fr-h">Hoy</h3>${feed.length ? `<div class="fr-feed">${feed.map(p => `<div><span class="fr-av">${initials(p.nombre)}</span><p><b>${esc(p.nombre)}</b> ${p.juego === "masomenos" ? `ha hecho una racha de <b>${p.aciertos}</b> en` : `ha hecho <b>${p.aciertos}/${p.rondas}</b> en`} ${esc(gameName(p.juego))}</p></div>`).join("")}</div>`
+        <div><h3 class="fr-h">Esta semana</h3><ol class="fr-board">${board.map((x, i) => `<li class="${x.yo ? "me" : ""}"><span class="fr-pos">${i + 1}</span><span class="fr-av">${initials(x.nombre)}</span><div><b>${x.yo ? "Tú" : esc(x.nombre)}${famTag(x.codigo) ? ` <em class="fr-fam">${esc(famTag(x.codigo))}</em>` : ""}</b><span>${x.partidas ? `${x.partidas} ${x.partidas === 1 ? "partida" : "partidas"}` : "Sin jugar"}</span></div><b class="fr-pts">${x.aciertos}<small> aciertos</small></b></li>`).join("")}</ol></div>
+        <div><h3 class="fr-h">Hoy</h3>${feed.length ? `<div class="fr-feed">${feed.map(p => `<div><span class="fr-av">${initials(p.nombre)}</span><p><b>${esc(p.nombre)}</b>${famTag(p.codigo) ? ` <em class="fr-fam">${esc(famTag(p.codigo))}</em>` : ""} ${p.juego === "masomenos" ? `ha hecho una racha de <b>${p.aciertos}</b> en` : `ha hecho <b>${p.aciertos}/${p.rondas}</b> en`} ${esc(gameName(p.juego))}</p></div>`).join("")}</div>`
           : `<p class="fr-none">Tus amigos aún no han jugado hoy.</p>`}</div></div>`
         : `<div class="fr-empty"><p>Aún no tienes conexiones. Comparte tu código o tu enlace: cuando acepten, veréis los resultados de cada uno.</p>${btn(`${ic("send")}Compartir invitación`, "frShare", "primary")}</div>`}`, "c-12 friends");
 }
@@ -133,8 +137,8 @@ function friendsSheet() {
     sheet("Añadir amigos", `<div class="fr-mycode"><span>Tu código</span><b>${esc(S.friends.code)}</b>${btn(`${ic("send")}Compartir invitación`, "frShare", "sm")}</div>
       <form data-form="frCode" class="form"><label class="field"><span>Código de tu amigo</span><input name="c" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="Por ejemplo, K3P9QX" value="${esc(pendingInvite())}" required></label>
       <button class="btn primary block">Enviar invitación</button></form>
-      ${amigos.length || env.length ? `<div class="rows fr-list">${[...amigos.map(x => [x, "Conectados", "Quitar"]), ...env.map(x => [x, "Invitación enviada", "Retirar"])].map(([x, st, a]) => `<div class="row"><span class="fr-av">${initials(x.nombre)}</span><div><b>${esc(x.nombre)}</b><span>${st}</span></div>${btn(a, "frDel", "sm ghost", `data-c="${esc(x.codigo)}"`)}</div>`).join("")}</div>` : ""}
-      <p class="note">Solo veis vuestros resultados en los juegos. Puedes quitar una conexión cuando quieras.</p>`);
+      ${amigos.length || env.length ? `<div class="rows fr-list">${[...amigos.map(x => [x, "Conectados", "Quitar"]), ...env.map(x => [x, "Invitación enviada", "Retirar"])].map(([x, st, a]) => `<div class="row"><span class="fr-av">${initials(x.nombre)}</span><div><b>${esc(x.nombre)}</b><span>${st}</span>${st === "Conectados" ? `<label class="fr-rel"><span>¿Es de tu familia?</span><select data-act="frTag" data-c="${esc(x.codigo)}"><option value="">No</option>${FAM_REL.map(r => `<option ${famTag(x.codigo) === r ? "selected" : ""}>${r}</option>`).join("")}</select></label>` : ""}</div>${btn(a, "frDel", "sm ghost", `data-c="${esc(x.codigo)}"`)}</div>`).join("")}</div>` : ""}
+      <p class="note">Solo veis vuestros resultados en los juegos. Si juega tu madre, padre, hermanos o abuelos, márcalos como familia y saldrán con su etiqueta. Puedes quitar una conexión cuando quieras.</p>`);
 }
 /* en la pantalla final de cada juego: cómo les ha ido hoy a tus amigos en ese juego */
 function friendsToday(id) {
@@ -147,7 +151,7 @@ async function friendsAct(act, b) {
     if (act === "frOn") return activateFriends();
     if (act === "frAdd") return friendsSheet();
     if (act === "frShare") {
-        const u = inviteUrl(S.friends.code), t = `Juega conmigo en Horizonte y comparemos resultados. Mi código: ${S.friends.code} · ${u}`;
+        const u = inviteUrl(S.friends.code), t = `Juega conmigo en Horizonte (amigos y familia) y comparemos resultados. Mi código: ${S.friends.code} · ${u}`;
         if (navigator.share) { try { await navigator.share({ title: "Horizonte", text: t }); } catch (e) { /* cancelado */ } }
         else { try { await navigator.clipboard.writeText(t); toast("Invitación copiada"); } catch (e) { prompt("Copia la invitación:", t); } }
         return;
