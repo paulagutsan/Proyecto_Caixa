@@ -167,7 +167,7 @@ function famAddSheet() {
     sheet("Añadir a otra persona", `<form data-form="famNew" class="form">
       <p class="note">Otro hijo, hija o nieto. Tendrá su propia cuenta, y tú podrás cambiar de una a otra desde aquí.</p>
       <label class="field"><span>Nombre o alias</span><input name="name" required maxlength="30"></label>
-      <label class="field"><span>Fecha de nacimiento</span><input name="birth" type="date" required></label>
+      <label class="field"><span>Fecha de nacimiento</span><input name="birth" type="date" ${birthAttrs()} required></label>
       <label class="check"><input type="checkbox" name="ok" required><span>Soy su madre, padre o tutor legal y autorizo la apertura de su cuenta. Entiendo que invertir conlleva riesgos.</span></label>
       <button class="btn primary lg block">Crear la cuenta</button></form>`);
 }
@@ -179,6 +179,7 @@ document.addEventListener("submit", async e => {
     const f = e.target.closest('[data-form="famNew"]'); if (!f) return;
     e.preventDefault();
     const d = Object.fromEntries(new FormData(f)), age = ageOf(d.birth);
+    const er = birthError(d.birth); if (er) return toast(er);
     if (age >= RULES.adultAge || age < 0) return toast("Con esa fecha la persona ya es mayor de edad. Revisa la fecha de nacimiento.");
     closeSheet();
     if (!S.acct) accStart();                                  // para que la persona actual también quede en la lista

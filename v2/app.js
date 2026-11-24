@@ -111,6 +111,18 @@ function ageOf(birth = S.teen?.birth) {
     if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--;
     return a;
 }
+/* Fechas de nacimiento realistas: existe en el calendario, no es futura y la edad está entre 0 (o la mínima indicada) y 40 años */
+const MAX_AGE = 40;
+function birthError(d, min = 0) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ""));
+    if (!m || T(d).getDate() !== +m[3] || T(d).getMonth() + 1 !== +m[2]) return "Escribe una fecha de nacimiento válida";
+    if (d > iso(new Date())) return "La fecha de nacimiento no puede ser futura";
+    const a = ageOf(d);
+    if (a > MAX_AGE) return `Revisa el año: Horizonte es para personas de hasta ${MAX_AGE} años`;
+    if (a < min) return `Para usar tu propia cuenta necesitas tener al menos ${min} años`;
+    return "";
+}
+const birthAttrs = () => `min="${birthFromAge(MAX_AGE + 1)}" max="${iso(new Date())}"`;
 const isAdult = () => ageOf() >= RULES.adultAge;
 const isOwn = c => SOURCES[c.src]?.own;
 const isOwnReal = c => isOwn(c) && c.src !== "premio";
@@ -329,25 +341,25 @@ function vLanding() {
     const lpYear = 8, lpNews = MKT_NEWS[lpYear];
     return `<div class="lp">
     <header class="lp-nav"><div class="lp-in">${brand("#/")}
-      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#aprende">Aprende</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#voz">Tu voz</a><a href="#proyecto">Tu proyecto</a><a href="#familias">Familias</a><a href="#regala">Regala</a><a href="#preguntas">Preguntas</a></nav>
+      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#aprende">Aprende</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#voz">Tus ideas</a><a href="#familias">Familias</a><a href="#regala">Regala</a><a href="#preguntas">Preguntas</a></nav>
       <div class="lp-right">${themeBtn()}${lnk("Crear cuenta", "#/alta/joven", "primary sm")}</div></div></header>
 
     <section class="hz-hero"><div class="lp-in hz-hero-in">
       <div class="hz-copy">
-        <h1>Hoy, tu primer euro.<br>Mañana, <em>tu casa</em>.</h1>
-        <p class="hz-lead">Aprende a invertir desde 1 €, con tu familia a tu lado.</p>
+        <h1>Tienes algo que tus padres ya no: <em>tiempo</em>.</h1>
+        <p class="hz-lead">Empieza a invertir desde 1 €, con tu familia al lado.</p>
         <div class="lp-cta">${lnk(`Soy joven${ic("arrow")}`, "#/alta/joven", "primary lg")}${lnk("Soy madre, padre o tutor", "#/familias", "lg")}</div>
         <p class="hz-try"><a href="#/probar">Prueba un tema y un juego sin crear cuenta</a></p>
-        <ul class="hz-trust"><li>${ic("check")}Sin cuotas ni comisión de apertura</li><li>${ic("family")}Con el apoyo de tu familia</li><li>${ic("shield")}Protección promocional el primer año (con condiciones)</li></ul>
+        <ul class="hz-trust"><li>${ic("check")}Sin cuotas ni comisión de apertura</li><li>${ic("family")}Con el apoyo de tu familia</li><li>${ic("shield")}<span>Protección promocional el primer año<sup>*</sup></span></li></ul>
         ${trustBar()}
       </div>
       <div class="hz-visual">
         <div class="ht" data-hero>
-          <p class="ht-k">Dos personas ponen lo mismo: <b data-o="put"></b></p>
+          <p class="ht-k">Si pones <b data-o="amt"></b> al mes durante 40 años, podrías tener</p>
           <p class="ht-big"><span data-o="v"></span></p>
-          <p class="ht-say">más para quien empieza hoy en vez de esperar 10 años.</p>
+          <p class="ht-say">Tú pones <b data-o="put"></b>. <em data-o="time"></em> los pone el tiempo.</p>
           <div class="ht-plot" data-o="plot"></div>
-          <label class="ht-range"><span>Si empiezas hoy con <b data-o="amt"></b> al mes</span><input type="range" min="10" max="100" step="5" value="50" data-i="hero" aria-label="Euros al mes"></label>
+          <label class="ht-range"><span>Cambia lo que pones cada mes</span><input type="range" min="10" max="100" step="5" value="50" data-i="hero" aria-label="Euros al mes"></label>
           <p class="note" data-o="note"></p>
         </div>
       </div>
@@ -364,8 +376,8 @@ function vLanding() {
         <p class="lp-lead">Detrás está CaixaBank Asset Management, la mayor gestora de fondos de España. Y unas ventajas pensadas para quien da sus primeros pasos.</p></div>
       <dl class="why-stats">
         <div><dt>${RULES.prize} €</dt><dd><b>Tu primera inversión</b>Los invertimos a tu nombre cuando superas Fundamentos (uno por persona).</dd></div>
-        <div><dt>${RULES.protectCap} €</dt><dd><b>Protección promocional del primer año</b>Si a los ${RULES.protectMonths} meses tus primeras aportaciones valen menos y no has vendido, CaixaBank repone la diferencia hasta ${RULES.protectCap} €. Con tope, dotación limitada y condiciones. <a href="#/legal">Ver condiciones</a></dd></div>
-        <div><dt>hasta −${pts(MILES.maxCut)}</dt><dd><b>Puntos en tu primera hipoteca</b>Bonificación posible según las condiciones del día en que la firmes. No es una oferta. <a href="#/legal">Ver condiciones</a></dd></div>
+        <div><dt>${RULES.protectCap} €</dt><dd><b>Protección promocional del primer año<sup>*</sup></b>Si a los ${RULES.protectMonths} meses tus primeras aportaciones valen menos y no has vendido, CaixaBank repone la diferencia hasta ${RULES.protectCap} €.</dd></div>
+        <div><dt>hasta −${pts(MILES.maxCut)}</dt><dd><b>Puntos en tu primera hipoteca<sup>**</sup></b>Bonificación posible según las condiciones del día en que la firmes. No es una oferta.</dd></div>
       </dl>
     </div></section>
 
@@ -409,25 +421,18 @@ function vLanding() {
         <li><span>${ic("house")}</span><div><b>Si no compras casa, no pierdes nada</b><small>Las millas no caducan y tu dinero sigue siendo tuyo.</small></div></li></ul>
     </div></section>
 
-    <section class="lp-sec alt" id="voz"><div class="lp-in lp-split">
-      <div><p class="kicker">Tu voz</p><h2 class="serif">Tu dinero también opina.</h2>
-        <p class="lp-lead">Cuando inviertes en un fondo, la gestora vota en las juntas de accionistas de las empresas. En Horizonte le dices qué preferirías tú: sueldos de directivos, clima, igualdad, privacidad. Tu opinión se suma a la de otras personas jóvenes.</p>
-        ${lnk(`Dar mi opinión${ic("arrow")}`, "#/alta/joven", "primary lg")}</div>
-      <div class="lp-vz"><p class="vz-co">${VOZ[0].co} · Junta de accionistas</p><h3>${VOZ[0].t}</h3><p>${VOZ[0].d}</p>
-        <div class="vz-btns"><a class="btn vz-c" href="#/alta/joven">${ic("chevl")}En contra</a><a class="btn ghost" href="#/alta/joven">No lo tengo claro</a><a class="btn vz-a" href="#/alta/joven">A favor${ic("chev")}</a></div>
-        <small>Propuesta de ejemplo. La opinión es consultiva.</small></div>
+    <section class="lp-sec alt" id="voz"><div class="lp-in">
+      <p class="kicker">Tu voz y tu proyecto</p><h2 class="serif">Tus ideas también cuentan.</h2>
+      <div class="vp">
+        <article class="vp-c"><span class="vp-ic">${ic("voice")}</span><h3>Opina sobre las empresas</h3><p>La gestora vota en las juntas de las empresas en las que inviertes. Dile qué preferirías tú: clima, sueldos, igualdad o privacidad.</p>
+          <blockquote><small>${VOZ[0].co}</small>${VOZ[0].t}</blockquote></article>
+        <article class="vp-c"><span class="vp-ic">${ic("bulb")}</span><h3>Impulsa tu propia idea</h3><p>Una app, una marca, un podcast… Cuéntala en privado y mira qué empresas podrían apoyarla con financiación, mentoría o primeros clientes.</p>
+          <blockquote><small>Privado por defecto</small>Tú decides con quién la compartes. La empresa solo ve un resumen, nunca tu nombre.</blockquote></article>
+      </div>
+      <p class="vp-foot">${lnk(`Que cuenten mis ideas${ic("arrow")}`, "#/alta/joven", "primary lg")}<small>Propuestas de ejemplo. Tu opinión es consultiva.</small></p>
     </div></section>
 
-    <section class="lp-sec" id="proyecto"><div class="lp-in lp-split">
-      <div><p class="kicker">Tu proyecto</p><h2 class="serif">¿Tienes una idea? Encuentra quién la impulse.</h2>
-        <p class="lp-lead">Una app, una marca de ropa, un huerto urbano, un podcast… Cuéntalo en privado y te enseñamos qué empresas asociadas podrían apoyarlo con financiación, mentoría o primeros clientes.</p>
-        ${lnk(`Contar mi proyecto${ic("arrow")}`, "#/alta/joven", "primary lg")}</div>
-      <ul class="lp-checks"><li><span>${ic("lock")}</span><div><b>Privado por defecto</b><small>Solo lo ves tú hasta que decides contactar con alguien.</small></div></li>
-        <li><span>${ic("bulb")}</span><div><b>Encajes a tu medida</b><small>Según el sector, la fase en la que está y lo que necesitas.</small></div></li>
-        <li><span>${ic("send")}</span><div><b>Tú decides</b><small>La empresa solo ve el resumen: nunca tu nombre ni tu dinero.</small></div></li></ul>
-    </div></section>
-
-    <section class="lp-sec alt" id="familias"><div class="lp-in lp-split">
+    <section class="lp-sec" id="familias"><div class="lp-in lp-split">
       <div><p class="kicker">Para familias</p><h2 class="serif">Tú abres la cuenta. Tú tienes el control.</h2>
         <p class="lp-lead">Hasta los 18, la persona titular de la cuenta eres tú: apruebas el Antídoto, las retiradas y los permisos, haces regalos con un mensaje y ves su progreso en euros.</p>
         ${lnk("Soy madre, padre o tutor", "#/familias", "primary lg")}</div>
@@ -438,47 +443,48 @@ function vLanding() {
 
     ${giftSection()}
 
-    <section class="lp-sec alt" id="preguntas"><div class="lp-in lp-narrow">
+    <section class="lp-sec" id="preguntas"><div class="lp-in lp-narrow">
       <p class="kicker">Preguntas frecuentes</p><h2 class="serif">Lo que más nos preguntan.</h2>
       <div class="faq">${FAQ.map(f => `<details><summary>${f.q}${ic("plus")}</summary><p>${f.a}</p></details>`).join("")}</div>
     </div></section>
 
     <section class="hz-final"><div class="lp-in"><h2 class="serif">Da el primer paso hoy.</h2><p class="hz-lead">Crea tu cuenta en dos minutos. Si eres menor, tu familia la autoriza en otros dos.</p><div class="lp-cta center">${lnk(`Soy joven${ic("arrow")}`, "#/alta/joven", "white lg")}${lnk("Soy madre, padre o tutor", "#/familias", "lg light")}</div></div></section>
-    <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}</div>
+    <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}
+      <div class="lp-ast"><p><sup>*</sup> Protección promocional: si a los ${RULES.protectMonths} meses de tu primera aportación tus primeros ${RULES.protectCap} € aportados (tuyos o de tu familia) valen menos y no has vendido ni retirado dinero, CaixaBank repone la diferencia. Máximo ${RULES.protectCap} € por persona y hasta agotar la dotación que fijen las bases. No es un fondo garantizado ni un seguro: tu dinero puede bajar.</p>
+      <p><sup>**</sup> Hasta ${pts(MILES.maxCut)} puntos, sobre las condiciones vigentes al firmar tu primera hipoteca con CaixaBank. No es una oferta ni obliga a contratar ningún producto (Ley 5/2019). <a href="#/legal">Ver todas las condiciones</a></p></div></div>
     </div>`;
 }
-/* Portada: el valor de empezar hoy. Las dos personas aportan exactamente lo mismo en total:
-   una pone m al mes durante 20 años; la otra espera 10 y pone el doble durante los 10 restantes. */
-const HT = { years: 20, wait: 10 };
-const htA = (m, t, r) => fv(m, t, 0, r), htB = (m, t, r) => t <= HT.wait ? 0 : fv(m * 2, t - HT.wait, 0, r);
-const htGap = (m, g) => htA(m, HT.years, RATE(g)) - htB(m, HT.years, RATE(g));
+/* Portada: lo que hace el tiempo. Misma cuota mensual durante 40 años, frente a empezar 10 años más tarde. */
+const HT = { years: 40, wait: 10 };
+const htA = (m, t, g) => fv(m, t, 0, RATE(g)), htB = (m, t, g) => t <= HT.wait ? 0 : fv(m, t - HT.wait, 0, RATE(g));
 function heroPlot(m, g) {
-    const W = 560, H = 300, mr = 128, mt = 16, mb = 28, N = HT.years, r = RATE(g), top = htA(m, N, r) * 1.04;
+    const W = 560, H = 300, mr = 132, mt = 16, mb = 28, N = HT.years, va = htA(m, N, g), vb = htB(m, N, g), vp = m * 12 * N, top = va * 1.04;
     const X = t => 4 + (W - 4 - mr) * t / N, Y = v => H - mb - (H - mt - mb) * v / top;
-    const L = f => Array.from({ length: N * 4 + 1 }, (_, k) => `${X(k / 4).toFixed(1)},${Y(f(k / 4)).toFixed(1)}`).join(" ");
-    const va = htA(m, N, r), vb = htB(m, N, r), xe = X(N), ya = Y(va), yb = Y(vb), y0 = Y(0);
-    const A = L(t => htA(m, t, r)), B = L(t => htB(m, t, r));
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Quien empieza hoy llega a ${eur(va)}; quien espera 10 años, a ${eur(vb)}">
-      <defs><linearGradient id="htg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" style="stop-color:var(--blue)" stop-opacity="0"/><stop offset="1" style="stop-color:var(--blue)" stop-opacity=".3"/></linearGradient></defs>
+    const L = f => Array.from({ length: N * 2 + 1 }, (_, k) => `${X(k / 2).toFixed(1)},${Y(f(k / 2)).toFixed(1)}`).join(" ");
+    const xe = X(N), ya = Y(va), yb = Y(vb), yp = Y(vp), y0 = Y(0), A = L(t => htA(m, t, g));
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Empezando hoy, ${eur(va)}; dentro de 10 años, ${eur(vb)}; lo que pones, ${eur(vp)}">
+      <defs><linearGradient id="htg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" style="stop-color:var(--blue)" stop-opacity=".02"/><stop offset="1" style="stop-color:var(--blue)" stop-opacity=".36"/></linearGradient></defs>
+      <polygon points="${A} ${xe},${yp} 4,${y0}" fill="url(#htg)"/>
+      <polygon points="4,${y0} ${xe},${yp} ${xe},${y0}" style="fill:var(--ink-3)" fill-opacity=".2"/>
       <line x1="4" x2="${xe}" y1="${y0}" y2="${y0}" style="stroke:var(--line-2)"/>
-      <polygon points="${A} ${xe},${y0} 4,${y0}" fill="url(#htg)"/>
-      <polyline class="ht-b" points="${B}" fill="none"/>
+      <polyline class="ht-b" points="${L(t => htB(m, t, g))}" fill="none"/>
       <polyline class="ht-a" pathLength="1" points="${A}" fill="none"/>
-      <line class="ht-gap" x1="${xe}" x2="${xe}" y1="${ya}" y2="${yb}"/>
-      <circle cx="${xe}" cy="${ya}" r="7" style="fill:var(--blue)"/><circle cx="${xe}" cy="${yb}" r="5" style="fill:var(--ink-3)"/>
-      <text x="${xe + 16}" y="${ya + 4}" class="ht-t1">${eur(va)}</text><text x="${xe + 16}" y="${ya + 21}" class="ht-t3">Empieza hoy</text>
-      <text x="${xe + 16}" y="${yb + 4}" class="ht-t2">${eur(vb)}</text><text x="${xe + 16}" y="${yb + 21}" class="ht-t3">Espera 10 años</text>
-      <text x="4" y="${H - 6}" class="ht-t3">Hoy</text><text x="${X(HT.wait)}" y="${H - 6}" text-anchor="middle" class="ht-t3">10 años</text><text x="${xe}" y="${H - 6}" text-anchor="end" class="ht-t3">20 años</text></svg>`;
+      <circle cx="${xe}" cy="${ya}" r="6" style="fill:var(--blue)"/><circle cx="${xe}" cy="${yb}" r="4" style="fill:var(--ink-3)"/>
+      <text x="${xe + 14}" y="${ya + 5}" class="ht-t1">${eur(va)}</text><text x="${xe + 14}" y="${ya + 22}" class="ht-t3">Empiezas hoy</text>
+      <text x="${xe + 14}" y="${yb + 2}" class="ht-t2">${eur(vb)}</text><text x="${xe + 14}" y="${yb + 19}" class="ht-t3">En 10 años</text>
+      <text x="${xe + 14}" y="${(yp + y0) / 2}" class="ht-t2">${eur(vp)}</text><text x="${xe + 14}" y="${(yp + y0) / 2 + 17}" class="ht-t3">Lo que pones</text>
+      <text x="4" y="${H - 6}" class="ht-t3">Hoy</text><text x="${X(20)}" y="${H - 6}" text-anchor="middle" class="ht-t3">20 años</text><text x="${xe}" y="${H - 6}" text-anchor="end" class="ht-t3">40 años</text></svg>`;
 }
 function bindLanding() {
     const hero = $("[data-hero]"); if (!hero) return;
     const input = $('[data-i="hero"]', hero), o = (k, v) => { $(`[data-o="${k}"]`, hero).textContent = v; };
     const show = () => {
         const m = +input.value, g = EST.gross;
-        o("put", eur(m * 12 * HT.years)); o("v", `+${eur(htGap(m, g))}`); o("amt", eur(m));
+        const put = m * 12 * HT.years, va = htA(m, HT.years, g);
+        o("put", eur(put)); o("v", eur(va)); o("amt", eur(m)); o("time", eur(va - put));
         $('[data-o="plot"]', hero).innerHTML = heroPlot(m, g);
         input.style.setProperty("--p", `${(m - 10) / 90 * 100}%`);
-        o("note", `Una pone ${eur(m)} al mes durante 20 años; la otra, ${eur(m * 2)} durante los últimos 10. Estimación al ${g} % anual, sin comisiones. Con un 3 % serían +${eur(htGap(m, 3))}; con un 8 %, +${eur(htGap(m, 8))}. No es una promesa: tu dinero también puede bajar.`);
+        o("note", `Estimación al ${g} % anual, sin descontar comisiones ni inflación. Con un 3 % serían ${eur(htA(m, HT.years, 3))}; con un 8 %, ${eur(htA(m, HT.years, 8))}. Quien espera 10 años pone lo mismo al mes, pero durante 30. No es una promesa: tu dinero también puede bajar.`);
     };
     input.addEventListener("input", () => { hero.classList.add("still"); show(); });
     show();
@@ -569,7 +575,7 @@ function vAlta(role) {
             <label class="field"><span>Nombre de la persona que autoriza</span><input name="fname" required maxlength="40" autocomplete="name" value="${esc(d.fname || "")}"></label>
             <label class="field"><span>Su correo electrónico</span><input name="femail" type="email" required maxlength="80" autocomplete="email" value="${esc(d.femail || "")}"></label>
             <label class="field"><span>Relación</span><select name="relation">${["Madre", "Padre", "Tutor o tutora legal"].map(r => `<option ${d.relation === r ? "selected" : ""}>${r}</option>`).join("")}</select></label>
-            <label class="field"><span>Fecha de nacimiento de ${esc(d.name || "la persona menor")}</span><input name="birth" type="date" required value="${esc(d.birth || "")}"></label>
+            <label class="field"><span>Fecha de nacimiento de ${esc(d.name || "la persona menor")}</span><input name="birth" type="date" ${birthAttrs()} required value="${esc(d.birth || "")}"></label>
             <label class="check"><input type="checkbox" name="ok" required><span>Soy su madre, padre o tutor legal, autorizo la apertura de la cuenta y entiendo que invertir conlleva riesgos, incluida la pérdida de parte del dinero.</span></label>
             <button class="btn primary lg block">Autorizar y entrar en Horizonte</button>
             <p class="note">En la versión real, recibirás un correo y confirmarás tu identidad (DNI o banca digital). Si hay otro progenitor con patria potestad, también se le pedirá su conformidad. Esto es una demostración.</p></form>`;
@@ -584,7 +590,7 @@ function vAlta(role) {
         else if (a.step === 1) body = `<h1>¿Para quién es la cuenta?</h1><p class="sub">La persona menor podrá cambiar su alias cuando entre.</p>
           <form data-form="altaF1" class="form">
             <label class="field"><span>Nombre o alias</span><input name="name" required maxlength="30" value="${esc(d.name || "")}"></label>
-            <label class="field"><span>Fecha de nacimiento</span><input name="birth" type="date" required value="${esc(d.birth || "")}"></label>
+            <label class="field"><span>Fecha de nacimiento</span><input name="birth" type="date" ${birthAttrs()} required value="${esc(d.birth || "")}"></label>
             <button class="btn primary lg block">Continuar</button></form>`;
         else body = `<h1>Autorización</h1><p class="sub">Hasta los 18, la madre, el padre o el tutor legal es la persona titular y aprueba las decisiones importantes de la cuenta.</p>
           <form data-form="altaF2" class="form">
@@ -1492,7 +1498,7 @@ function vAjustes() {
         <form class="form two" data-form="profile">
           <label class="field"><span>Nombre</span><input name="name" value="${esc(S.teen?.name || "")}" maxlength="30" required></label>
           <label class="field"><span>Apellidos</span><input name="surname" value="${esc(S.teen?.surname || "")}" maxlength="60"></label>
-          <label class="field"><span>Fecha de nacimiento</span><input name="birth" type="date" value="${esc(S.teen?.birth || "")}" required></label>
+          <label class="field"><span>Fecha de nacimiento</span><input name="birth" type="date" ${birthAttrs()} value="${esc(S.teen?.birth || "")}" required></label>
           <button class="btn primary full">Guardar cambios</button></form>`, "c-7")}
       ${card(`${cardH("Cuenta")}${S.family ? `<p class="note">${fam ? "Estás en el área familiar." : "Estás en tu área personal."} En este dispositivo puedes cambiar de área.</p><div class="actions">${btn(`${ic("switch")}${fam ? `Ir al área de ${esc(teenName())}` : "Ir al área familiar"}`, "switchRole")}</div>` : ""}
         <p class="note">Los datos se guardan en este dispositivo y puedes descargarlos cuando quieras.</p><div class="actions">${btn("Descargar mis datos", "exportData")}${btn("Cerrar sesión y borrar datos", "reset", "danger")}</div>`, "c-5")}
@@ -1502,14 +1508,15 @@ function vAjustes() {
 
 /* ------------------------------------------------------------------ estructura y rutas */
 const NAV_T = [["inicio", "Inicio", "home"], ["dinero", "Dinero", "chart"], ["aprende", "Aprende", "book"], ["antidoto", "Antídoto", "spark"], ["casa", "Tu casa", "house"]];
-const NAV_T3 = [["voz", "Tu voz", "voice"], ["proyecto", "Tu proyecto", "bulb"]];
+const NAV_T3 = [["voz", "Tus ideas", "bulb"]];
 const NAV_T2 = [["familia", "Familia", "family"], ["ajustes", "Ajustes", "settings"]];
 const NAV_F = [["f/resumen", "Resumen", "home"], ["f/regalar", "Regalos", "gift"], ["f/permisos", "Permisos", "key"]];
 const NAV_F2 = [["ajustes", "Ajustes", "settings"]];
 
 function shell(route, content) {
     const fam = S.role === "family", main = fam ? NAV_F : NAV_T, extra = fam ? NAV_F2 : NAV_T2;
-    const item = ([id, l, i]) => `<a href="#/${id}" class="${route === id ? "on" : ""}" ${route === id ? 'aria-current="page"' : ""}>${ic(i)}<span>${l}</span></a>`;
+    const on = id => route === id || (id === "voz" && route === "proyecto");
+    const item = ([id, l, i]) => `<a href="#/${id}" class="${on(id) ? "on" : ""}" ${on(id) ? 'aria-current="page"' : ""}>${ic(i)}<span>${l}</span></a>`;
     const who = (fam ? S.family?.name : teenName()) || "";
     const home = fam ? "#/f/resumen" : "#/inicio";
     const tabs = fam ? [...main, ...extra] : main;
@@ -1652,7 +1659,7 @@ document.addEventListener("click", async e => {
     else if (/^(voz|pj)[A-Z]/.test(act)) cxAct(act, b);
     else if (act === "moreMenu") {
         const cur = (location.hash.replace(/^#\/?/, "").split(/[/?]/)[0]) || "inicio";
-        const grp = (t, items) => `<p class="more-h">${t}</p>${items.map(([id, l, i]) => `<a href="#/${id}" class="${cur === id ? "on" : ""}">${ic(i)}<span>${l}</span>${ic("chev", "chev")}</a>`).join("")}`;
+        const grp = (t, items) => `<p class="more-h">${t}</p>${items.map(([id, l, i]) => `<a href="#/${id}" class="${cur === id || (id === "voz" && cur === "proyecto") ? "on" : ""}">${ic(i)}<span>${l}</span>${ic("chev", "chev")}</a>`).join("")}`;
         sheet("Menú", `<nav class="more-nav" aria-label="Todas las secciones">${grp("Tu camino", NAV_T)}${grp("Comunidad", NAV_T3)}${grp("Cuenta", NAV_T2)}</nav>`);
     }
     else if (act === "vRange") {
@@ -1702,8 +1709,9 @@ document.addEventListener("submit", e => {
         Object.assign(alta.data, { name: d.name.trim(), age });
         if (age >= RULES.adultAge) { alta.data.birth = birthFromAge(age); finishTeen(); return; }
         alta.step = 1; render();
-    } else if (k === "altaF1") { Object.assign(alta.data, { name: d.name.trim(), birth: d.birth }); alta.step = 2; render(); }
+    } else if (k === "altaF1") { const er = birthError(d.birth); if (er) return toast(er); Object.assign(alta.data, { name: d.name.trim(), birth: d.birth }); alta.step = 2; render(); }
     else if (k === "alta1") {
+        const er = birthError(d.birth, 5); if (er) return toast(er);
         const age = ageOf(d.birth);
         if (age >= RULES.adultAge || age < 0) return toast("Con esa fecha, la persona ya es mayor de edad. Revisa la fecha de nacimiento.");
         if (alta.data.age != null && Math.abs(age - alta.data.age) > 1) return toast("La fecha de nacimiento no coincide con la edad que indicaste.");
@@ -1752,6 +1760,8 @@ document.addEventListener("submit", e => {
     } else if (k === "goal") {
         S.goal = { price: Math.max(30000, +d.price), age: Math.max(ageOf() + 2, +d.age) }; save(); toast("Objetivo guardado"); rerender();
     } else if (k === "profile") {
+        const er = birthError(d.birth); if (er) return toast(er);
+        if (S.role === "teen" && !isAdult() && ageOf(d.birth) >= RULES.adultAge) return toast("No puedes pasar a mayor de edad cambiando la fecha. Si hay un error, lo corrige tu familia.");
         S.teen = { name: d.name.trim(), surname: d.surname.trim(), birth: d.birth }; save(); toast("Cambios guardados"); rerender();
     } else if (k === "ask") { askQ(d.q); f.reset(); }
 });

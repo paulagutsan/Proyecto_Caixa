@@ -137,7 +137,7 @@ const RANK_MIN = 100;          // el mapa de miedos se publica a partir de 100 r
 /* El ciclo de Horizonte: cada paso alimenta al siguiente */
 const CYCLE = [
     { id: "aprende", t: "Aprende", p: "Cinco temas cortos y una prueba final, sin jerga. Al superarla, recibes un certificado que puedes comprobar y compartir.", ic: "book" },
-    { id: "invierte", t: "Invierte", p: `Desde 1 €, con tu familia detrás. Tus primeros ${RULES.protectCap} € tienen protección promocional durante el primer año (con condiciones).`, ic: "chart" },
+    { id: "invierte", t: "Invierte", p: `Desde 1 €, con tu familia detrás. Tus primeros ${RULES.protectCap} € tienen protección promocional durante el primer año<sup>*</sup>.`, ic: "chart" },
     { id: "entiende", t: "Anticípate", p: "Cada semana, qué ha pasado con tu dinero y por qué. Y, si quieres, una parte pequeña de tu cartera en un tema que te importa.", ic: "spark" },
     { id: "millas", t: "Gana millas", p: "Aprender, aportar con constancia y revisar tu plan cada año suma millas. Nunca por tener más dinero que nadie, ni por jugar.", ic: "star" },
     { id: "casa", t: "Tu casa", p: "Si un día pides tu primera hipoteca con CaixaBank, tus millas pueden convertirse en una bonificación, según las condiciones de ese momento.", ic: "house" },

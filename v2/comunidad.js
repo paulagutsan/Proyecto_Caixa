@@ -90,11 +90,12 @@ function pjMatches(p) {
 const initialsOf = n => n.split(" ").filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 
 /* ---------------------------------------------------------------- Tu voz */
+const ideasTabs = cur => `<nav class="ideas-tabs" aria-label="Tus ideas"><a href="#/voz" class="${cur === "voz" ? "on" : ""}">${ic("voice")}Opina sobre las empresas</a><a href="#/proyecto" class="${cur === "proyecto" ? "on" : ""}">${ic("bulb")}Impulsa tu proyecto</a></nav>`;
 function vVoz() {
     const st = cxState(), pending = VOZ.filter(v => !st.votes[v.id]), done = VOZ.length - pending.length, cur = pending[0];
     if (!voz.totals && !voz.err) setTimeout(loadVoz, 0);
     const last = voz.last && VOZ.find(v => v.id === voz.last), voted = VOZ.filter(v => st.votes[v.id]);
-    return `${pageH("Tu voz", "Cuando inviertes en un fondo, la gestora vota en las juntas de accionistas de las empresas. Aquí le dices qué preferirías tú.")}
+    return `${pageH("Tus ideas", "Cuando inviertes en un fondo, la gestora vota en las juntas de accionistas de las empresas. Aquí le dices qué preferirías tú.")}${ideasTabs("voz")}
     <div class="grid">
       ${card(cur ? `<div class="vz-top"><span class="kicker">Propuesta ${done + 1} de ${VOZ.length}</span><span class="vz-prog">${VOZ.map((v, i) => `<i class="${i < done ? "done" : i === done ? "on" : ""}"></i>`).join("")}</span></div>
           <article class="vz-card" id="vzCard" tabindex="0" aria-label="Propuesta: ${esc(cur.t)}">
@@ -117,13 +118,13 @@ function vVoz() {
 function vProyecto() {
     const st = cxState(), p = st.project;
     const priv = `<span class="kicker">Privado por defecto</span><ul class="pj-safe"><li>${ic("lock")}Tu proyecto solo lo ves tú.</li><li>${ic("check")}Ninguna empresa sabe nada hasta que decides contactarla.</li><li>${ic("check")}Incluso entonces, solo ve el resumen: nunca tu nombre, tu email ni tu dinero.</li></ul>`;
-    if (!p) return `${pageH("Tu proyecto", "Una app, una marca de ropa, un huerto urbano, un podcast… Cuéntalo y descubre quién podría impulsarlo.")}
+    if (!p) return `${pageH("Tus ideas", "Una app, una marca de ropa, un huerto urbano, un podcast… Cuéntalo y descubre quién podría impulsarlo.")}${ideasTabs("proyecto")}
     <div class="grid">
       ${card(`<div class="pj-empty"><span class="kicker">Tu proyecto</span><h2>¿Tienes un proyecto entre manos?</h2><p>Cuéntalo en dos minutos y te enseñamos qué empresas asociadas podrían apoyarlo con financiación, mentoría o primeros clientes.</p>${btn(`Contar mi proyecto${ic("arrow")}`, "pjEdit", "primary lg")}</div>`, "c-7")}
       ${card(priv, "c-5")}
     </div>`;
     const ms = pjMatches(p);
-    return `${pageH("Tu proyecto", "Privado: solo lo ves tú hasta que decidas contactar con alguien.")}
+    return `${pageH("Tus ideas", "Privado: solo lo ves tú hasta que decidas contactar con alguien.")}${ideasTabs("proyecto")}
     <div class="grid">
       ${card(`<div class="pj-head"><span class="kicker">${PJ_SECTORS[p.sector]} · ${PJ_STAGES[p.stage]}</span>${btn("Editar", "pjEdit", "sm ghost")}</div>
         <h2 class="pj-title">${esc(p.title)}</h2><p class="pj-desc">${esc(p.desc)}</p>

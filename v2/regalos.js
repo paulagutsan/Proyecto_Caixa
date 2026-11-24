@@ -18,7 +18,7 @@ const gfCard = g => `<div class="gf-card"><span class="gf-k">Un regalo en Horizo
 
 /* ---- portada */
 function giftSection() {
-    return `<section class="lp-sec" id="regala"><div class="lp-in lp-split">
+    return `<section class="lp-sec alt" id="regala"><div class="lp-in lp-split">
       <div><p class="kicker">Regala</p><h2 class="serif">Regala su primer euro.</h2>
         <p class="lp-lead">Cumpleaños, Navidad o fin de curso: regala una aportación a quien quieras, con su nombre y un mensaje tuyo. No hace falta tener cuenta para regalar; quien lo recibe lo canjea al crear la suya.</p>
         ${lnk(`Hacer un regalo${ic("arrow")}`, "#/regalar", "primary lg")}</div>
