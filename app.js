@@ -941,6 +941,7 @@ function vLiga() {
         ${past.length ? `<h2 class="lg-h">Tus últimas semanas</h2><div class="lg-past">${past.map(w => `<div><span>${fmtD(w)}</span><b>${ligaHits(w)}/${LIGA.length}</b></div>`).join("")}</div>` : ""}
         ${friends.length ? `<h2 class="lg-h">Tus amigos esta semana</h2><div class="lg-past">${friends.slice(0, 6).map(p => `<div><span>${esc(p.nombre)}</span><b>${p.aciertos}/${p.rondas}</b></div>`).join("")}</div>` : ""}
         <p class="mm-learn">Acertar la bolsa a una semana es casi una moneda al aire, incluso para los profesionales. Por eso Horizonte invierte a largo plazo y no intenta adivinar.</p>
+        <p class="note center-note">Los porcentajes son del juego, no los datos reales del mercado.</p>
         <div class="focus-nav center">${lnk("Volver", homeLearn(), "lg")}</div></div>`);
 }
 
