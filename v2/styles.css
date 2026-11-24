@@ -495,33 +495,30 @@ body[data-view="app"] #toasts { left: calc(50% + var(--side) / 2); }
 .vals-src a { text-decoration: underline; text-underline-offset: 2px; }
 
 /* ---------------------------------------------------------------- Certificado Horizonte */
-.cred { position: relative; width: 330px; aspect-ratio: 1.586; border-radius: 20px; padding: 20px 22px; color: #fff; overflow: hidden; flex: none; display: flex; flex-direction: column;
-    background: radial-gradient(140% 120% at 100% 100%, rgba(247, 181, 0, .4), transparent 46%), linear-gradient(150deg, #0089bd, #005a80 58%, #003a56);
-    box-shadow: 0 30px 60px -28px rgba(0, 60, 90, .6), inset 0 0 0 1px rgba(255, 255, 255, .12); }
-.cred::after { content: ""; position: absolute; left: 0; right: 0; bottom: 30%; height: 1px; background: linear-gradient(90deg, transparent, rgba(255, 224, 170, .55), transparent); }
-.cred.big { width: 400px; padding: 24px 26px; border-radius: 24px; }
-.cred.st0 { background: radial-gradient(140% 120% at 100% 100%, rgba(255, 255, 255, .12), transparent 45%), linear-gradient(150deg, #33414d, #161f27 70%); }
-.cred-top { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; opacity: .78; }
+.cred { position: relative; width: 340px; border-radius: 18px; padding: 20px 22px 18px; color: #fff; overflow: hidden; flex: none; display: flex; flex-direction: column;
+    background: radial-gradient(120% 90% at 100% 0%, rgba(247, 181, 0, .3), transparent 52%), linear-gradient(155deg, #0a8fc4, #005a80 55%, #0b2f45);
+    box-shadow: 0 24px 48px -26px rgba(0, 60, 90, .65), inset 0 0 0 1px rgba(255, 255, 255, .14); }
+.cred::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255, 255, 255, .035) 0 2px, transparent 2px 14px); pointer-events: none; }
+.cred.big { width: 420px; padding: 26px 28px 22px; border-radius: 22px; }
+.cred.st0 { background: radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, .12), transparent 50%), linear-gradient(155deg, #3a4854, #161f27 72%); }
+.cred-top { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 255, 255, .82); }
+.cred-top span { white-space: nowrap; }
 .cred-top img { width: 30px; height: auto; filter: brightness(0) invert(1); opacity: .9; }
-.cred-mid { margin-top: 14px; }
-.cred-mid small { display: block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
-.cred-mid b { font-family: "Source Serif 4", Georgia, serif; font-weight: 300; font-size: 30px; letter-spacing: -.01em; line-height: 1.05; }
-.cred.big .cred-mid b { font-size: 36px; }
-.cred-name { margin-top: auto; font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
-.cred.big .cred-name { font-size: 20px; }
-.cred-stages { display: flex; gap: 6px; margin: 10px 0 12px; position: relative; z-index: 1; }
+.cred-top .cred-st { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .16); font-style: normal; font-size: 9.5px; letter-spacing: .1em; white-space: nowrap; }
+.cred-mid { position: relative; margin-top: 22px; }
+.cred-mid small { display: block; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: rgba(255, 255, 255, .6); margin-bottom: 2px; }
+.cred-mid b { font-family: "Source Serif 4", Georgia, serif; font-weight: 400; font-size: 34px; letter-spacing: -.01em; line-height: 1.05; }
+.cred.big .cred-mid b { font-size: 40px; }
+.cred-name { position: relative; margin-top: 16px; font-size: 16px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cred.big .cred-name { font-size: 19px; }
+.cred-stages { position: relative; display: flex; gap: 6px; margin: 16px 0 14px; }
 .cred-stages i { flex: 1; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .2); }
 .cred-stages i.done { background: rgba(255, 255, 255, .85); } .cred-stages i.on { background: var(--sun); box-shadow: 0 0 10px rgba(240, 182, 90, .8); }
-.cred-bottom { display: flex; gap: 22px; position: relative; z-index: 1; }
-.cred-bottom small { display: block; font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; opacity: .6; }
-.cred-bottom b { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.cred-bottom { position: relative; display: flex; gap: 28px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .16); }
+.cred-bottom small { display: block; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 255, 255, .6); margin-bottom: 2px; }
+.cred-bottom b { font-size: 13px; font-weight: 600; white-space: nowrap; letter-spacing: .02em; }
 .hero-cred { display: flex; align-items: center; gap: 28px; }
-.cred:not(.big) .cred-top span { font-size: 9.5px; white-space: nowrap; }
-.cred:not(.big) .cred-mid { margin-top: 10px; } .cred:not(.big) .cred-mid small { display: none; }
-.cred:not(.big) .cred-mid b { font-size: 24px !important; }
-.cred:not(.big) .cred-name { font-size: 15px; } .cred:not(.big) .cred-stages { margin: 8px 0 10px; }
-.hero-cred .cred { width: 290px; padding: 18px 20px; }
-.hero-cred .cred-mid b { font-size: 26px; }
+.hero-cred .cred { width: 320px; }
 .hc-copy h2 { font-size: 24px; font-weight: 720; }
 .hc-copy p { color: var(--ink-2); margin: 8px 0 18px; }
 .cred-hero { display: flex; align-items: center; gap: 44px; }
@@ -1434,3 +1431,18 @@ fieldset.field { border: 0; padding: 0; margin: 0; } fieldset.field legend { fon
 .pj2-range { margin-top: -6px; }
 .page-h .h-acts { display: flex; gap: 8px; flex-wrap: wrap; }
 @media (max-width: 720px) { .hch-scn button { font-size: 12px; padding: 5px 9px; } .inv-card .actions { width: 100%; } }
+
+/* ---- conexión familia ↔ joven y resumen familiar ---- */
+.conn-card { border: 1px solid var(--blue-100); background: linear-gradient(180deg, var(--blue-50), var(--surface)); }
+.conn { display: grid; gap: 14px; } .conn.ok { display: flex; align-items: center; gap: 14px; }
+.conn.ok b { display: block; } .conn.ok span:not(.mv-ic) { color: var(--ink-3); font-size: 14px; }
+.conn-t h2 { font-size: 21px; margin: 2px 0 6px; } .conn-t p { color: var(--ink-2); max-width: 640px; font-size: 15px; line-height: 1.55; }
+.conn-link { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.conn-link input { flex: 1 1 280px; min-width: 0; font: inherit; font-size: 13.5px; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2); text-overflow: ellipsis; }
+.conn-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.fam-steps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; }
+.fam-steps li { display: flex; align-items: center; gap: 12px; }
+.fam-steps li > span { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--line-2); display: grid; place-items: center; flex: none; color: #fff; }
+.fam-steps li.ok > span { background: var(--green); border-color: var(--green); } .fam-steps .ic { width: 14px; height: 14px; stroke-width: 3; }
+.fam-steps b { display: block; font-size: 14.5px; } .fam-steps small { color: var(--ink-3); font-size: 13px; }
+@media (max-width: 720px) { .fam-steps { grid-template-columns: 1fr; } }

@@ -98,10 +98,10 @@ function installCard() {
 /* ------------------------------------------------------------------ estado */
 const blank = () => ({ v: 2, role: null, teen: null, family: null, familyAuth: false, paga: 0, weekly: 0, roundup: false,
     lessons: {}, exam: null, diploma: null, itv: [], money: [], schedules: [], fears: [], antidoteApproved: false,
-    geminiOk: false, friendsOk: false, friends: null, voted: false, chat: [], goal: { ...GOAL_DEFAULT }, games: {}, metas: [], suit: null, pending: [], callReq: null });
+    geminiOk: false, friendsOk: false, friends: null, voted: false, chat: [], goal: { ...GOAL_DEFAULT }, games: {}, metas: [], suit: null, pending: [], callReq: null, joined: {} });
 let S;
 try { S = { ...blank(), ...(JSON.parse(localStorage.getItem(KEY)) || {}) }; } catch (e) { S = blank(); }
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } accTouch(); };
 
 /* ------------------------------------------------------------------ cálculos */
 function ageOf(birth = S.teen?.birth) {
@@ -715,7 +715,7 @@ function vInicio() {
         [!!m.firstOwn, "Pon tu primer euro", "Con 1 € basta. Es el paso que te convierte en inversor.", "#/dinero"],
         [!!S.suit, "Haz el test y, si quieres, elige un Antídoto", "Seis preguntas sobre tu situación. El Antídoto es opcional y pequeño.", "#/antidoto"],
         [S.weekly > 0 || S.roundup, "Automatiza tu ahorro", "Una cantidad fija cada semana, sin acordarte.", "#/dinero"],
-        [!!S.family || m.gifts > 0, "Invita a tu familia", "Pueden regalarte dinero para tu casa.", "#/familia"],
+        [!!S.joined?.family, "Conecta a tu familia", "Envíales el enlace: podrán autorizarte y regalarte dinero para tu casa.", "#/familia"],
     ];
     const done = tasks.filter(t => t[0]).length, recent = [...S.money].reverse().slice(0, 4), has = S.money.length > 0;
     const w = weekSummary(), can = geminiAllowed(), sg = v => `${v >= 0 ? "+" : "−"}${pct(Math.abs(v), 1)}`;
@@ -1408,8 +1408,9 @@ function vFamiliaJoven() {
     const antState = al.fears.length ? (al.active ? "Aprobado" : al.needSuit ? "Falta el test" : "Pendiente de aprobación") : S.suit ? (S.suit.ok ? "Aún no lo has elegido" : "No disponible con tus respuestas") : "Falta el test";
     return `${pageH("Familia", "Tu familia puede regalarte dinero para tu futuro, aprobar tus decisiones y ver tu progreso.")}
     <div class="grid">
+      ${connectCard("teen")}
       ${card(`${cardH("Tu familia en Horizonte")}${S.family ? `<div class="rows"><div class="row"><span class="avatar">${esc(S.family.name.slice(0, 1).toUpperCase())}</span><div><b>${esc(S.family.name)}</b><span>${esc(S.family.relation)}${S.familyAuth ? " · Ha autorizado tu cuenta" : ""}${adult ? "" : " · Persona titular hasta los 18"}</span></div></div></div>` : empty("family", "Aún no hay nadie de tu familia", "Invítales para que puedan ayudarte.")}
-        <div class="actions">${btn(`${ic("send")}Invitar a un familiar`, "invite", "primary", `data-text="${esc(invite)}"`)}${adult ? "" : btn(`${ic("family")}${S.callReq ? "Llamada solicitada" : "Que un gestor llame a mi familia"}`, "reqCall", "", S.callReq ? "disabled" : "")}</div>`, "c-6")}
+        ${adult ? "" : `<div class="actions">${btn(`${ic("family")}${S.callReq ? "Llamada solicitada" : "Que un gestor llame a mi familia"}`, "reqCall", "", S.callReq ? "disabled" : "")}</div>`}`, "c-6")}
       ${card(`${cardH("Permisos", adult ? "Ya eres mayor de edad: decides tú." : "Hasta los 18, los decide tu madre, padre o tutor.")}
         <div class="rows"><div class="row"><div><b>Antídoto</b><span>${antState}</span></div>${badge(al.active ? "Aprobado" : al.fears.length ? "Pendiente" : "Sin elegir", al.active ? "ok" : al.fears.length ? "warn" : "")}</div>
           <div class="row"><div><b>Gemini</b><span>Usar la información de tu cuenta para explicarte tu dinero</span></div>${adult ? toggle("gemOk", S.geminiOk, "Permitir Gemini") : ok ? badge("Permitido", "ok") : `${badge("Sin permiso")}${ask("que el asistente use los datos de mi cuenta")}`}</div>
@@ -1421,23 +1422,26 @@ function vFamiliaJoven() {
 
 /* ------------------------------------------------------------------ área familiar */
 function vFResumen() {
-    const m = money(), mi = miles(), n = esc(teenName());
+    const m = money(), mi = miles(), n = esc(teenName()), done = Object.keys(S.lessons).length, passed = !!S.exam?.passed;
+    const steps = [[done >= LESSONS.length, "Fundamentos", `${done} de ${LESSONS.length} temas`], [passed, "Prueba final", passed ? `${S.exam.score}/${S.exam.total} el ${fmtD(S.exam.date)}` : "Pendiente"],
+        [!!m.firstOwn, "Primer euro propio", m.firstOwn ? fmtD(m.firstOwn.date) : "Aún no"], [!!S.suit, "Test de situación", S.suit ? "Hecho" : "Pendiente"]];
     return `${pageH(`Hola, ${esc(S.family?.name || "")}`, `Así avanza ${n} en Horizonte.`, lnk(`${ic("gift")}Hacer un regalo`, "#/f/regalar", "primary"))}
     <div class="grid">
-      ${card(`<div class="hero-cred">${credVisual()}<div class="hc-copy"><span class="kicker">Su Certificado Horizonte</span><h2>${STAGES[stageOf()]}</h2>
-        <p>${S.exam?.passed ? `Superó Fundamentos el ${fmtD(S.exam.date)} con ${S.exam.score}/${S.exam.total}.` : `Lleva ${Object.keys(S.lessons).length} de ${LESSONS.length} temas de Fundamentos.`} ${m.firstOwn ? `Puso su primer euro propio el ${fmtD(m.firstOwn.date)}.` : "Aún no ha puesto su primer euro propio."}</p></div></div>`, "c-8")}
-      ${card(stat("Su dinero", eur(m.value, true), `${eur(m.gifts, true)} aportados por la familia`), "c-4 stat-card")}
-      ${card(stat(`Aportado por ${n}`, eur(Math.max(0, m.ownReal), true), "Con su propio dinero"), "c-4")}
-      ${card(stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos de bonificación posible`), "c-4")}
-      ${card(stat("Con protección", eur(m.protect?.active ? m.protect.base : 0), m.protect?.lost ? "Se retiró antes de 12 meses" : `de ${RULES.protectCap} € en su primer año`), "c-4")}
-      ${weekFamilyCard()}${talkCard()}${callCard()}
+      ${connectCard("family")}
       ${card(`${cardH("Pendiente de tu aprobación")}${pendingRows()}`, "c-12")}
+      ${card(stat("Su dinero", eur(m.value, true), `${eur(m.gifts, true)} aportados por la familia`), "c-3 stat-card")}
+      ${card(stat(`Aportado por ${n}`, eur(Math.max(0, m.ownReal), true), "Con su propio dinero"), "c-3")}
+      ${card(stat("Millas de casa", num(mi.total), `${pts(mi.cut)} puntos de bonificación posible`), "c-3")}
+      ${card(stat("Con protección", eur(m.protect?.active ? m.protect.base : 0), m.protect?.lost ? "Se retiró antes de 12 meses" : `de ${RULES.protectCap} € en su primer año`), "c-3")}
+      ${card(`<div class="hero-cred">${credVisual()}<div class="hc-copy"><span class="kicker">Su camino</span><h2>${STAGES[stageOf()]}</h2>
+        <ul class="fam-steps">${steps.map(([ok, t, sub]) => `<li class="${ok ? "ok" : ""}"><span>${ok ? ic("check") : ""}</span><div><b>${t}</b><small>${sub}</small></div></li>`).join("")}</ul></div></div>`, "c-12")}
+      ${weekFamilyCard()}${talkCard()}${callCard()}
     </div>`;
 }
 function callCard() {
     return card(`${cardH("¿Quieres hablar con una persona?", "Pide que un gestor de CaixaBank os llame para resolver dudas, sin compromiso.")}
       <div class="actions">${S.callReq ? badge(`Solicitada el ${fmtD(S.callReq.date)}`, "ok") : btn(`${ic("family")}Pedir una llamada`, "reqCall", "primary")}</div>
-      <p class="note">Propuesta de servicio: en esta demostración la solicitud se simula.</p>`, "c-6");
+      <p class="note">Propuesta de servicio: en esta demostración la solicitud se simula.</p>`, "c-12");
 }
 function pendingRows() {
     const al = allocation(), rows = [], n = esc(teenName());
@@ -1532,6 +1536,7 @@ function render() {
     const learner = !S.role || S.role === "teen";          // los temas y los juegos se pueden probar sin cuenta
     if (r === "verificar") { html = vVerificar(params); view = "public"; }
     else if (r === "legal") { html = vLegal(); view = "public"; }
+    else if (r === "vincular") { html = vVincular(params); view = "public"; }
     else if (r === "tema" && learner) { html = vTema(parts[1], parts[2]); view = "focus"; if (!html) { location.hash = homeLearn(); return; } }
     else if (r === "juego" && learner) { html = vJuego(parts[1]); view = "focus"; if (!html) { location.hash = homeLearn(); return; } }
     else if (r === "prueba" && S.role === "teen") { html = vExamen(); view = "focus"; }
@@ -1561,8 +1566,8 @@ function finishTeen() {
     const d = alta.data, keep = { lessons: S.lessons || {}, games: S.games || {}, mmBest: S.mmBest };      // lo probado sin cuenta se conserva
     S = { ...blank(), ...keep }; S.role = "teen";
     S.teen = { name: d.name.trim(), surname: "", birth: d.birth };
-    if (d.fname) { S.family = { name: d.fname.trim(), relation: d.relation, email: d.femail || "" }; S.familyAuth = true; }
-    save(); alta = null; location.hash = "#/inicio"; toast(`Te damos la bienvenida a Horizonte, ${esc(S.teen.name)}`);
+    if (d.fname) { S.family = { name: d.fname.trim(), relation: d.relation, email: d.femail || "" }; S.familyAuth = true; S.joined = { teen: true }; }
+    save(); if (d.fname) accStart(); alta = null; location.hash = "#/inicio"; toast(`Te damos la bienvenida a Horizonte, ${esc(S.teen.name)}`);
 }
 document.addEventListener("click", async e => {
     const b = e.target.closest("[data-act]");
@@ -1611,6 +1616,10 @@ document.addEventListener("click", async e => {
         } else { x.i++; x.ans = null; }
         render(); scrollTo(0, 0);
     }
+    else if (act === "vincGo") vincGo(b.dataset.role);
+    else if (act === "vincRetry") vincLoad(vinc.token);
+    else if (act === "accStart") { accStart(); rerender(); }
+    else if (act === "accCopy" || act === "accShare") accShareCopy(act === "accShare", b.dataset.role);
     else if (act === "openWithdraw") withdrawSheet();
     else if (act === "openSuit") suitSheet();
     else if (act === "shareInv") investorCard(true);
@@ -1659,7 +1668,7 @@ document.addEventListener("click", async e => {
         const rows = [["Fecha", "Concepto", "Importe (€)", "Mensaje"], ...[...S.money].sort((a, b) => a.date < b.date ? -1 : 1).map(c => [c.date, SOURCES[c.src]?.label || c.src, String(c.amount).replace(".", ","), c.msg || ""])];
         saveFile("extracto-horizonte.csv", "﻿" + rows.map(r => r.map(q).join(";")).join("\r\n"), "text/csv;charset=utf-8"); toast("Extracto descargado");
     }
-    else if (act === "exportData") { saveFile("mis-datos-horizonte.json", JSON.stringify(S, null, 2), "application/json"); toast("Tus datos se han descargado"); }
+    else if (act === "exportData") { saveFile("mis-datos-horizonte.json", JSON.stringify({ ...S, acct: undefined }, null, 2), "application/json"); toast("Tus datos se han descargado"); }
     else if (act === "invite") { const t = b.dataset.text; if (navigator.share) { try { await navigator.share({ title: "Horizonte", text: t }); } catch (err) { /* cancelado */ } } else { try { await navigator.clipboard.writeText(t); toast("Invitación copiada. Compártela por WhatsApp o por correo."); } catch (err) { prompt("Copia la invitación:", t); } } }
     else if (act === "cancelSched") { S.schedules.splice(+b.dataset.i, 1); save(); toast("Aportación mensual cancelada"); rerender(); }
     else if (act === "switchRole") { S.role = S.role === "family" ? "teen" : "family"; save(); location.hash = S.role === "family" ? "#/f/resumen" : "#/inicio"; }
@@ -1704,8 +1713,12 @@ document.addEventListener("submit", e => {
         S = blank(); S.role = "family";
         S.family = { name: a.fname.trim(), relation: a.relation, email: a.femail || "" };
         S.teen = { name: a.name.trim(), surname: "", birth: a.birth };
-        S.familyAuth = true;
-        save(); alta = null; location.hash = "#/f/resumen"; toast("Cuenta familiar creada");
+        S.familyAuth = true; S.joined = { family: true };
+        save(); accStart(); alta = null; location.hash = "#/f/resumen"; toast("Cuenta familiar creada");
+    } else if (k === "vincCode") {
+        const t = parseToken(d.c), role = (String(d.c).match(/[?&]r=(joven|familia)/) || [])[1];
+        if (t.length < 20) return toast("Ese código no es válido");
+        location.hash = `#/vincular?c=${t}${role ? `&r=${role}` : ""}`;
     } else if (k === "withdraw") {
         const amount = Math.round(+d.amount * 100) / 100;
         if (!(amount > 0) || amount > money().value + 0.005) return toast("No puedes retirar más de lo que tienes");
@@ -1791,6 +1804,7 @@ function downloadDiploma() {
 }
 
 if (S.diploma && !S.diploma.reg) setTimeout(certRegister, 1500);
+accInit();
 window.addEventListener("hashchange", () => {
     if (/^#(ciclo|por-que|aprende|antidoto|casa|voz|proyecto|familias|preguntas)$/.test(location.hash)) return;
     closeSheet(); render(); scrollTo(0, 0);
