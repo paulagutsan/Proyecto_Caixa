@@ -1,12 +1,18 @@
 // Horizonte · intermediario con Gemini (Supabase Edge Function)
 // La clave de Gemini vive SOLO aquí, como secreto de Supabase (GEMINI_API_KEY). Nunca en la web.
 // Secretos opcionales: GEMINI_MODEL (modelo preferido), GEMINI_FALLBACK (modelo de reserva) y ALLOWED_ORIGINS.
-// Si Google responde que el modelo está saturado (503) o con un error temporal, reintenta y pasa al modelo de reserva.
+// Si Google responde que el modelo está saturado (503) o con un error temporal, reintenta una vez y pasa al modelo de reserva.
+// Cada llamada a Google se corta a los 7 s y la pregunta entera a los 15 s; los errores quedan en Edge Functions → Logs.
 // Al crear la función, desactiva "Verify JWT" (la web la llama sin sesión de usuario).
 
 const KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
-const MODELS = [Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest", Deno.env.get("GEMINI_FALLBACK") ?? "gemini-flash-lite-latest"]
+// Por defecto, primero el modelo ligero (rápido y el que menos se satura) y de reserva el Flash normal.
+// Con los secretos GEMINI_MODEL y GEMINI_FALLBACK puedes poner los ID exactos que veas en AI Studio.
+const MODELS = [Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-lite-latest", Deno.env.get("GEMINI_FALLBACK") ?? "gemini-flash-latest"]
   .filter((m, i, a) => m && a.indexOf(m) === i);
+const ATTEMPT_MS = 7000;   // máximo por llamada a Google: si se cuelga, se corta
+const BUDGET_MS = 15000;   // máximo total por pregunta (la web se rinde a los 20 s y usa sus respuestas locales)
+const PER_MINUTE = 20;     // preguntas por minuto y por IP (en una reunión todos comparten wifi)
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ??
   "https://paulagutsan.github.io,http://localhost:8099,http://127.0.0.1:8099").split(",").map((s) => s.trim());
@@ -31,12 +37,12 @@ const SCHEMA = {
   required: ["title", "answer"],
 };
 
-// Límite sencillo por IP para no agotar la cuota gratuita: 8 preguntas por minuto.
+// Límite sencillo por IP para no agotar la cuota gratuita.
 const hits = new Map<string, number[]>();
 function limited(ip: string) {
   const now = Date.now(), arr = (hits.get(ip) ?? []).filter((t) => now - t < 60_000);
   arr.push(now); hits.set(ip, arr);
-  return arr.length > 8;
+  return arr.length > PER_MINUTE;
 }
 
 function cors(origin: string | null) {
@@ -77,19 +83,23 @@ Deno.serve(async (req) => {
     generationConfig: { temperature: 0.4, maxOutputTokens: 600, responseMimeType: "application/json", responseSchema: SCHEMA },
   };
   let last = { status: 0, message: "" };
+  const started = Date.now();
   for (const model of MODELS) {
     for (let attempt = 0; attempt < 2; attempt++) {
+      if (Date.now() - started > BUDGET_MS - 2000) break;   // sin tiempo para otra llamada
       try {
         const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": KEY },
           body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(Math.min(ATTEMPT_MS, BUDGET_MS - (Date.now() - started))),
         });
         if (!r.ok) {
           const e = await r.json().catch(() => ({}));
           last = { status: r.status, message: String(e?.error?.message ?? "").slice(0, 200) };
-          if ([429, 500, 503, 504].includes(r.status)) { await sleep(700 * (attempt + 1)); continue; }   // temporal: reintenta
-          break;                                                                                            // 400/403/404: prueba el siguiente modelo
+          console.error(`gemini ${model} intento ${attempt + 1}: ${r.status} ${last.message}`);   // se ve en Edge Functions → Logs
+          if ([429, 500, 503, 504].includes(r.status) && attempt === 0) { await sleep(400); continue; }   // temporal: un reintento rápido
+          break;                                                                                            // otro error o ya reintentado: siguiente modelo
         }
         const d = await r.json();
         const txt = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
@@ -100,8 +110,11 @@ Deno.serve(async (req) => {
           facts: (out.facts ?? []).slice(0, 3).map((f: { label: string; value: string }) => [String(f.label), String(f.value)]),
           model,
         }, 200, h);
-      } catch (_e) {
-        last = { status: 0, message: "respuesta no válida" };
+      } catch (e) {
+        const timeout = e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError");
+        last = { status: 0, message: timeout ? "Google tarda demasiado" : "respuesta no válida" };
+        console.error(`gemini ${model} intento ${attempt + 1}: ${last.message}`);
+        if (timeout) break;   // si se cuelga, no insistas con el mismo modelo
       }
     }
   }

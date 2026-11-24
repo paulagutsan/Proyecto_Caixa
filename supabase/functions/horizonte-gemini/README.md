@@ -12,15 +12,15 @@ Intermediario entre la web de Horizonte (v2) y Gemini. La clave de Google AI Stu
 3. **Edge Functions → Secrets** (o Project Settings → Edge Functions): añade
    - `GEMINI_API_KEY` = tu clave de Google AI Studio.
    - (Opcional) `GEMINI_MODEL` = el ID exacto del modelo que veas en AI Studio, por ejemplo uno Flash o Flash-Lite.
-     Si no lo pones, se usa `gemini-flash-latest`; si está saturado, la función reintenta y pasa a
-     `gemini-flash-lite-latest` (cámbialo con el secreto `GEMINI_FALLBACK`).
+     Si no lo pones, se usa `gemini-flash-lite-latest` (el más rápido); si falla, la función reintenta una vez y pasa a
+     `gemini-flash-latest` (cámbialo con el secreto `GEMINI_FALLBACK`).
 4. Listo. La web ya apunta a `https://norfjljehjyjovgmshdr.supabase.co/functions/v1/horizonte-gemini`
    (ver `v2/config.js`). Si la función falla o se agota la cuota gratuita, el asistente usa sus respuestas locales.
 
 ## Qué hace
 
 - Solo acepta peticiones desde `paulagutsan.github.io` y `localhost:8099` (secreto opcional `ALLOWED_ORIGINS`).
-- Límite de 8 preguntas por minuto por dirección IP y textos acotados, para no agotar la cuota.
+- Límite de 20 preguntas por minuto por dirección IP; cada llamada a Google se corta a los 7 s (15 s en total) y textos acotados, para no agotar la cuota.
 - Recibe la pregunta, las cifras de la cuenta **sin el nombre** y los últimos mensajes; devuelve título, respuesta y hasta 3 cifras clave.
 - Instrucciones al modelo: educación financiera, sin recomendaciones de compra o venta ni promesas de rentabilidad,
   solo con las cifras de la cuenta.
