@@ -63,7 +63,7 @@ async function loadSocial(silent = false) {
         const [red, partidas] = await Promise.all([rpc2("v2_red"), rpc2("v2_partidas_amigos", { p_desde: desde })]);
         soc = { red: red || [], partidas: partidas || [], loaded: true, loading: false, err: "", t: Date.now() };
     } catch (e) { soc.loading = false; soc.loaded = true; soc.t = Date.now(); soc.err = e.message; }
-    if (/^#\/(aprende|juego)/.test(location.hash)) rerender();
+    if (/^#\/(aprende|juego)/.test(location.hash) && !(typeof mm !== "undefined" && mm?.phase === "play")) rerender();
 }
 async function activateFriends() {
     try {
@@ -75,12 +75,12 @@ async function activateFriends() {
         await loadSocial();
     } catch (e) { toast(esc(e.message)); }
 }
-async function pushGame(dia, juego, aciertos) {
+async function pushGame(dia, juego, aciertos, rondas) {
     const g = GAMES.find(x => x.id === juego); if (!g) return;
-    try { await rpc2("v2_guardar_partida", { p_dia: dia, p_juego: juego, p_aciertos: aciertos, p_rondas: g.rounds }); } catch (e) { /* se reintenta en la próxima partida */ }
+    try { await rpc2("v2_guardar_partida", { p_dia: dia, p_juego: juego, p_aciertos: aciertos, p_rondas: rondas || g.rounds || aciertos + 1 }); } catch (e) { /* se reintenta en la próxima partida */ }
 }
 /* tras cada partida: guarda el resultado y refresca lo de los amigos */
-function friendsAfterGame(id, score) { if (friendsOn()) pushGame(iso(new Date()), id, score).then(() => loadSocial(true)); }
+function friendsAfterGame(id, score, rondas) { if (friendsOn()) pushGame(iso(new Date()), id, score, rondas).then(() => loadSocial(true)); }
 
 async function connectCode(raw) {
     const c = String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -124,7 +124,7 @@ function friendsCard() {
       ${recib.map(x => `<div class="fr-inv"><span class="fr-av">${initials(x.nombre)}</span><div><b>${esc(x.nombre)}</b><span>Quiere conectar contigo</span></div><div class="fr-btns">${btn("Ignorar", "frResp", "sm ghost", `data-c="${esc(x.codigo)}" data-ok="0"`)}${btn("Aceptar", "frResp", "sm primary", `data-c="${esc(x.codigo)}" data-ok="1"`)}</div></div>`).join("")}
       ${!soc.loaded ? `<p class="note">Cargando…</p>` : amigos.length ? `<div class="fr-grid">
         <div><h3 class="fr-h">Esta semana</h3><ol class="fr-board">${board.map((x, i) => `<li class="${x.yo ? "me" : ""}"><span class="fr-pos">${i + 1}</span><span class="fr-av">${initials(x.nombre)}</span><div><b>${x.yo ? "Tú" : esc(x.nombre)}</b><span>${x.partidas ? `${x.partidas} ${x.partidas === 1 ? "partida" : "partidas"}` : "Sin jugar"}</span></div><b class="fr-pts">${x.aciertos}<small> aciertos</small></b></li>`).join("")}</ol></div>
-        <div><h3 class="fr-h">Hoy</h3>${feed.length ? `<div class="fr-feed">${feed.map(p => `<div><span class="fr-av">${initials(p.nombre)}</span><p><b>${esc(p.nombre)}</b> ha hecho <b>${p.aciertos}/${p.rondas}</b> en ${esc(gameName(p.juego))}</p></div>`).join("")}</div>`
+        <div><h3 class="fr-h">Hoy</h3>${feed.length ? `<div class="fr-feed">${feed.map(p => `<div><span class="fr-av">${initials(p.nombre)}</span><p><b>${esc(p.nombre)}</b> ${p.juego === "masomenos" ? `ha hecho una racha de <b>${p.aciertos}</b> en` : `ha hecho <b>${p.aciertos}/${p.rondas}</b> en`} ${esc(gameName(p.juego))}</p></div>`).join("")}</div>`
           : `<p class="fr-none">Tus amigos aún no han jugado hoy.</p>`}</div></div>`
         : `<div class="fr-empty"><p>Aún no tienes conexiones. Comparte tu código o tu enlace: cuando acepten, veréis los resultados de cada uno.</p>${btn(`${ic("send")}Compartir invitación`, "frShare", "primary")}</div>`}`, "c-12 friends");
 }
@@ -140,7 +140,7 @@ function friendsSheet() {
 function friendsToday(id) {
     if (!friendsOn()) return "";
     const today = iso(new Date()), xs = soc.partidas.filter(p => p.dia === today && p.juego === id && !p.yo);
-    return xs.length ? `<div class="fr-today"><span>Hoy, tus amigos:</span>${xs.slice(0, 4).map(p => `<b>${esc(p.nombre)} ${p.aciertos}/${p.rondas}</b>`).join("")}</div>` : "";
+    return xs.length ? `<div class="fr-today"><span>Hoy, tus amigos:</span>${xs.slice(0, 4).map(p => `<b>${esc(p.nombre)} ${p.juego === "masomenos" ? `racha ${p.aciertos}` : `${p.aciertos}/${p.rondas}`}</b>`).join("")}</div>` : "";
 }
 async function friendsAct(act, b) {
     if (act === "frJump") return $(".friends")?.scrollIntoView({ behavior: "smooth", block: "start" });

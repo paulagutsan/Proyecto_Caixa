@@ -365,4 +365,15 @@ const MKT_NEWS = [
 const GAMES = [
     { id: "titular", t: "El titular", p: "Un titular real de un año. ¿La bolsa mundial acabó ese año arriba o abajo?", rounds: 5 },
     { id: "duelo", t: "¿Cuál rindió más?", p: "Dos inversiones, un año. Elige la que más subió (o la que menos cayó).", rounds: 5 },
+    { id: "masomenos", t: "Más o menos", p: "¿La segunda inversión acabó con más o con menos dinero? Encadena aciertos con cada vez menos tiempo.", rounds: 0, endless: true },
+];
+/* Más o menos: además de inversiones reales, algunas cartas con conceptos (inflación, interés, comisiones, apuestas) */
+const MM_CONCEPTS = [
+    { code: "INF", t: "1.000 € en un cajón", s: "10 años con un 3 % de inflación (en poder de compra de hoy)", v: 1000 / Math.pow(1.03, 10) },
+    { code: "INF", t: "1.000 € en un cajón", s: "20 años con un 2 % de inflación (en poder de compra de hoy)", v: 1000 / Math.pow(1.02, 20) },
+    { code: "INT", t: "1.000 € al 5 % anual", s: "durante 30 años, sin tocarlos", v: 1000 * Math.pow(1.05, 30) },
+    { code: "INT", t: "1.000 € al 7 % anual", s: "durante 10 años, sin tocarlos", v: 1000 * Math.pow(1.07, 10) },
+    { code: "INT", t: "1.000 € al 3 % anual", s: "durante 20 años, sin tocarlos", v: 1000 * Math.pow(1.03, 20) },
+    { code: "COM", t: "1.000 € al 5 % con un 2 % de comisiones", s: "durante 20 años", v: 1000 * Math.pow(1.03, 20) },
+    { code: "APU", t: "1.000 € en apuestas deportivas", s: "apostándolo todo 20 veces seguidas (la casa se queda de media un 5 %)", v: 1000 * Math.pow(.95, 20) },
 ];

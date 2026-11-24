@@ -138,14 +138,14 @@ function vProyecto() {
 }
 function pjForm() {
     const p = cxState().project || { title: "", sector: "", stage: "idea", needs: [], desc: "" };
-    sheet("Cuéntanos tu proyecto", `<form data-form="pj" class="form" novalidate>
-      <label class="field"><span>Nombre</span><input name="title" maxlength="50" value="${esc(p.title)}" placeholder="Por ejemplo: ropa hecha con redes de pesca" required></label>
-      <label class="field"><span>Sector</span><select name="sector" required><option value="">Elige uno</option>${Object.entries(PJ_SECTORS).map(([k, v]) => `<option value="${k}" ${p.sector === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+    sheet("Cuéntanos tu proyecto", `<form data-form="pj" class="form pj-form" novalidate>
+      <div class="pj-row"><label class="field"><span>Nombre</span><input name="title" maxlength="50" value="${esc(p.title)}" placeholder="Por ejemplo: ropa con redes de pesca" required></label>
+      <label class="field"><span>Sector</span><select name="sector" required><option value="">Elige uno</option>${Object.entries(PJ_SECTORS).map(([k, v]) => `<option value="${k}" ${p.sector === k ? "selected" : ""}>${v}</option>`).join("")}</select></label></div>
       <fieldset class="field"><legend>¿En qué punto está?</legend><div class="pj-opts">${Object.entries(PJ_STAGES).map(([k, v]) => `<label><input type="radio" name="stage" value="${k}" ${p.stage === k ? "checked" : ""}><span>${v}</span></label>`).join("")}</div></fieldset>
       <fieldset class="field"><legend>¿Qué te vendría bien?</legend><div class="pj-opts">${Object.entries(PJ_NEEDS).map(([k, v]) => `<label><input type="checkbox" name="needs" value="${k}" ${p.needs.includes(k) ? "checked" : ""}><span>${v}</span></label>`).join("")}</div></fieldset>
-      <label class="field"><span>En dos frases</span><textarea name="desc" maxlength="280" rows="3" placeholder="Qué haces y para quién">${esc(p.desc)}</textarea></label>
-      <button class="btn primary block">Guardar y ver encajes</button>
-      <p class="note">Solo lo ves tú. Nada se comparte sin tu permiso.</p></form>`);
+      <label class="field"><span>En dos frases</span><textarea name="desc" maxlength="280" rows="2" placeholder="Qué haces y para quién">${esc(p.desc)}</textarea></label>
+      <div class="pj-foot"><button class="btn primary block">Guardar y ver encajes</button><p class="note">Solo lo ves tú. Nada se comparte sin tu permiso.</p></div></form>`);
+    $("#sheet .sheet-card")?.classList.add("wide");
 }
 function pjSave(f) {
     const fd = new FormData(f), p = { title: String(fd.get("title") || "").trim().slice(0, 50), sector: fd.get("sector") || "", stage: fd.get("stage") || "idea", needs: fd.getAll("needs").filter(n => PJ_NEEDS[n]), desc: String(fd.get("desc") || "").trim().slice(0, 280) };

@@ -28,6 +28,9 @@ const P = {
     chart: '<path d="M4 17l5-5 4 3 7-8"/><path d="M15 7h5v5"/>',
     shield: '<path d="M12 3l7.5 3v6c0 4.6-3.2 8-7.5 9.3C7.7 20 4.5 16.6 4.5 12V6z"/><path d="M9 12.2l2.1 2.1L15.3 10"/>',
     house: '<path d="M3 11 12 4l9 7"/><path d="M5 9.8V20h14V9.8"/><path d="M10 20v-5.5h4V20"/>',
+    up: '<path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/>',
+    down: '<path d="M12 5v14M5.5 12.5 12 19l6.5-6.5"/>',
+    updown: '<path d="M8 4v14M4.5 7.5 8 4l3.5 3.5M16 20V6M12.5 16.5 16 20l3.5-3.5"/>',
     voice: '<path d="M4 10v4h3l6 4V6L7 10H4z"/><path d="M16.5 9.5a3.5 3.5 0 0 1 0 5M19 7a7 7 0 0 1 0 10"/>',
     bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2v.2h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
@@ -700,7 +703,7 @@ function vAprende() {
         <div class="exam"><span class="mv-ic own">${ic("star")}</span><div><b>Prueba final</b><span>${passed ? `Superada el ${fmtD(S.exam.date)}.` : all ? `${RULES.examSize} preguntas; puedes fallar ${RULES.examMaxErrors}. Al superarla, CaixaBank invierte ${RULES.prize} € a tu nombre.` : `Disponible al completar los ${LESSONS.length} temas.`}</span></div>
           ${all || passed ? lnk(passed ? "Repetir" : "Empezar", "#/prueba", passed ? "" : "primary") : `<button class="btn" disabled>Empezar</button>`}</div>`, "c-7")}
       ${card(`${cardH("Juegos con datos reales", `25 años de mercados, en partidas de un minuto. Una al día suma ${MILES.game} millas.`, played ? badge(`${ic("check")}Hoy: ${played.score}/${GAMES.find(g => g.id === played.id)?.rounds}`, "ok") : "")}
-        <div class="games">${GAMES.map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div>
+        <div class="games">${GAMES.map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : g.id === "masomenos" ? "updown" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div>
         <button class="h-link fr-jump" data-act="frJump">${ic("family")}Compara tus resultados con tus amigos${ic("arrow")}</button>
         <p class="note">Datos anuales aproximados entre ${MKT_FROM} y ${MKT_FROM + MKT[0].r.length - 1}. Rentabilidades pasadas no garantizan las futuras.</p>`, "c-5")}
       ${friendsCard()}
@@ -728,6 +731,7 @@ function newGame(id) {
 }
 function vJuego(id) {
     const g = GAMES.find(x => x.id === id); if (!g) return null;
+    if (id === "masomenos") return vMasMenos();
     if (!gameState || gameState.id !== id) newGame(id);
     const e = gameState;
     if (e.over) {
@@ -739,6 +743,75 @@ function vJuego(id) {
     const q = e.qs[e.i];
     return focus("#/aprende", e.i + 1, e.qs.length, `<span class="kicker">${q.kick} · ${e.score} aciertos</span><h1 class="${id === "titular" ? "serif-q" : ""}">${esc(q.q)}</h1>${q.sub ? `<p class="lead-q">${q.sub}</p>` : ""}${opts(q, e.ans, "gameAns")}
       ${e.ans !== null ? `${why(e.ans === q.a, q.why)}<div class="focus-nav"><span></span>${btn(e.i === e.qs.length - 1 ? "Ver resultado" : `Siguiente${ic("arrow")}`, "gameNext", "primary")}</div>` : ""}`);
+}
+
+/* ---------------- Más o menos (de la versión 1): ¿la nueva carta acaba con más o con menos que la anterior? */
+let mm = null, mmTimer = null;
+function mmItem(prev) {
+    for (let tries = 0; tries < 60; tries++) {
+        let it;
+        if (Math.random() < .2) it = { ...MM_CONCEPTS[Math.floor(Math.random() * MM_CONCEPTS.length)] };
+        else {
+            const c = MKT[Math.floor(Math.random() * MKT.length)], len = [1, 3, 5, 10][Math.floor(Math.random() * 4)], from = Math.floor(Math.random() * (c.r.length - len + 1));
+            const v = 1000 * c.r.slice(from, from + len).reduce((a, r) => a * (1 + r / 100), 1);
+            it = { code: c.code, color: c.color, t: c.name, s: `1.000 € ${len === 1 ? `durante ${MKT_FROM + from}` : `de ${MKT_FROM + from} a ${MKT_FROM + from + len - 1}`} · ${c.sub}`, v };
+        }
+        if (!prev || (Math.abs(it.v / prev.v - 1) > .04 && it.t + it.s !== prev.t + prev.s)) return it;
+    }
+}
+const mmSecs = () => Math.max(4, 10 - Math.floor(mm.streak / 3));      // cada tres aciertos, un segundo menos
+function mmNew() { clearInterval(mmTimer); const a = mmItem(); mm = { a, b: mmItem(a), streak: 0, phase: "play", busy: false, timeout: false, res: null }; }
+const mmVal = v => eur(Math.round(v));
+function mmCard(it, hidden, cls = "") {
+    return `<div class="mm-card ${cls}"><span class="mm-code" style="--c:${it.color || "var(--ink-3)"}">${it.code}</span><div><b>${esc(it.t)}</b><small>${esc(it.s)}</small></div><output>${hidden ? "¿?" : mmVal(it.v)}</output></div>`;
+}
+function vMasMenos() {
+    if (!mm) mmNew();
+    const best = S.mmBest || 0;
+    if (mm.phase === "over") {
+        return focus("#/aprende", 0, 0, `<div class="center"><span class="kicker">${mm.timeout ? "Se acabó el tiempo" : "Fin de la racha"}</span><h1 class="mm-big">${mm.streak}</h1>
+          <p>${mm.streak > 0 && mm.streak >= best ? "¡Nuevo récord personal!" : `Tu récord: ${best}`}</p>
+          <p class="mm-learn">Lo que cuenta no es acertar cada año: es el plazo. En diez años, casi todas las inversiones diversificadas acaban por encima de un cajón.</p>
+          ${mm.miles ? `<p class="mm-learn">+${mm.miles} millas de casa por jugar hoy.</p>` : ""}
+          ${friendsToday("masomenos")}<div class="focus-nav center">${btn("Otra partida", "mmAgain", "primary lg")}${lnk("Volver", "#/aprende", "lg")}</div></div>`);
+    }
+    const res = mm.res;
+    return focus("#/aprende", 0, 0, `<div class="mm">
+        <div class="mm-top"><span>Racha <b>${mm.streak}</b></span><span>Récord ${best}</span><span>${mmSecs()} s por pregunta</span></div>
+        <div class="mm-timer"><i id="mmBar"></i></div>
+        ${mmCard(mm.a, false)}
+        <p class="mm-q">¿Esta acaba con <b>más</b> o con <b>menos</b>?</p>
+        ${mmCard(mm.b, !res, res ? (res === "ok" ? "ok" : "ko") : "")}
+        <div class="mm-btns">${btn(`${ic("up")}Más`, "mmGuess", "mm-up", `data-v="up" ${mm.busy ? "disabled" : ""}`)}${btn(`${ic("down")}Menos`, "mmGuess", "mm-down", `data-v="down" ${mm.busy ? "disabled" : ""}`)}</div>
+        <p class="note center-note">Rentabilidades anuales aproximadas en moneda local, sin comisiones. Las de interés fijo son hipotéticas.</p></div>`);
+}
+function mmStart() {
+    clearInterval(mmTimer);
+    if (!mm || mm.phase !== "play" || mm.busy) return;
+    const total = mmSecs() * 1000, t0 = Date.now();
+    mmTimer = setInterval(() => {
+        const bar = $("#mmBar"); if (!bar) return clearInterval(mmTimer);
+        const left = Math.max(0, 1 - (Date.now() - t0) / total);
+        bar.style.width = `${left * 100}%`; bar.classList.toggle("hot", left < .3);
+        if (left <= 0) { clearInterval(mmTimer); mm.timeout = true; mmReveal(false); }
+    }, 50);
+}
+function mmGuess(dir) {
+    if (!mm || mm.busy || mm.phase !== "play") return;
+    mmReveal(dir === "up" ? mm.b.v > mm.a.v : mm.b.v < mm.a.v);
+}
+function mmReveal(ok) {
+    clearInterval(mmTimer); mm.busy = true; mm.res = ok ? "ok" : "ko"; render();
+    setTimeout(() => {
+        mm.busy = false; mm.res = null;
+        if (ok) { mm.streak++; mm.a = mm.b; mm.b = mmItem(mm.a); if (mm.streak > (S.mmBest || 0)) { S.mmBest = mm.streak; save(); } }
+        else {
+            mm.phase = "over"; const t = iso(new Date());
+            if (!S.games[t]) { const before = miles().total; S.games[t] = { id: "masomenos", score: mm.streak }; save(); mm.miles = miles().total - before; }
+            friendsAfterGame("masomenos", mm.streak, mm.streak + 1);
+        }
+        render();
+    }, ok ? 900 : 1400);
 }
 
 let lessonState = null;
@@ -1296,6 +1369,7 @@ function render() {
     if (r !== "prueba") examState = null;
     if (r !== "alta") alta = null;
     if (r !== "juego") gameState = null;
+    if (!(r === "juego" && parts[1] === "masomenos")) { clearInterval(mmTimer); if (mm?.phase === "over") mm = null; }
     let html, view = "app";
     if (r === "amigos") { if (params.get("c")) setPendingInvite(params.get("c").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6)); location.hash = S.role === "teen" ? "#/aprende" : "#/"; return; }
     if (r === "verificar") { html = vVerificar(params); view = "public"; }
@@ -1317,6 +1391,7 @@ function render() {
     document.body.dataset.view = view;
     $("#app").innerHTML = html;
     bindViz(); bindProj(); bindLanding(); bindValueCharts();
+    if (r === "juego" && parts[1] === "masomenos") mmStart();
     if (r === "antidoto" && !ranking) loadRanking().then(() => { if (location.hash.startsWith("#/antidoto")) rerender(); });
     const chat = $("#chat"); if (chat) chat.scrollTop = chat.scrollHeight;
 }
@@ -1350,6 +1425,8 @@ document.addEventListener("click", async e => {
         render(); scrollTo(0, 0);
     }
     else if (act === "gameAgain") { newGame(b.dataset.id); render(); }
+    else if (act === "mmGuess") mmGuess(b.dataset.v);
+    else if (act === "mmAgain") { mmNew(); render(); }
     else if (act === "lpFear") { const f = FEARS.find(x => x.id === b.dataset.id); $$(".lf").forEach(x => x.classList.toggle("on", x === b)); $('[data-o="lf"]').innerHTML = `<b>${FUNDS[f.fund].name}</b><p>${f.why}</p>`; }
     else if (act === "lpGame") {
         const box = b.closest("[data-lpgame]"), y = +box.dataset.y, r = MKT.find(x => x.k === "world").r[y], ok = (+b.dataset.v === 1) === (r >= 0);
@@ -1463,7 +1540,10 @@ document.addEventListener("submit", e => {
         S.teen = { name: d.name.trim(), surname: d.surname.trim(), birth: d.birth }; save(); toast("Cambios guardados"); rerender();
     } else if (k === "ask") { askQ(d.q); f.reset(); }
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#sheet.open")) closeSheet(); });
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && $("#sheet.open")) closeSheet();
+    if (location.hash === "#/juego/masomenos" && mm?.phase === "play" && (e.key === "ArrowUp" || e.key === "ArrowDown")) { e.preventDefault(); mmGuess(e.key === "ArrowUp" ? "up" : "down"); }
+});
 function saveFile(name, content, type) {
     const url = URL.createObjectURL(new Blob([content], { type })), a = document.createElement("a");
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
