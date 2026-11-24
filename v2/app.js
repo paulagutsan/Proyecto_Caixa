@@ -1550,7 +1550,11 @@ document.addEventListener("click", async e => {
     else if (act === "openContribute") contributeSheet();
     else if (/^fr[A-Z]/.test(act)) friendsAct(act, b);
     else if (/^(voz|pj)[A-Z]/.test(act)) cxAct(act, b);
-    else if (act === "moreMenu") sheet("Más", `<nav class="more-nav">${[...NAV_T3, ...NAV_T2].map(([id, l, i]) => `<a href="#/${id}">${ic(i)}<span>${l}</span>${ic("chev", "chev")}</a>`).join("")}</nav>`);
+    else if (act === "moreMenu") {
+        const cur = (location.hash.replace(/^#\/?/, "").split(/[/?]/)[0]) || "inicio";
+        const grp = (t, items) => `<p class="more-h">${t}</p>${items.map(([id, l, i]) => `<a href="#/${id}" class="${cur === id ? "on" : ""}">${ic(i)}<span>${l}</span>${ic("chev", "chev")}</a>`).join("")}`;
+        sheet("Menú", `<nav class="more-nav" aria-label="Todas las secciones">${grp("Tu camino", NAV_T)}${grp("Comunidad", NAV_T3)}${grp("Cuenta", NAV_T2)}</nav>`);
+    }
     else if (act === "vRange") {
         vRange = b.dataset.k; $$(".vc-ranges button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", x === b); });
         const box = $("[data-vchart]:not(.mini)"); if (box) { box.dataset.range = vRange; drawValueChart(box); }

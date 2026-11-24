@@ -1371,3 +1371,37 @@ fieldset.field { border: 0; padding: 0; margin: 0; } fieldset.field legend { fon
     .pj-foot { margin: 0 -20px calc(-20px - env(safe-area-inset-bottom)); padding: 12px 20px calc(14px + env(safe-area-inset-bottom)); bottom: calc(-20px - env(safe-area-inset-bottom)); }
 }
 @keyframes sheetUp { from { transform: translateY(100%); } }
+.more-h { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 14px 2px 2px; }
+.more-h:first-child { margin-top: 2px; }
+.more-nav a { padding: 13px 2px; }
+.more-nav a.on { color: var(--blue); } .more-nav a.on .ic:first-child { color: var(--blue); }
+/* portada en el móvil: cada sección ocupa al menos una pantalla y se distingue de la siguiente */
+@media (max-width: 1099px) {
+    .lp > section:not(.hz-final) { min-height: calc(100svh - var(--navh)); display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
+    .lp > section > .lp-in { width: 100%; box-sizing: border-box; }
+    .lp-sec, .lp-sec.why { padding: 56px 0; }
+    .hz-hero { min-height: calc(100svh - var(--navh)); }
+}
+/* portada en el móvil: secciones más compactas, cada una empieza arriba al desplazar y se distinguen entre sí */
+@media (max-width: 1099px) { .lp { --navh: 61px; } #preguntas { background: var(--surface); } }
+@media (max-width: 860px) {
+    html:has(.lp) { scroll-snap-type: y proximity; }
+    .lp > section { scroll-snap-align: start; }
+    .lp-sec, .lp-sec.why { padding: 40px 0; }
+    .lp-sec h2.serif, .hz-dark h2 { font-size: 30px !important; }
+    .lp-lead { font-size: 15.5px; }
+    /* inicio */
+    .hz-hero { padding: 24px 0; }
+    .hz-hero-in { gap: 22px; }
+    /* cómo funciona */
+    .cycle { margin-top: 24px; } .cycle li { padding: 10px 0; } .cycle p { font-size: 13.5px; } .cycle-foot { display: none; }
+    /* por qué */
+    .why-stats { margin-top: 22px; gap: 10px; } .why-stats > div { padding: 16px 18px; } .why-stats dt { font-size: 32px !important; } .why-stats dd { margin-top: 8px; font-size: 13.5px; }
+    /* antídoto: el texto ya lo explica; se quedan las preocupaciones */
+    .hz-dark { padding: 40px 0; } .anti-grid { gap: 24px; } .anti-steps { display: none; }
+    .anti-r .lf-out { margin-top: 12px; padding: 14px 16px; } .anti-r .lf-out p { font-size: 14.5px; }
+    /* tu voz y tu proyecto */
+    .lp-vz { padding: 20px; } .lp-vz h3 { font-size: 21px; } .lp-vz > p:not(.vz-co) { display: none; }
+    .lp-checks { gap: 8px; } .lp-checks li { padding: 12px 14px; }
+    .lp-split { gap: 26px; } .lp-split .btn { margin-top: 18px; }
+}
