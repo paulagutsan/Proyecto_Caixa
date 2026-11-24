@@ -205,6 +205,7 @@ function miles() {
     const monthName = ym => T(ym + "-15").toLocaleDateString("es-ES", { month: "long", year: "numeric" });
     [...new Set(own.map(c => c.date.slice(0, 7)))].forEach(ym => items.push({ n: MILES.monthOwn, date: last(own, ym), label: `Aportación propia · ${monthName(ym)}` }));
     S.itv.forEach(d => items.push({ n: MILES.itv, date: d, label: "Revisión anual" }));
+    Object.entries(S.games).forEach(([d, g]) => items.push({ n: MILES.game, date: d, label: `Juego «${GAMES.find(x => x.id === g.id)?.t || ""}»` }));
     streak().bonus.forEach(b => items.push(b));
     const gifts = S.money.filter(isGift), byM = {};
     gifts.forEach(c => { const ym = c.date.slice(0, 7); byM[ym] = (byM[ym] || 0) + c.amount; });
@@ -220,11 +221,11 @@ function milesPerYear() {
     const giftM = Math.min(MILES.giftMonthCap, Math.floor(S.schedules.reduce((a, x) => a + x.amount, 0) / 5));
     return ((S.weekly > 0 || S.roundup) ? MILES.monthOwn * 12 + 13 * MILES.streak4 : 0) + giftM * 12 + (S.diploma ? MILES.itv : 0);
 }
-/* Racha: semanas seguidas con algo hecho (un tema, una aportación tuya o la revisión anual). Los juegos no cuentan: no se premia jugar con mercados. */
+/* Racha: semanas seguidas con algo hecho (un tema, un juego, una aportación tuya o la revisión anual) */
 const weekOf = d => { const x = T(d); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return iso(x); };
 const shiftDays = (d, n) => { const x = T(d); x.setDate(x.getDate() + n); return iso(x); };
 function streak() {
-    const days = [...Object.values(S.lessons), ...S.money.filter(isOwnReal).map(c => c.date), ...S.itv];
+    const days = [...Object.values(S.lessons), ...S.money.filter(isOwnReal).map(c => c.date), ...Object.keys(S.games), ...S.itv];
     const weeks = new Set(days.map(weekOf)), sorted = [...weeks].sort(), bonus = [];
     let run = 0, prev = null;
     sorted.forEach(w => {
@@ -410,12 +411,15 @@ function vLanding() {
     </div></section>
 
     <section class="lp-sec" id="casa"><div class="lp-in lp-split">
-      <div><p class="kicker gold-ink">Millas de casa</p><h2 class="serif">Tu constancia puede contar el día de tu hipoteca.</h2>
-        <p class="lp-lead">Aprender, aportar con constancia y revisar tu plan cada año suma millas. Nunca por tener más dinero que nadie, y los juegos no suman. Si un día pides tu primera hipoteca con CaixaBank, tus millas pueden convertirse en una bonificación de hasta ${pts(MILES.maxCut)} puntos, según las condiciones de ese momento.</p>
-        ${lnk("Ver las condiciones", "#/legal", "lg")}</div>
-      <ul class="lp-checks"><li><span>${ic("book")}</span><div><b>Se ganan con hábitos</b><small>Temas, aportaciones mensuales, constancia semanal y revisión anual.</small></div></li>
-        <li><span>${ic("info")}</span><div><b>No es una oferta ni un precio cerrado</b><small>Depende de las condiciones vigentes el día de la firma. No obliga a contratar nada.</small></div></li>
-        <li><span>${ic("house")}</span><div><b>Si no compras casa, no pierdes nada</b><small>Las millas no caducan y tu dinero sigue siendo tuyo.</small></div></li></ul>
+      <div><p class="kicker gold-ink">Millas de casa</p><h2 class="serif">Tu constancia vale una casa.</h2>
+        <p class="lp-lead">Aprender, jugar, aportar cada mes y mantener tu racha suma millas. Nunca por tener más dinero que nadie. Se canjean como rebaja del interés de tu primera hipoteca con CaixaBank<sup>**</sup> y no caducan.</p></div>
+      <div class="lp-sim gold" data-lpmiles>
+        <label>Años de constancia hasta tu hipoteca <output data-o="y"></output><input type="range" min="2" max="15" step="1" value="10" data-i="y"></label>
+        <div class="ls-row"><span>Millas de casa</span><b data-o="mi"></b></div>
+        <div class="ls-row hi"><span>Rebaja del diferencial</span><b data-o="cut"></b></div>
+        <div class="ls-row"><span>Intereses que te ahorras</span><b data-o="save"></b></div>
+        <p class="note">Estimación con una hipoteca de ${eur(GOAL_DEFAULT.price * (1 - DOWN_PCT))} a ${MORTGAGE_YEARS} años, aportando cada mes y con la revisión anual. Rebaja máxima: ${pts(MILES.maxCut)} puntos.</p>
+      </div>
     </div></section>
 
     <section class="lp-sec alt" id="voz"><div class="lp-in">
@@ -479,7 +483,22 @@ function heroPlot(m, g, yr) {
       ${labs.map(l => `<text x="${xe + 14}" y="${l.y + 2}" class="${l.c}">${eur(l.v)}</text><text x="${xe + 14}" y="${l.y + 17}" class="ht-t3">${l.t}</text>`).join("")}
       <text x="${HT_L}" y="${H - 6}" class="ht-t3">Hoy</text>${[10, 20, 30].map(t => `<text x="${X(t)}" y="${H - 6}" text-anchor="middle" class="ht-t3">${t}</text>`).join("")}<text x="${xe}" y="${H - 6}" text-anchor="end" class="ht-t3">40 años</text></svg>`;
 }
+function bindMiles() {
+    const mi = $("[data-lpmiles]");
+    if (mi) {
+        const P0 = GOAL_DEFAULT.price * (1 - DOWN_PCT);
+        const upd = () => {
+            const y = +$('[data-i="y"]', mi).value;
+            const m = MILES.lesson * LESSONS.length + MILES.theory + MILES.firstOwn + y * (MILES.monthOwn * 12 + MILES.itv + 13 * MILES.streak4), c = cutOf(m);
+            const sv = (payment(P0, MORTGAGE_RATE, MORTGAGE_YEARS) - payment(P0, MORTGAGE_RATE - c, MORTGAGE_YEARS)) * MORTGAGE_YEARS * 12;
+            $('[data-o="y"]', mi).textContent = `${y} años`; $('[data-o="mi"]', mi).textContent = num(m);
+            $('[data-o="cut"]', mi).textContent = `−${pts(c)} puntos`; $('[data-o="save"]', mi).textContent = eur(sv);
+        };
+        $('[data-i="y"]', mi).addEventListener("input", upd); upd();
+    }
+}
 function bindLanding() {
+    bindMiles();
     const hero = $("[data-hero]"); if (!hero) return;
     const input = $('[data-i="hero"]', hero), plot = $('[data-o="plot"]', hero), o = (k, v) => { $(`[data-o="${k}"]`, hero).textContent = v; };
     let yr = HT.years;
@@ -513,8 +532,8 @@ function vProbar() {
       <div class="card pub-card">${cardH("Fundamentos", `Cinco temas cortos (unos ${totalMin()} minutos en total). ${done} de ${LESSONS.length} hechos.`)}
         <div class="rows">${LESSONS.map((l, i) => `<a class="row ${S.lessons[l.id] ? "ok" : ""}" href="#/tema/${l.id}/0"><span class="tick num">${S.lessons[l.id] ? ic("check") : i + 1}</span><div><b>${l.title}</b><span>${l.sub} · ${l.min} min</span></div>${ic("chev", "chev")}</a>`).join("")}</div>
         <p class="note">La prueba final, el certificado y tu primera inversión de ${RULES.prize} € necesitan cuenta.</p></div>
-      <div class="card pub-card">${cardH("Juegos con datos de años pasados", "Partidas de un minuto. Dan insignias, no dinero ni millas.")}
-        <div class="games">${GAMES.map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : g.id === "masomenos" ? "updown" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div></div>
+      <div class="card pub-card">${cardH("Juegos con datos reales", "25 años de mercados, en partidas de un minuto.")}
+        <div class="games">${GAMES.filter(g => g.id !== "liga").map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : g.id === "masomenos" ? "updown" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div></div>
       <div class="lp-cta">${lnk(`Crear mi cuenta${ic("arrow")}`, "#/alta/joven", "primary lg")}${lnk("Soy madre, padre o tutor", "#/familias", "lg")}</div>
       ${legal()}</div></section></div>`;
 }
@@ -525,7 +544,7 @@ function vFamilias() {
         ["¿Qué sacáis vosotros?", `Sin comisión de apertura. Los fondos cobran una comisión de gestión; como referencia, en torno al ${feeTxt} % al año, y el documento de datos fundamentales (DFI) de cada fondo detalla su coste exacto.`],
         ["¿Con 14 años puede invertir?", "La cuenta la abre y la titula su madre, padre o tutor; la persona menor la usa con vuestra autorización. A los 18, pasa a su nombre cuando confirma su identidad."],
         ["¿Se puede sacar el dinero?", "Sí. La persona menor pide la retirada y os llega para aprobarla. Si se retira antes de los 12 meses, se pierde la protección promocional del primer año."],
-        ["¿Esto es un casino con adornos?", "No. Los juegos usan datos de años pasados, no dan dinero ni millas (solo insignias) y no hay predicciones semanales ni cuenta atrás. Lo que suma millas es aprender y aportar con constancia."],
+        ["¿Esto es un casino con adornos?", "No. En los juegos no se apuesta dinero: se practica con datos reales de 25 años de mercados y se suman unas pocas millas al día por aprender."],
         ["¿Y lo de la hipoteca?", `Es una bonificación posible de hasta ${pts(MILES.maxCut)} puntos, sujeta a las condiciones de ese momento, y no os obliga a nada. <a href="#/legal">Ver condiciones</a>.`],
     ];
     return `<div class="lp">${pubTop(lnk("Crear cuenta familiar", "#/alta/familia", "primary sm"))}
@@ -558,7 +577,7 @@ function vLegal() {
       ${sec("Invertir tiene riesgos", `<p>Puedes recuperar menos de lo que aportas. Las proyecciones que ves son estimaciones en tres escenarios (3, 5 y 8 % anual) y no garantizan nada. En esta versión de demostración, el dinero, las aportaciones y los movimientos de mercado son simulados.</p>`)}
       ${sec("Lo que cuesta", `<p>Horizonte no cobra comisión de apertura. El coste de cada fondo figura en su documento de datos fundamentales (DFI), disponible antes de invertir.</p>`)}
       ${sec("Protección promocional del primer año", `<ul><li>Es una promoción de CaixaBank, no un fondo garantizado ni un seguro.</li><li>Cubre la diferencia si, a los ${RULES.protectMonths} meses de la primera aportación, las primeras aportaciones (tuyas o de tu familia, hasta ${RULES.protectCap} €) valen menos de lo aportado.</li><li>Tope de ${RULES.protectCap} € por persona. No cubre rendimientos ni aportaciones posteriores al tope.</li><li>Solo si no has vendido o retirado antes de los ${RULES.protectMonths} meses.</li><li>Dotación limitada (${PROMO.budgetTxt}): puede agotarse y se publicará su estado.</li></ul>`)}
-      ${sec("Millas de casa y bonificación hipotecaria", `<ul><li>Suman: temas de Fundamentos, la prueba final, aportaciones propias cada mes, la constancia semanal, la revisión anual y los regalos de tu familia (con tope mensual).</li><li>No suman: los juegos (dan insignias) ni tener más dinero que nadie.</li><li>Si pides tu primera hipoteca con CaixaBank, las millas pueden convertirse en una bonificación sobre el diferencial de hasta ${pts(MILES.maxCut)} puntos, sobre las condiciones vigentes el día de la firma y según las condiciones de vinculación voluntaria que entonces se ofrezcan.</li><li>No obliga a contratar ningún producto y se rige por la Ley 5/2019. Las cifras de «Tu casa» son ilustraciones, no una oferta.</li><li>Las millas no caducan. Si nunca compras casa, no pierdes nada.</li></ul>`)}
+      ${sec("Millas de casa y bonificación hipotecaria", `<ul><li>Suman: temas de Fundamentos, la prueba final, aportaciones propias cada mes, un juego al día, la constancia semanal, la revisión anual y los regalos de tu familia (con tope mensual).</li><li>No suman por tener más dinero que nadie.</li><li>Si pides tu primera hipoteca con CaixaBank, las millas pueden convertirse en una bonificación sobre el diferencial de hasta ${pts(MILES.maxCut)} puntos, sobre las condiciones vigentes el día de la firma y según las condiciones de vinculación voluntaria que entonces se ofrezcan.</li><li>No obliga a contratar ningún producto y se rige por la Ley 5/2019. Las cifras de «Tu casa» son ilustraciones, no una oferta.</li><li>Las millas no caducan. Si nunca compras casa, no pierdes nada.</li></ul>`)}
       ${sec("El Antídoto", `<ul><li>El ${Math.round(RULES.base * 100)} % de tu dinero va a un fondo global diversificado y el ${Math.round(RULES.antidote * 100)} % a los temas que eliges, dentro de una selección cerrada de fondos de CaixaBank Asset Management.</li><li>Si eres menor, tu familia lo aprueba.</li><li>No es una garantía: reduce el impacto si lo que temes ocurre, pero las inversiones pueden perder valor.</li></ul>`)}
       ${sec("Menores de edad", `<ul><li>Hasta los 18, la persona titular legal es la madre, padre o tutor, que aprueba el Antídoto, las retiradas y los permisos.</li><li>En la versión real, la persona adulta se identifica con su DNI o banca digital y, si hay otro progenitor con patria potestad, también da su conformidad.</li><li>A los 18, la cuenta pasa a tu nombre cuando confirmas tu identidad.</li></ul>`)}
       ${sec("Tus datos, en claro", `<ul><li><b>Qué guardamos:</b> tu nombre o alias, tu edad, tu progreso y tus movimientos. En esta demostración se guardan solo en tu dispositivo.</li><li><b>Qué sale de tu dispositivo:</b> si eliges un Antídoto, solo el tema y un tramo de edad, de forma anónima, para el mapa de preocupaciones. Si activas amigos, tu nombre con la inicial del apellido y tus resultados.</li><li><b>Gemini:</b> sin permiso responde con información general. Con permiso usa los datos de tu cuenta, sin tu nombre. Nunca se usa para publicidad.</li><li>Puedes descargar tus datos o borrarlos en Ajustes cuando quieras.</li></ul><p><b>En una frase para una persona de 14 años:</b> solo usamos lo imprescindible para que la app funcione, no vendemos nada y puedes pedir que lo borremos.</p>`)}
@@ -588,8 +607,7 @@ function vAlta(role) {
             <label class="field"><span>Relación</span><select name="relation">${["Madre", "Padre", "Tutor o tutora legal"].map(r => `<option ${d.relation === r ? "selected" : ""}>${r}</option>`).join("")}</select></label>
             <label class="field"><span>Fecha de nacimiento de ${esc(d.name || "la persona menor")}</span><input name="birth" type="date" ${birthAttrs()} required value="${esc(d.birth || "")}"></label>
             <label class="check"><input type="checkbox" name="ok" required><span>Soy su madre, padre o tutor legal, autorizo la apertura de la cuenta y entiendo que invertir conlleva riesgos, incluida la pérdida de parte del dinero.</span></label>
-            <button class="btn primary lg block">Autorizar y entrar en Horizonte</button>
-            <p class="note">En la versión real, recibirás un correo y confirmarás tu identidad (DNI o banca digital). Si hay otro progenitor con patria potestad, también se le pedirá su conformidad. Esto es una demostración.</p></form>`;
+            <button class="btn primary lg block">Autorizar y entrar en Horizonte</button></form>`;
     } else {
         steps = ["Tus datos", "Su cuenta", "Autorización"];
         if (a.step === 0) body = `<h1>Crea tu cuenta familiar</h1><p class="sub">Podrás hacer regalos, aprobar decisiones y ver su progreso.</p>
@@ -606,8 +624,7 @@ function vAlta(role) {
         else body = `<h1>Autorización</h1><p class="sub">Hasta los 18, la madre, el padre o el tutor legal es la persona titular y aprueba las decisiones importantes de la cuenta.</p>
           <form data-form="altaF2" class="form">
             <label class="check"><input type="checkbox" name="ok" required><span>${/Madre|Padre|Tutor/.test(d.relation || "") ? "Soy su madre, padre o tutor legal y autorizo la apertura de su cuenta." : "Su madre, padre o tutor legal ha autorizado la apertura de su cuenta."} Entiendo que invertir conlleva riesgos, incluida la pérdida de parte del dinero.</span></label>
-            <button class="btn primary lg block">Crear cuenta</button>
-            <p class="note">En la versión real, confirmarás tu identidad (DNI o banca digital). Esto es una demostración.</p></form>`;
+            <button class="btn primary lg block">Crear cuenta</button></form>`;
     }
     return `<div class="auth split">
       <aside class="auth-side">${brand("#/", 34)}
@@ -661,10 +678,10 @@ function weekSummary() {
 }
 function weekCard(cls = "c-12") {
     const w = weekSummary(), can = geminiAllowed();
-    return card(`${cardH(`<span class="gem">${ic("spark")}Tu dinero hoy</span> ${badge("Simulación", "warn")}`, `Semana del ${fmtD(weekOf(new Date()))}`, btn(can ? "Pregúntale a Gemini" : "Pregunta al asistente", "goAsk", "sm"))}
+    return card(`${cardH(`<span class="gem">${ic("spark")}Tu dinero hoy</span>`, `Semana del ${fmtD(weekOf(new Date()))}`, btn(can ? "Pregúntale a Gemini" : "Pregunta al asistente", "goAsk", "sm"))}
       <div class="week">${w.lines.map(l => `<p>${l}</p>`).join("")}</div>
       <div class="week-funds">${(w.parts.length ? w.parts : [{ fund: "global" }]).map(p => `<div>${sw(p.fund)}<span>${FUNDS[p.fund].name}</span><b class="${w.mv[p.fund] >= 0 ? "up" : "down"}">${w.mv[p.fund] >= 0 ? "+" : "−"}${pct(Math.abs(w.mv[p.fund]), 1)}</b></div>`).join("")}</div>
-      <p class="note">Movimientos inventados para esta demostración: no son datos reales de ningún fondo.</p>`, cls);
+      `, cls);
 }
 
 /* ------------------------------------------------------------------ inicio */
@@ -734,7 +751,7 @@ function vInicio() {
         [!!S.exam?.passed, "Supera Fundamentos", `Cinco temas y una prueba. Primera inversión: ${RULES.prize} € a tu nombre.`, "#/aprende"],
         [!!m.firstOwn, "Pon tu primer euro", "Con 1 € basta. Es el paso que te convierte en inversor.", "#/dinero"],
         [S.fears.length > 0, "Elige tu Antídoto", "Dinos qué te preocupa de tu futuro.", "#/antidoto"],
-        [S.weekly > 0 || S.roundup, "Automatiza tu ahorro", "Una cantidad fija cada semana, sin acordarte.", "#/dinero"],
+        [S.weekly > 0 || S.roundup, "Automatiza tu ahorro", "Una cantidad semanal o el redondeo de tus compras.", "#/dinero"],
         [!!S.joined?.family, "Conecta a tu familia", "Envíales el enlace: podrán autorizarte y regalarte dinero para tu casa.", "#/familia"],
     ];
     const done = tasks.filter(t => t[0]).length, recent = [...S.money].reverse().slice(0, 4), has = S.money.length > 0;
@@ -749,7 +766,7 @@ function vInicio() {
             ${has ? `<p class="vh-chg"><span data-o="chg"></span> <small data-o="when"></small></p>` : `<p class="vh-chg"><small>Aún no has invertido</small></p>`}</div></div>
           ${has ? `<a href="#/dinero" class="vchart mini" data-vchart data-range="1M" aria-label="Ver tu dinero"></a>` : `<div class="mini-empty"></div>`}
           <div class="h-acts">${btn(`${ic("plus")}Aportar`, "openContribute", "primary sm")}${lnk(`Ver detalle${ic("arrow")}`, "#/dinero", "ghost sm")}</div></div>
-        <div class="h-week"><span class="h-k">${ic("spark")}Tu dinero hoy · semana del ${fmtD(weekOf(new Date()))} ${badge("Simulación", "warn")}</span>
+        <div class="h-week"><span class="h-k">${ic("spark")}Tu dinero hoy · semana del ${fmtD(weekOf(new Date()))}</span>
           ${w.lines.map(l => `<p>${l}</p>`).join("")}
           <p class="h-funds">${(w.parts.length ? w.parts : [{ fund: "global" }]).map(p => `<span>${sw(p.fund)}${FUNDS[p.fund].name} <b class="${w.mv[p.fund] >= 0 ? "up" : "down"}">${sg(w.mv[p.fund])}</b></span>`).join("")}</p>
           <button class="h-link" data-act="goAsk">${can ? "Pregúntale a Gemini" : "Pregunta al asistente"}${ic("arrow")}</button></div>
@@ -820,7 +837,7 @@ function vAprende() {
         <div class="exam"><span class="mv-ic own">${ic("star")}</span><div><b>Prueba final</b><span>${passed ? `Superada el ${fmtD(S.exam.date)}.` : all ? `${RULES.examSize} preguntas; puedes fallar ${RULES.examMaxErrors}. Al superarla, CaixaBank invierte ${RULES.prize} € a tu nombre.` : `Disponible al completar los ${LESSONS.length} temas.`}</span></div>
           ${all || passed ? lnk(passed ? "Repetir" : "Empezar", "#/prueba", passed ? "" : "primary") : `<button class="btn" disabled>Empezar</button>`}</div>`, "c-7 course")}
       ${card(`<div class="cred-hero"><button class="cred-btn" data-act="openCred" aria-label="Ver tu certificado">${credVisual(true)}<span class="cred-cta">${S.exam?.passed ? "Ver certificado" : "Ver progreso"}${ic("arrow")}</span></button>${msList("stages")}</div>`, "c-5 cert-card")}
-      ${card(`${cardH("Juegos con datos de años pasados", "Partidas de un minuto, sin prisas. Dan insignias, no millas ni dinero.", played ? badge(`${ic("check")}Hoy: ${played.score}/${GAMES.find(g => g.id === played.id)?.rounds}`, "ok") : "")}
+      ${card(`${cardH("Juegos con datos reales", `25 años de mercados, en partidas de un minuto. Una al día suma ${MILES.game} millas.`, played ? badge(`${ic("check")}Hoy: ${played.score}/${GAMES.find(g => g.id === played.id)?.rounds}`, "ok") : "")}
         <div class="games">${GAMES.map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : g.id === "masomenos" ? "updown" : g.id === "liga" ? "trophy" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div>
         ${badgesRow()}
         <button class="h-link fr-jump" data-act="frJump">${ic("family")}Compara tus resultados con tus amigos${ic("arrow")}</button>
@@ -853,6 +870,7 @@ function newGame(id) {
 function vJuego(id) {
     const g = GAMES.find(x => x.id === id); if (!g) return null;
     if (id === "masomenos") return vMasMenos();
+    if (id === "liga") return vLiga();
     if (!gameState || gameState.id !== id) newGame(id);
     const e = gameState;
     if (e.over) {
@@ -864,6 +882,66 @@ function vJuego(id) {
     const q = e.qs[e.i];
     return focus(homeLearn(), e.i + 1, e.qs.length, `<span class="kicker">${q.kick} · ${e.score} aciertos</span><h1 class="${id === "titular" ? "serif-q" : ""}">${esc(q.q)}</h1>${q.sub ? `<p class="lead-q">${q.sub}</p>` : ""}${opts(q, e.ans, "gameAns")}
       ${e.ans !== null ? `${why(e.ans === q.a, q.why)}<div class="focus-nav"><span></span>${btn(e.i === e.qs.length - 1 ? "Ver resultado" : `Siguiente${ic("arrow")}`, "gameNext", "primary")}</div>` : ""}`);
+}
+
+/* ---------------- Liga del lunes: cada semana, ¿el IBEX, la bolsa mundial y el oro acaban arriba o abajo?
+   Por ahora el resultado de cada semana es simulado (la bolsa mundial es la misma que «Tu dinero hoy»).
+   Con datos reales: cerrar el lunes a las 9:00 y resolver con el cierre del viernes. */
+const LIGA_DEMO = true;
+function ligaWeek(wk) { const d = T(wk); d.setHours(0, 0, 0, 0); const open = new Date(d); open.setHours(9, 0, 0, 0); const close = new Date(d); close.setDate(close.getDate() + 4); close.setHours(17, 35, 0, 0); return { open, close }; }
+function ligaMoves(wk) {
+    const g = weekMoves(wk).global, r = prng(hashStr(wk + "|liga"));
+    return { mundo: g, ibex: 0.7 * g + 2.0 * gauss(r) + 0.1, oro: 1.9 * gauss(r) + 0.15 };
+}
+function ligaNow(wk, k) {                                          // cómo va el mercado en este momento de la semana
+    const { open, close } = ligaWeek(wk), now = Date.now(), fin = ligaMoves(wk)[k];
+    if (now >= close) return { v: fin, done: true };
+    if (now <= open) return { v: 0, done: false, f: 0 };
+    const f = (now - open) / (close - open), r = prng(hashStr(wk + k + Math.floor(f * 60)));
+    return { v: fin * f + 1.2 * Math.sqrt(f * (1 - f)) * gauss(r) * .6, done: false, f };
+}
+const ligaOpen = wk => LIGA_DEMO ? Date.now() < ligaWeek(wk).close : Date.now() < ligaWeek(wk).open;
+function ligaHits(wk) { const p = S.liga?.[wk]?.picks || {}, mv = ligaMoves(wk); return LIGA.reduce((a, m) => a + (p[m.k] && (p[m.k] === "up") === (mv[m.k] >= 0) ? 1 : 0), 0); }
+function ligaSeason() {
+    const weeks = Object.keys(S.liga || {}).filter(w => Object.keys(S.liga[w].picks || {}).length && Date.now() >= ligaWeek(w).close).sort();
+    let pts = 0, streak = 0, best = 0;
+    weeks.forEach(w => { const h = ligaHits(w); pts += h; streak = h >= 2 ? streak + 1 : 0; best = Math.max(best, streak); });
+    return { weeks, pts, streak, best };
+}
+/* al ver la liga tras el cierre: se apunta el resultado (millas de juego y amigos) una sola vez */
+function ligaSettle() {
+    Object.entries(S.liga || {}).forEach(([w, e]) => {
+        if (e.done || !Object.keys(e.picks || {}).length || Date.now() < ligaWeek(w).close) return;
+        e.done = true; e.hits = ligaHits(w); save();
+        if (Date.now() - ligaWeek(w).close < 2 * 864e5) friendsAfterGame("liga", e.hits, LIGA.length);
+    });
+}
+const sgnPct = v => `${v >= 0 ? "+" : "−"}${pct(Math.abs(v), 1)}`;
+function vLiga() {
+    S.liga ||= {}; ligaSettle();
+    const wk = weekOf(new Date()), e = S.liga[wk] || { picks: {} }, open = ligaOpen(wk), { close } = ligaWeek(wk), done = Date.now() >= close;
+    const n = Object.keys(e.picks).length, season = ligaSeason();
+    const past = season.weeks.filter(w => w !== wk).slice(-6).reverse();
+    const friends = friendsOn() ? soc.partidas.filter(p => p.juego === "liga" && !p.yo) : [];
+    const rows = LIGA.map(m => {
+        const pick = e.picks[m.k], now = ligaNow(wk, m.k), hit = done && pick ? (pick === "up") === (now.v >= 0) : null;
+        return `<div class="lg-row ${hit === true ? "ok" : hit === false ? "ko" : ""}">
+          <span class="mm-code" style="--c:${m.color}">${m.code}</span>
+          <div><b>${m.name}</b><small>${m.sub}</small></div>
+          <span class="lg-now ${now.v >= 0 ? "up" : "down"}">${done ? `Cerró ${sgnPct(now.v)}` : now.f ? `Va ${sgnPct(now.v)}` : "Aún no ha abierto"}</span>
+          <div class="lg-pick">${open ? `<button class="${pick === "up" ? "on up" : ""}" data-act="ligaPick" data-k="${m.k}" data-v="up" aria-pressed="${pick === "up"}">${ic("up")}Arriba</button><button class="${pick === "down" ? "on down" : ""}" data-act="ligaPick" data-k="${m.k}" data-v="down" aria-pressed="${pick === "down"}">${ic("down")}Abajo</button>`
+            : pick ? `<span class="lg-mine">${pick === "up" ? "Dijiste arriba" : "Dijiste abajo"}${hit === null ? "" : hit ? ic("check") : ic("close")}</span>` : `<span class="lg-mine none">Sin predicción</span>`}</div></div>`;
+    }).join("");
+    return focus(homeLearn(), 0, 0, `<div class="lg">
+        <span class="kicker">Liga del lunes · semana del ${fmtD(wk)}</span>
+        <h1>¿Cómo acabará la semana?</h1>
+        <p class="lead-q">${done ? `Semana cerrada: has acertado <b>${ligaHits(wk)} de ${LIGA.length}</b>. El lunes empieza otra.` : open ? `Elige arriba o abajo para cada mercado. Se resuelve el viernes a las 17:35, con el cierre.${n ? ` Llevas ${n} de ${LIGA.length}.` : ""}` : "Las predicciones de esta semana ya están cerradas. Se resuelve el viernes a las 17:35."}</p>
+        <div class="lg-rows">${rows}</div>
+        <dl class="lg-stats"><div><dt>Aciertos en la temporada</dt><dd>${season.pts}</dd></div><div><dt>Semanas jugadas</dt><dd>${season.weeks.length}</dd></div><div><dt>Racha (2+ aciertos)</dt><dd>${season.streak}<small> · mejor ${season.best}</small></dd></div></dl>
+        ${past.length ? `<h2 class="lg-h">Tus últimas semanas</h2><div class="lg-past">${past.map(w => `<div><span>${fmtD(w)}</span><b>${ligaHits(w)}/${LIGA.length}</b></div>`).join("")}</div>` : ""}
+        ${friends.length ? `<h2 class="lg-h">Tus amigos esta semana</h2><div class="lg-past">${friends.slice(0, 6).map(p => `<div><span>${esc(p.nombre)}</span><b>${p.aciertos}/${p.rondas}</b></div>`).join("")}</div>` : ""}
+        <p class="mm-learn">Acertar la bolsa a una semana es casi una moneda al aire, incluso para los profesionales. Por eso Horizonte invierte a largo plazo y no intenta adivinar.</p>
+        <div class="focus-nav center">${lnk("Volver", homeLearn(), "lg")}</div></div>`);
 }
 
 /* ---------------- Más o menos (de la versión 1): ¿la nueva carta acaba con más o con menos que la anterior? */
@@ -880,6 +958,7 @@ function mmItem(prev) {
         if (!prev || (Math.abs(it.v / prev.v - 1) > .04 && it.t + it.s !== prev.t + prev.s)) return it;
     }
 }
+const mmSecs = () => Math.max(4, 10 - Math.floor(mm.streak / 3));      // cada tres aciertos, un segundo menos
 function mmNew() { clearInterval(mmTimer); const a = mmItem(); mm = { a, b: mmItem(a), streak: 0, phase: "play", busy: false, timeout: false, res: null }; }
 const mmVal = v => eur(Math.round(v));
 function mmCard(it, hidden, cls = "") {
@@ -889,21 +968,33 @@ function vMasMenos() {
     if (!mm) mmNew();
     const best = S.mmBest || 0;
     if (mm.phase === "over") {
-        return focus(homeLearn(), 0, 0, `<div class="center"><span class="kicker">Fin de la racha</span><h1 class="mm-big">${mm.streak}</h1>
+        return focus(homeLearn(), 0, 0, `<div class="center"><span class="kicker">${mm.timeout ? "Se acabó el tiempo" : "Fin de la racha"}</span><h1 class="mm-big">${mm.streak}</h1>
           <p>${mm.streak > 0 && mm.streak >= best ? "¡Nuevo récord personal!" : `Tu récord: ${best}`}</p>
           <p class="mm-learn">Lo que cuenta no es acertar cada año: es el plazo. En diez años, casi todas las inversiones diversificadas acaban por encima de un cajón.</p>
+          ${mm.miles ? `<p class="mm-learn">+${mm.miles} millas de casa por jugar hoy.</p>` : ""}
           ${friendsToday("masomenos")}<div class="focus-nav center">${btn("Otra partida", "mmAgain", "primary lg")}${lnk("Volver", homeLearn(), "lg") + (S.role ? "" : lnk("Crear mi cuenta", "#/alta/joven", "primary lg"))}</div></div>`);
     }
     const res = mm.res;
     return focus(homeLearn(), 0, 0, `<div class="mm">
-        <div class="mm-top"><span>Racha <b>${mm.streak}</b></span><span>Récord ${best}</span></div>
+        <div class="mm-top"><span>Racha <b>${mm.streak}</b></span><span>Récord ${best}</span><span>${mmSecs()} s por pregunta</span></div>
+        <div class="mm-timer"><i id="mmBar"></i></div>
         ${mmCard(mm.a, false)}
         <p class="mm-q">¿Esta acaba con <b>más</b> o con <b>menos</b>?</p>
         ${mmCard(mm.b, !res, res ? (res === "ok" ? "ok" : "ko") : "")}
         <div class="mm-btns">${btn(`${ic("up")}Más`, "mmGuess", "mm-up", `data-v="up" ${mm.busy ? "disabled" : ""}`)}${btn(`${ic("down")}Menos`, "mmGuess", "mm-down", `data-v="down" ${mm.busy ? "disabled" : ""}`)}</div>
         <p class="note center-note">Rentabilidades anuales aproximadas en moneda local, sin comisiones. Las de interés fijo son hipotéticas.</p></div>`);
 }
-function mmStart() { clearInterval(mmTimer); }                       // sin cuenta atrás: aquí se piensa, no se corre
+function mmStart() {
+    clearInterval(mmTimer);
+    if (!mm || mm.phase !== "play" || mm.busy) return;
+    const total = mmSecs() * 1000, t0 = Date.now();
+    mmTimer = setInterval(() => {
+        const bar = $("#mmBar"); if (!bar) return clearInterval(mmTimer);
+        const left = Math.max(0, 1 - (Date.now() - t0) / total);
+        bar.style.width = `${left * 100}%`; bar.classList.toggle("hot", left < .3);
+        if (left <= 0) { clearInterval(mmTimer); mm.timeout = true; mmReveal(false); }
+    }, 50);
+}
 function mmGuess(dir) {
     if (!mm || mm.busy || mm.phase !== "play") return;
     mmReveal(dir === "up" ? mm.b.v > mm.a.v : mm.b.v < mm.a.v);
@@ -1146,7 +1237,6 @@ function vDinero() {
     const weeklyOpts = [0, 2, 5, 10, 20];
     const pend = S.pending || [];
     return `${pageH("Dinero", "", `<div class="h-acts">${m.value > 0 ? btn(`${ic("back")}Retirar`, "openWithdraw") : ""}${btn(`${ic("plus")}Aportar`, "openContribute", "primary")}</div>`)}
-    <div class="demo-banner">${ic("info")}<p><b>Versión de demostración.</b> El dinero, las aportaciones y los movimientos de mercado son simulados: no se mueve ningún euro real.</p></div>
     <div class="grid">
       ${card(`<div class="vhead" data-vhead>
           <div class="vh-main"><span class="vh-k">Tu dinero</span><b class="vh-v" data-o="val">${eur(m.value, true)}</b>
@@ -1157,17 +1247,17 @@ function vDinero() {
           <div class="vc-foot"><div class="vc-ranges" role="tablist" aria-label="Periodo">${RANGES.map(([k]) => `<button role="tab" class="${k === vRange ? "on" : ""}" aria-selected="${k === vRange}" data-act="vRange" data-k="${k}">${k}</button>`).join("")}</div>
           <div class="vc-key"><span><i class="k1"></i>Tu dinero</span><span><i class="k2"></i>Lo que has añadido</span></div></div>`
         : `<div class="vchart-empty">${empty("chart", "Tu curva empieza con tu primer euro", "Aquí verás cómo se mueve tu dinero cada día.", btn("Hacer mi primera aportación", "openContribute", "primary"))}</div>`}`, "c-12 money-card")}
+      ${card(`${cardH("Últimas inversiones", "Todo lo que se ha invertido a tu nombre.", has ? btn(`${ic("download")}Extracto en Excel`, "csv", "sm") : "")}
+        ${has ? `<div class="rows moves">${moves.slice(0, allMoves ? 50 : 6).map(moveRow).join("")}</div>
+        ${moves.length > 6 ? `<button class="more" data-act="allMoves">${allMoves ? "Ver menos" : `Ver los ${moves.length} movimientos`}</button>` : ""}` : empty("chart", "Aún no hay inversiones", "Aparecerán aquí y podrás descargarlas en Excel.")}`, "c-12")}
       ${investorCardUI(m)}
       ${weekCard("c-12")}
       ${pend.length ? card(`${cardH("Retiradas pendientes", `Tu familia tiene que aprobarlas.`)}<div class="rows">${pend.map(x => `<div class="row"><span class="mv-ic warn">${ic("back")}</span><div><b>${eur(x.amount, true)}</b><span>Pedida el ${fmtD(x.date)} · pendiente de aprobación</span></div>${btn("Cancelar", "wdNo", "sm ghost", `data-id="${x.id}"`)}</div>`).join("")}</div>`, "c-12") : ""}
-      ${has ? card(`${cardH("Movimientos", "", btn(`${ic("download")}Extracto`, "csv", "sm ghost"))}
-        <div class="rows moves">${moves.slice(0, allMoves ? 50 : 5).map(moveRow).join("")}</div>
-        ${moves.length > 5 ? `<button class="more" data-act="allMoves">${allMoves ? "Ver menos" : `Ver los ${moves.length} movimientos`}</button>` : ""}`, "c-12") : ""}
       ${card(`${cardH("Ahorro automático", "Se aparta solo, sin que tengas que acordarte.")}
         <div class="auto">
           <div class="auto-row"><div><b>Cada semana</b><span>${S.weekly ? `≈ ${eur(S.weekly * 52 / 12)} al mes` : "Elige una cantidad"}</span></div>
             <div class="seg" role="radiogroup" aria-label="Euros a la semana">${weeklyOpts.map(v => `<button role="radio" aria-checked="${S.weekly === v}" class="${S.weekly === v ? "on" : ""}" data-act="setWeekly" data-v="${v}">${v ? `${v} €` : "No"}</button>`).join("")}</div></div>
-          <div class="auto-row"><div><b>Redondeo de compras</b><span>Cuando tengas tu tarjeta, cada compra se redondeará al euro siguiente y la diferencia se invertirá. Pagas 3,40 € y se invierten 0,60 €.</span></div>${badge("Próximamente")}</div>
+          <div class="auto-row"><div><b>Redondeo de compras</b><span>Cada compra con tu tarjeta se redondea al euro siguiente y la diferencia se invierte. Pagas 3,40 € y se invierten 0,60 €.</span></div>${toggle("roundup", S.roundup, "Redondeo de compras")}</div>
         </div>`, "c-12")}
       ${card(`${cardH("Dónde está tu dinero", m.al.active ? `Cartera base ${pct(RULES.base * 100)} · Antídoto ${pct(RULES.antidote * 100)}` : m.al.pending ? "Tu Antídoto espera la aprobación de tu familia." : "Todo en la cartera base.", m.al.active ? "" : lnk(S.fears.length ? "Ver Antídoto" : "Elegir Antídoto", "#/antidoto", "sm ghost"))}
         ${stack(m.parts)}<div class="rows">${m.parts.map(pp => `<div class="row">${sw(pp.fund)}<div><b>${FUNDS[pp.fund].name}</b><span>${pp.fear ? "Antídoto · " + esc(pp.fear.label) : FUNDS[pp.fund].sub}</span></div><b class="amt">${eur(pp.amount, true)}</b></div>`).join("")}</div>`, "c-12")}
@@ -1176,7 +1266,7 @@ function vDinero() {
         <p class="note">${m.protect ? (m.protect.lost ? `Has retirado dinero antes de los ${RULES.protectMonths} meses: la protección ya no aplica.` : m.protect.active ? `Del ${fmtD(m.protect.start)} al ${fmtD(m.protect.end)} · quedan ${m.protect.daysLeft} días` : `Tu periodo de protección terminó el ${fmtD(m.protect.end)}.`) : "Empieza con tu primera aportación."}</p></div>
         <details class="terms" open><summary>Condiciones${ic("plus")}</summary><ul><li>Es una promoción, no un fondo garantizado ni un seguro: tu dinero sigue invertido y puede bajar.</li><li>Tope de ${RULES.protectCap} € por persona y ${RULES.protectMonths} meses desde tu primera aportación.</li><li>Cubre las primeras aportaciones, no los rendimientos ni lo que aportes por encima del tope.</li><li>Solo si no vendes ni retiras antes de los ${RULES.protectMonths} meses.</li><li>Dotación limitada: puede agotarse. <a href="#/legal">Ver condiciones completas</a>.</li></ul></details>`, "c-12")}
     </div>
-    <p class="note center-note">Movimientos de mercado simulados en esta versión de demostración.</p>`;
+    `;
 }
 function applyWithdrawal(amount) { S.money.push({ date: iso(new Date()), amount: -amount, src: "retiro" }); S.money.sort((a, b) => a.date.localeCompare(b.date)); save(); }
 function withdrawSheet() {
@@ -1185,7 +1275,7 @@ function withdrawSheet() {
       <div class="amount-in"><input name="amount" type="number" min="1" max="${max}" step="0.01" inputmode="decimal" required placeholder="0" aria-label="Importe en euros"><span>€</span></div>
       <p class="note">Disponible: ${eur(m.value, true)}.</p>
       ${m.protect?.active ? `<div class="warn-box">${ic("info")}<p>Si retiras antes del ${fmtD(m.protect.end)}, <b>pierdes la protección promocional</b> del primer año.</p></div>` : ""}
-      <p class="note">${minor ? "Como eres menor de edad, tu familia tiene que aprobar la retirada. Cuando lo haga, el dinero vuelve a la cuenta bancaria asociada." : "El dinero vuelve a tu cuenta bancaria."} En esta demostración no se mueve dinero real.</p>
+      <p class="note">${minor ? "Como eres menor de edad, tu familia tiene que aprobar la retirada. Cuando lo haga, el dinero vuelve a la cuenta bancaria asociada." : "El dinero vuelve a tu cuenta bancaria."}</p>
       <button class="btn primary lg block">${minor ? "Pedir a mi familia que lo apruebe" : "Retirar"}</button></form>`);
 }
 function metaSaved(id) { return S.money.filter(c => c.meta === id).reduce((a, c) => a + c.amount, 0); }
@@ -1203,8 +1293,7 @@ function weekFamilyCard() {
         ? (w.retPct < 0 ? "Una semana mala no dice nada de un plazo de diez años. Lo mejor es no vender y hablarlo con calma." : "Una semana buena tampoco cambia el plan: lo que cuenta es la constancia.")
         : "Una semana tranquila. Lo que cuenta es el plazo y la constancia.";
     return card(`${cardH("Esta semana", `Semana del ${fmtD(weekOf(new Date()))}`)}
-      <div class="week"><p>${m.value > 0 ? `El dinero de ${n} ${w.chg >= 0 ? "ha subido" : "ha bajado"} <b>${eur(Math.abs(w.chg), true)}</b> (${sg}).` : `Cuando ${n} invierta, verás aquí qué ha pasado con su dinero.`}</p><p>${calm}</p>${m.protect?.active && w.retPct < 0 ? `<p>Sus ${eur(m.protect.base)} siguen protegidos ${m.protect.daysLeft} días más.</p>` : ""}</div>
-      <p class="note">Movimientos simulados en esta versión de demostración.</p>`, "c-6");
+      <div class="week"><p>${m.value > 0 ? `El dinero de ${n} ${w.chg >= 0 ? "ha subido" : "ha bajado"} <b>${eur(Math.abs(w.chg), true)}</b> (${sg}).` : `Cuando ${n} invierta, verás aquí qué ha pasado con su dinero.`}</p><p>${calm}</p>${m.protect?.active && w.retPct < 0 ? `<p>Sus ${eur(m.protect.base)} siguen protegidos ${m.protect.daysLeft} días más.</p>` : ""}</div>`, "c-6");
 }
 function talkCard() {
     const t = TALKS[Math.floor(Date.now() / 6048e5) % TALKS.length];
@@ -1222,7 +1311,6 @@ function contributeSheet() {
       <div class="amount-in"><input name="amount" type="number" min="1" max="3000" step="0.01" inputmode="decimal" required placeholder="0" aria-label="Importe en euros"><span>€</span></div>
       <div class="chips">${[1, 5, 10, 20, 50].map(v => `<button type="button" class="chip" data-act="setAmount" data-v="${v}">${v} €</button>`).join("")}</div>
       <label class="field"><span>¿De dónde sale?</span><select name="src"><option value="paga">Mi paga</option><option value="verano">Un trabajo de verano</option><option value="otro">Otro ingreso</option></select></label>
-      <p class="note demo-note">Demostración: no se mueve ningún euro. En la versión real, el cargo se haría desde una cuenta bancaria (la de tu familia, si eres menor) por transferencia, domiciliación o Bizum.</p>
       <button class="btn primary lg block">Confirmar aportación</button></form>`);
 }
 /* ---------------- Antídoto */
@@ -1324,6 +1412,7 @@ function vCasa() {
     const rules = [
         ["Cada tema de Fundamentos", `+${MILES.lesson}`, `${Object.keys(S.lessons).length} de ${LESSONS.length}`],
         ["Superar Fundamentos", `+${MILES.theory}`, S.exam?.passed ? "Conseguido" : ""],
+        ["Un juego al día", `+${MILES.game}`, Object.keys(S.games).length ? `${Object.keys(S.games).length} días jugados` : "Datos reales de 25 años"],
         ["Cada 4 semanas de constancia", `+${MILES.streak4}`, `Constancia actual: ${streak().current} semanas`],
         ["Tu primer euro propio", `+${MILES.firstOwn}`, m.firstOwn ? "Conseguido" : ""],
         ["Cada mes que aportas", `+${MILES.monthOwn}`, S.weekly || S.roundup ? "Ahorro automático activo" : ""],
@@ -1348,7 +1437,7 @@ function vCasa() {
         <div class="mh-meter"><span>Rebaja acumulada</span>${bar(mi.cut, MILES.maxCut, "gold")}<small>${pts(mi.cut)} de ${pts(MILES.maxCut)} puntos posibles</small></div></div>`, "c-12")}
       ${card(`${cardH("Cómo se ganan")}<div class="rows">${rules.map(([t, n, s]) => `<div class="row"><div><b>${t}</b>${s ? `<span>${s}</span>` : ""}</div><b class="amt gold">${n}</b></div>`).join("")}</div>
         <p class="note">${num(MILES.perPoint / 100)} millas equivalen a 0,01 puntos de bonificación posible, hasta un máximo de ${pts(MILES.maxCut)} puntos.</p>`, "c-6")}
-      ${card(`${cardH("Condiciones")}<ul class="plain"><li>Se canjean como bonificación en tu primera hipoteca con CaixaBank, según las condiciones vigentes el día de la firma.</li><li>Es una bonificación posible, no una oferta ni un precio cerrado, y no obliga a contratar otros productos (Ley 5/2019). Puede ir ligada a condiciones de vinculación voluntaria que entonces se ofrezcan.</li><li>No caducan. Si no compras vivienda, no pierdes nada: tu dinero sigue siendo tuyo.</li><li>Los juegos no suman millas. Los regalos tienen un tope mensual. <a href="#/legal">Ver condiciones completas</a>.</li></ul>`, "c-6")}
+      ${card(`${cardH("Condiciones")}<ul class="plain"><li>Se canjean como bonificación en tu primera hipoteca con CaixaBank, según las condiciones vigentes el día de la firma.</li><li>Es una bonificación posible, no una oferta ni un precio cerrado, y no obliga a contratar otros productos (Ley 5/2019). Puede ir ligada a condiciones de vinculación voluntaria que entonces se ofrezcan.</li><li>No caducan. Si no compras vivienda, no pierdes nada: tu dinero sigue siendo tuyo.</li><li>Los regalos tienen un tope mensual. <a href="#/legal">Ver condiciones completas</a>.</li></ul>`, "c-6")}
       ${card(`${cardH("Historial de millas")}${mi.items.length ? `<div class="rows">${mi.items.slice(0, 15).map(i => `<div class="row"><div><b>${esc(i.label)}</b><span>${fmtD(i.date)}</span></div><b class="amt gold">+${i.n}</b></div>`).join("")}</div>` : empty("house", "Aún no tienes millas", "Empieza por Fundamentos: cada tema suma.", lnk("Ir a Aprende", "#/aprende", "primary"))}`, "c-12")}
     </div>`;
 }
@@ -1443,8 +1532,7 @@ function vFResumen() {
 }
 function callCard() {
     return card(`${cardH("¿Quieres hablar con una persona?", "Pide que un gestor de CaixaBank os llame para resolver dudas, sin compromiso.")}
-      <div class="actions">${S.callReq ? badge(`Solicitada el ${fmtD(S.callReq.date)}`, "ok") : btn(`${ic("family")}Pedir una llamada`, "reqCall", "primary")}</div>
-      <p class="note">Propuesta de servicio: en esta demostración la solicitud se simula.</p>`, "c-12");
+      <div class="actions">${S.callReq ? badge(`Solicitada el ${fmtD(S.callReq.date)}`, "ok") : btn(`${ic("family")}Pedir una llamada`, "reqCall", "primary")}</div>`, "c-12");
 }
 function pendingRows() {
     const al = allocation(), rows = [], n = esc(teenName());
@@ -1600,6 +1688,14 @@ document.addEventListener("click", async e => {
     else if (act === "gameAgain") { newGame(b.dataset.id); render(); }
     else if (act === "installApp") { if (installEvt) { installEvt.prompt(); const r = await installEvt.userChoice; installEvt = null; if (r.outcome !== "accepted") toast("Puedes instalarla cuando quieras desde aquí"); rerender(); } }
     else if (act === "mmGuess") mmGuess(b.dataset.v);
+    else if (act === "ligaPick") {
+        const wk = weekOf(new Date());
+        if (!ligaOpen(wk)) { toast("Las predicciones de esta semana están cerradas"); return; }
+        S.liga ||= {}; const e = S.liga[wk] ||= { picks: {} }, t = iso(new Date());
+        e.picks[b.dataset.k] = b.dataset.v; e.at = new Date().toISOString();
+        if (Object.keys(e.picks).length === LIGA.length && !S.games[t]) { S.games[t] = { id: "liga", score: 0 }; toast(`Predicción guardada · +${MILES.game} millas por jugar hoy`); }
+        save(); render();
+    }
     else if (act === "mmAgain") { mmNew(); render(); }
     else if (act === "lpFear") { const f = FEARS.find(x => x.id === b.dataset.id); $$(".lf").forEach(x => x.classList.toggle("on", x === b)); $('[data-o="lf"]').innerHTML = `<b>${FUNDS[f.fund].name}</b><p>${f.why}</p>`; }
     else if (act === "lpGame") {
@@ -1639,7 +1735,7 @@ document.addEventListener("click", async e => {
         else { save(); toast("Solicitud retirada"); }
         rerender();
     }
-    else if (act === "reqCall") { S.callReq = { date: iso(new Date()) }; save(); toast("Solicitud enviada (aquí se simula). Un gestor de CaixaBank llamaría en un día hábil."); rerender(); }
+    else if (act === "reqCall") { S.callReq = { date: iso(new Date()) }; save(); toast("Solicitud enviada. Un gestor de CaixaBank os llamará."); rerender(); }
     else if (act === "askPerm") { const t = `Hola, ¿me das permiso para que el asistente de Horizonte use los datos de mi cuenta? Entra en el área familiar y mira «Permisos»: ${location.origin}${location.pathname}`; if (navigator.share) { try { await navigator.share({ title: "Horizonte", text: t }); } catch (err) { /* cancelado */ } } else { try { await navigator.clipboard.writeText(t); toast("Mensaje copiado para tu familia"); } catch (err) { prompt("Copia el mensaje:", t); } } }
     else if (act === "examRetry") { examState = null; render(); }
     else if (act === "dlDiploma") downloadDiploma();

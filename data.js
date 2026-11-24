@@ -25,7 +25,8 @@ const MILES = {
     firstOwn: 50,        // tu primer euro propio
     monthOwn: 10,        // cada mes en el que aportas tú
     itv: 50,             // revisión anual
-    streak4: 20,         // cada 4 semanas seguidas aprendiendo o aportando (los juegos dan insignias, nunca millas)
+    game: 5,             // un juego al día con datos reales
+    streak4: 20,         // cada 4 semanas seguidas con actividad
     giftPer5: 1,         // 1 milla por cada 5 € que te regalan…
     giftMonthCap: 20,    // …con un tope de 20 millas al mes, para que no se pueda «comprar» la rebaja
     perPoint: 25000,     // 25.000 millas = 1 punto porcentual menos de diferencial (250 millas = 0,01)
@@ -145,7 +146,7 @@ const CYCLE = [
     { id: "aprende", t: "Aprende", p: "Cinco temas cortos y una prueba final, sin jerga. Al superarla, recibes un certificado que puedes comprobar y compartir.", ic: "book" },
     { id: "invierte", t: "Invierte", p: `Desde 1 €, con tu familia detrás. Tus primeros ${RULES.protectCap} € tienen protección promocional durante el primer año<sup>*</sup>.`, ic: "chart" },
     { id: "entiende", t: "Anticípate", p: "Cada semana, qué ha pasado con tu dinero y por qué. Y tu Antídoto: invierte en lo que te preocupa.", ic: "spark" },
-    { id: "millas", t: "Gana millas", p: "Aprender, aportar con constancia y revisar tu plan cada año suma millas. Nunca por tener más dinero que nadie, ni por jugar.", ic: "star" },
+    { id: "millas", t: "Gana millas", p: "Aprender, jugar, aportar con constancia y revisar tu plan cada año suma millas. Nunca por tener más dinero que nadie.", ic: "star" },
     { id: "casa", t: "Tu casa", p: "Si un día pides tu primera hipoteca con CaixaBank, tus millas pueden convertirse en una bonificación, según las condiciones de ese momento.", ic: "house" },
 ];
 const FAQ = [
@@ -153,11 +154,11 @@ const FAQ = [
     { q: "¿Puedo perder dinero?", a: `Sí. Invertir siempre tiene riesgo y el valor puede bajar. Como promoción, durante tu primer año CaixaBank repone la diferencia si tus primeros ${RULES.protectCap} € aportados (tuyos o de tu familia) valen menos a los ${RULES.protectMonths} meses, siempre que no hayas vendido antes. Tiene tope de ${RULES.protectCap} € por persona, dotación limitada (${PROMO.budgetTxt}) y no cubre nada más.` },
     { q: "¿Qué es el Certificado Horizonte?", a: `Una acreditación de CaixaBank Asset Management que demuestra que sabes lo esencial antes de invertir: interés compuesto, riesgo y plazo, diversificación y cómo evitar estafas. Al superar Fundamentos, CaixaBank invierte ${RULES.prize} € a tu nombre (uno por persona, una vez verificada tu identidad) y recibes un certificado con un código que cualquiera puede comprobar en nuestra página de verificación. Puedes añadirlo a LinkedIn a partir de los 16.` },
     { q: "¿Qué es el Antídoto?", a: `En lugar de preguntarte cuánto riesgo quieres, te preguntamos qué te preocupa de tu futuro. El ${Math.round(RULES.base * 100)} % de tu dinero va a un fondo global diversificado y el ${Math.round(RULES.antidote * 100)} % a los temas que eliges, dentro de una selección cerrada de fondos de CaixaBank Asset Management. Reduce el golpe si lo que temes ocurre; no es una garantía.` },
-    { q: "¿Cómo funcionan las millas de casa?", a: "Las ganas al aprender, al aportar cada mes, al mantener tu constancia semanal, con la revisión anual y con los regalos de tu familia (con un tope mensual). Los juegos dan insignias, no millas. Si un día pides tu primera hipoteca con CaixaBank, las millas pueden convertirse en una bonificación sobre las condiciones de ese momento, según las condiciones de vinculación voluntaria que se ofrezcan. No obligan a contratar nada, no caducan y, si nunca compras casa, no pierdes nada." },
+    { q: "¿Cómo funcionan las millas de casa?", a: "Las ganas al aprender, al jugar con datos reales, al aportar cada mes, al mantener tu constancia semanal, con la revisión anual y con los regalos de tu familia (con un tope mensual). Si un día pides tu primera hipoteca con CaixaBank, las millas pueden convertirse en una bonificación sobre las condiciones de ese momento, según las condiciones de vinculación voluntaria que se ofrezcan. No obligan a contratar nada, no caducan y, si nunca compras casa, no pierdes nada." },
     { q: "¿Qué hace Gemini con mis datos?", a: "Sin permiso, Gemini responde solo con información general y sin ningún dato tuyo. Con el permiso de tu familia (y a partir de los 18, el tuyo), usa la información de tu cuenta, sin tu nombre, para explicarte tu dinero con tus propios números. Nunca se usa para publicidad y puedes retirar el permiso cuando quieras." },
     { q: "¿Cómo puede ayudar mi familia?", a: "Desde el área familiar pueden hacer regalos puntuales o aportaciones mensuales con un mensaje, aprobar tu Antídoto y tus retiradas, decidir los permisos y ver tu progreso. También pueden pedir que un gestor de CaixaBank les llame." },
     { q: "¿Puedo sacar mi dinero?", a: "Sí. Si eres mayor de edad, pides la retirada y listo. Si eres menor, la solicitud llega a tu familia para que la apruebe. Si retiras antes de los 12 meses, pierdes la protección promocional del primer año. Mientras no vendas, una caída es solo un número en pantalla." },
-    { q: "¿Esto es un juego de apuestas?", a: "No. Los juegos usan datos históricos de hace años, no predicen el futuro y no dan dinero ni millas: solo insignias. En Horizonte no hay predicciones semanales ni cuenta atrás." },
+    { q: "¿Esto es un juego de apuestas?", a: "No. En los juegos no se apuesta dinero: se practica con datos reales de 25 años de mercados y se suman unas pocas millas al día por aprender." },
     { q: "¿Cuánto cuesta Horizonte?", a: `Horizonte no cobra comisión de apertura, pero invertir tiene un coste. Los fondos de CaixaBank Asset Management cobran una comisión de gestión; como referencia, en torno al ${feeTxt} % al año, es decir, unos ${feeTxt} € por cada 100 € invertidos. Te la mostramos siempre en euros, y el documento de datos fundamentales de cada fondo detalla su coste exacto.` },
 ];
 const LEGAL = "Horizonte es un servicio de CaixaBank Asset Management, propuesto en el reto CaixaBank AM × Google. Invertir conlleva riesgos, incluida la pérdida del capital invertido. Los valores que se muestran son estimaciones con fines informativos y no garantizan rentabilidades futuras. La protección del primer año es una promoción sujeta a condiciones: tope de 500 € por persona, 12 meses, solo si no se vende antes y hasta agotar la dotación publicada. Las millas de casa son una bonificación posible sobre las condiciones vigentes en el momento de la firma de una hipoteca, según las condiciones de vinculación voluntaria que entonces se ofrezcan, y no obligan a contratar ningún producto (Ley 5/2019). Antes de invertir, consulta el documento de datos fundamentales (DFI) de cada fondo.";
@@ -300,7 +301,7 @@ const LESSONS = [
             `Durante tus primeros 12 meses, los primeros <b>${RULES.protectCap} €</b> aportados (tuyos o de tu familia) tienen una protección promocional: si al cumplir el año valen menos, CaixaBank repone la diferencia.`,
             "Solo cuenta si no vendes antes de los 12 meses, tiene tope y hay una dotación limitada. No cubre nada más." ] },
         { h: "Millas de casa", p: [
-            "Cada tema que completas, cada mes que aportas, tu constancia semanal y cada regalo de tu familia suman <b>millas de casa</b>. Los juegos no: dan insignias.",
+            "Cada tema que completas, cada juego, cada mes que aportas, tu constancia semanal y cada regalo de tu familia suman <b>millas de casa</b>.",
             "Años después, si pides tu primera hipoteca con CaixaBank, pueden convertirse en una bonificación sobre las condiciones de ese momento. No caducan ni te obligan a nada." ] },
         { h: "Tu familia te acompaña", p: [
             "Hasta los 18, tu madre, padre o tutor es la persona titular de la cuenta: aprueba tu Antídoto, tus retiradas y los permisos de la app, y puede regalarte dinero para tu casa.",
@@ -377,9 +378,16 @@ const MKT_NEWS = [
     "Récords en bolsa impulsados por la tecnología."
 ];
 const GAMES = [
-    { id: "titular", t: "El titular", p: "Un titular real de un año pasado. ¿La bolsa mundial acabó ese año arriba o abajo?", rounds: 5 },
+    { id: "titular", t: "El titular", p: "Un titular real de un año. ¿La bolsa mundial acabó ese año arriba o abajo?", rounds: 5 },
     { id: "duelo", t: "¿Cuál rindió más?", p: "Dos inversiones, un año. Elige la que más subió (o la que menos cayó).", rounds: 5 },
-    { id: "masomenos", t: "Más o menos", p: "¿La segunda inversión acabó con más o con menos dinero? Sin prisas: encadena aciertos con datos de años pasados.", rounds: 0, endless: true },
+    { id: "liga", t: "Liga del lunes", p: "Cada semana: ¿el IBEX, la bolsa mundial y el oro acabarán arriba o abajo? Se resuelve el viernes con el cierre.", rounds: 3, weekly: true },
+    { id: "masomenos", t: "Más o menos", p: "¿La segunda inversión acabó con más o con menos dinero? Encadena aciertos con cada vez menos tiempo.", rounds: 0, endless: true },
+];
+/* Liga del lunes: tres mercados, una predicción por semana */
+const LIGA = [
+    { k: "ibex", code: "ESP", name: "IBEX 35", sub: "Las 35 mayores empresas de la bolsa española", color: "#c8102e" },
+    { k: "mundo", code: "MUN", name: "Bolsa mundial", sub: "MSCI World: unas 1.400 empresas de 23 países", color: "#007eae" },
+    { k: "oro", code: "ORO", name: "Oro", sub: "Precio de la onza en euros", color: "#c99a2e" },
 ];
 /* Más o menos: además de inversiones reales, algunas cartas con conceptos (inflación, interés, comisiones, apuestas) */
 const MM_CONCEPTS = [
@@ -392,7 +400,7 @@ const MM_CONCEPTS = [
     { code: "APU", t: "1.000 € en apuestas deportivas", s: "apostándolo todo 20 veces seguidas (la casa se queda de media un 5 %)", v: 1000 * Math.pow(.95, 20) },
 ];
 
-/* Insignias de los juegos: reconocimiento, nunca millas ni dinero */
+/* Insignias de los juegos */
 const BADGES = [
     { id: "primera", t: "Primera partida", d: "Has jugado tu primera partida con datos reales.", test: n => n.days >= 1 },
     { id: "cinco", t: "Cinco días", d: "Has jugado en cinco días distintos.", test: n => n.days >= 5 },

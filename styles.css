@@ -1622,3 +1622,5 @@ body[data-view="app"] .page { padding-bottom: 110px; }
 }
 @media (prefers-reduced-motion: reduce) { .gem-panel { animation: none; } }
 @media print { #gem { display: none; } }
+
+@media (min-width: 861px) { .games-card .games { grid-template-columns: repeat(4, 1fr); } .games-card .game, .games-card .game:first-child { padding-right: 22px; } .games-card .game:not(:first-child) { padding-left: 22px; } }

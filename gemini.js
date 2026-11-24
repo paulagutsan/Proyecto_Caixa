@@ -53,7 +53,7 @@ function gNext(c) {
     if (!c.diploma) return { label: `Completar Fundamentos (${c.lessonsDone}/${c.lessonsTotal})`, href: "#/aprende", why: `Al superar la prueba final, CaixaBank invierte ${G_EUR(c.prize)} a tu nombre.` };
     if (!c.hasOwn) return { label: "Poner tu primer euro", href: "#/dinero", why: `Con 1 € basta, y tus primeros ${G_EUR(c.protectCap)} aportados tienen protección promocional durante 12 meses.` };
     if (!c.fears.length) return { label: "Elegir tu Antídoto", href: "#/antidoto", why: "Dinos qué te preocupa de tu futuro y preparamos tu reparto." };
-    if (!(c.weekly > 0 || c.roundup)) return { label: "Automatizar tu ahorro", href: "#/dinero", why: "Una cantidad semanal fija suma millas cada mes." };
+    if (!(c.weekly > 0 || c.roundup)) return { label: "Automatizar tu ahorro", href: "#/dinero", why: "Una cantidad semanal o el redondeo de tus compras suma millas cada mes." };
     return { label: "Hacer la revisión anual", href: "#/antidoto", why: `Tu próxima revisión es antes del ${c.itvDue}.` };
 }
 
@@ -130,7 +130,7 @@ function localGemini(question, c) {
                 ? R("Certificado Horizonte", `Tienes tu certificado desde el ${c.diploma}. Tu próxima revisión anual es antes del ${c.itvDue}. ${c.age >= 16 ? "Puedes añadirlo a LinkedIn desde Aprende." : "Podrás añadirlo a LinkedIn a partir de los 16."}`,
                     [["Racha actual", `${c.streak} semanas`], ["Próxima revisión", c.itvDue], ["Cada 4 semanas", `+${MILES.streak4} millas`]],
                     [{ label: "Ir a Aprende", href: "#/aprende", primary: true }], ["tu certificado", "tu racha"])
-                : R("Fundamentos", `Llevas ${c.lessonsDone} de ${c.lessonsTotal} temas. Al superar la prueba final, CaixaBank invierte ${G_EUR(c.prize)} a tu nombre y recibes el Certificado Horizonte.`,
+                : R("Fundamentos", `Llevas ${c.lessonsDone} de ${c.lessonsTotal} temas. Al superar la prueba final, CaixaBank invierte ${G_EUR(c.prize)} a tu nombre y recibes el Certificado Horizonte. Un juego al día suma ${MILES.game} millas.`,
                     [["Temas", `${c.lessonsDone} de ${c.lessonsTotal}`], ["Premio", `${G_EUR(c.prize)} invertidos`], ["Prueba final", `+${MILES.theory} millas`]],
                     [{ label: "Continuar Fundamentos", href: "#/aprende", primary: true }], ["tu certificado", "tu racha"]);
         }
@@ -141,11 +141,11 @@ function localGemini(question, c) {
                 [{ label: "Ver costes en euros", href: "#/dinero", primary: true }], ["tu dinero invertido"]);
         }
         case "withdraw":
-            return R("Retirar tu dinero", `Puedes pedir una retirada desde Dinero. Si eres mayor de edad, se hace directamente; si eres menor, la aprueba tu familia. Si retiras antes de 12 meses, pierdes la protección promocional del primer año. En esta versión de demostración no se mueve dinero real.`,
+            return R("Retirar tu dinero", `Puedes pedir una retirada desde Dinero. Si eres mayor de edad, se hace directamente; si eres menor, la aprueba tu familia. Si retiras antes de 12 meses, pierdes la protección promocional del primer año.`,
                 [["Protección", "Solo si no retiras antes de 12 meses"], ["Hasta los 18", "Aprueba tu familia"]],
                 [{ label: "Ir a Dinero", href: "#/dinero", primary: true }, topic("drop")], ["tu año de protección"]);
         case "human":
-            return R("Hablar con una persona", `Tu familia puede pedir desde Familia que un gestor de CaixaBank le llame para resolver dudas, sin compromiso. En esta demostración la solicitud se simula.`,
+            return R("Hablar con una persona", `Tu familia puede pedir desde Familia que un gestor de CaixaBank le llame para resolver dudas, sin compromiso.`,
                 [["Quién la pide", "Tu madre, padre o tutor"]], [{ label: "Ir a Familia", href: "#/familia", primary: true }], []);
         case "family":
             return R("Tu familia", `Tu familia puede regalarte dinero, puntual o cada mes, con un mensaje, aprobar tu Antídoto y ver tu progreso. Los regalos suman millas de casa: ${MILES.giftPer5} por cada 5 €, con un tope de ${MILES.giftMonthCap} al mes.`,

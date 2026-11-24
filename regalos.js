@@ -33,7 +33,6 @@ function vRegalar() {
         const g = gfMade, link = gfLink(g.code), msg = `${g.de} te ha regalado ${eur(g.importe)} en Horizonte, de CaixaBank. Ábrelo aquí: ${link}`;
         return wrap(`<p class="kicker">Regalo preparado</p><h1 class="serif pub-h1">Ya está. Ahora envíaselo a ${esc(g.para)}.</h1>${gfCard(g)}
           <div class="conn-link gf-link"><input readonly value="${esc(link)}" aria-label="Enlace del regalo" onfocus="this.select()"><div class="conn-btns">${btn(`${ic("link")}Copiar`, "gfCopy", "")}${btn(`${ic("send")}Compartir`, "gfShare", "primary")}<a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">WhatsApp</a></div></div>
-          <div class="demo-banner">${ic("info")}<p><b>Versión de demostración.</b> No se ha cobrado nada ni se mueve dinero real. En la versión real, el regalo se pagaría por transferencia o Bizum antes de poder canjearse, y si quien lo recibe es menor, su familia tiene que autorizar su cuenta.</p></div>
           <div class="lp-cta">${btn("Hacer otro regalo", "gfAgain", "lg")}${lnk("Volver", S.role ? "#/ajustes" : "#/", "lg")}</div>`);
     }
     return wrap(`<p class="kicker">Regala</p><h1 class="serif pub-h1">Regala su primer euro.</h1>
@@ -46,7 +45,7 @@ function vRegalar() {
         <label class="field"><span>Ocasión</span><select name="ocasion"><option>Cumpleaños</option><option>Navidad</option><option>Fin de curso</option><option>Graduación</option><option>Sin ocasión</option></select></label>
         <label class="field"><span>Mensaje (opcional)</span><input name="mensaje" maxlength="120" placeholder="Para que empieces con buen pie"></label>
         <button class="btn primary lg block">Preparar el regalo</button>
-        <p class="note">Hasta 3.000 €. Esta es una demostración: no se cobra nada.</p></form>`);
+        <p class="note">Hasta 3.000 €.</p></form>`);
 }
 
 /* ---- recibir un regalo */
