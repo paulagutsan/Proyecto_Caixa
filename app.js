@@ -347,11 +347,11 @@ function vLanding() {
 
     <section class="hz-hero"><div class="lp-in hz-hero-in">
       <div class="hz-copy">
-        <h1>Tienes algo que tus padres ya no: <em>tiempo</em>.</h1>
+        <h1>Hoy, tu primer euro.<br>Mañana, <em>tu casa</em>.</h1>
         <p class="hz-lead">Empieza a invertir desde 1 €, con tu familia al lado.</p>
         <div class="lp-cta">${lnk(`Soy joven${ic("arrow")}`, "#/alta/joven", "primary lg")}${lnk("Soy madre, padre o tutor", "#/familias", "lg")}</div>
         <p class="hz-try"><a href="#/probar">Prueba un tema y un juego sin crear cuenta</a></p>
-        <ul class="hz-trust"><li>${ic("check")}Sin cuotas ni comisión de apertura</li><li>${ic("family")}Con el apoyo de tu familia</li><li>${ic("shield")}<span>Protección promocional el primer año<sup>*</sup></span></li></ul>
+        <ul class="hz-trust"><li>${ic("check")}Sin comisión de apertura</li><li>${ic("family")}Con el apoyo de tu familia</li><li>${ic("shield")}<span>Protección promocional el primer año<sup>*</sup></span></li></ul>
         ${trustBar()}
       </div>
       <div class="hz-visual">
@@ -526,7 +526,7 @@ function vFamilias() {
     const obj = [
         ["¿Y si pierde mi dinero?", `Puede bajar: invertir tiene riesgo. Por eso el curso enseña qué hacer en una caída y la cartera base es un fondo global diversificado. Además, como promoción, CaixaBank repone la diferencia de los primeros ${RULES.protectCap} € aportados si a los ${RULES.protectMonths} meses valen menos y no se ha vendido<sup>*</sup>. Veréis el valor en euros cada semana.`],
         ["¿Quién tiene el control?", "Vosotros. Hasta los 18, la persona titular legal sois vosotros: aprobáis el Antídoto, las retiradas y los permisos (Gemini y amigos) y veis su progreso. Si hay otro progenitor con patria potestad, se le pide también su conformidad."],
-        ["¿Qué sacáis vosotros?", `Sin cuotas ni comisión de apertura. Los fondos cobran una comisión de gestión; como referencia, en torno al ${feeTxt} % al año, y el documento de datos fundamentales (DFI) de cada fondo detalla su coste exacto.`],
+        ["¿Qué sacáis vosotros?", `Sin comisión de apertura. Los fondos cobran una comisión de gestión; como referencia, en torno al ${feeTxt} % al año, y el documento de datos fundamentales (DFI) de cada fondo detalla su coste exacto.`],
         ["¿Con 14 años puede invertir?", "La cuenta la abre y la titula su madre, padre o tutor; la persona menor la usa con vuestra autorización. A los 18, pasa a su nombre cuando confirma su identidad."],
         ["¿Se puede sacar el dinero?", "Sí. La persona menor pide la retirada y os llega para aprobarla. Si se retira antes de los 12 meses, se pierde la protección promocional del primer año."],
         ["¿Esto es un casino con adornos?", "No. Los juegos usan datos de años pasados, no dan dinero ni millas (solo insignias) y no hay predicciones semanales ni cuenta atrás. Lo que suma millas es aprender y aportar con constancia."],
@@ -560,7 +560,7 @@ function vLegal() {
       <p class="kicker">Condiciones y avisos legales</p><h1 class="serif pub-h1">Lo importante, sin letra pequeña.</h1>
       <p class="lp-lead">Aquí está, en lenguaje claro, lo que conviene saber antes de empezar. Texto de ejemplo del prototipo: los textos definitivos los fijan Cumplimiento y Asesoría Jurídica de CaixaBank AM.</p>
       ${sec("Invertir tiene riesgos", `<p>Puedes recuperar menos de lo que aportas. Las proyecciones que ves son estimaciones en tres escenarios (3, 5 y 8 % anual) y no garantizan nada. En esta versión de demostración, el dinero, las aportaciones y los movimientos de mercado son simulados.</p>`)}
-      ${sec("Lo que cuesta", `<p>Horizonte no cobra cuotas ni comisión de apertura. El coste de cada fondo figura en su documento de datos fundamentales (DFI), disponible antes de invertir.</p>`)}
+      ${sec("Lo que cuesta", `<p>Horizonte no cobra comisión de apertura. El coste de cada fondo figura en su documento de datos fundamentales (DFI), disponible antes de invertir.</p>`)}
       ${sec("Protección promocional del primer año", `<ul><li>Es una promoción de CaixaBank, no un fondo garantizado ni un seguro.</li><li>Cubre la diferencia si, a los ${RULES.protectMonths} meses de la primera aportación, las primeras aportaciones (tuyas o de tu familia, hasta ${RULES.protectCap} €) valen menos de lo aportado.</li><li>Tope de ${RULES.protectCap} € por persona. No cubre rendimientos ni aportaciones posteriores al tope.</li><li>Solo si no has vendido o retirado antes de los ${RULES.protectMonths} meses.</li><li>Dotación limitada (${PROMO.budgetTxt}): puede agotarse y se publicará su estado.</li></ul>`)}
       ${sec("Millas de casa y bonificación hipotecaria", `<ul><li>Suman: temas de Fundamentos, la prueba final, aportaciones propias cada mes, la constancia semanal, la revisión anual y los regalos de tu familia (con tope mensual).</li><li>No suman: los juegos (dan insignias) ni tener más dinero que nadie.</li><li>Si pides tu primera hipoteca con CaixaBank, las millas pueden convertirse en una bonificación sobre el diferencial de hasta ${pts(MILES.maxCut)} puntos, sobre las condiciones vigentes el día de la firma y según las condiciones de vinculación voluntaria que entonces se ofrezcan.</li><li>No obliga a contratar ningún producto y se rige por la Ley 5/2019. Las cifras de «Tu casa» son ilustraciones, no una oferta.</li><li>Las millas no caducan. Si nunca compras casa, no pierdes nada.</li></ul>`)}
       ${sec("El Antídoto", `<ul><li>Es opcional y pequeño: como máximo el ${Math.round(RULES.antidote * 100)} % de la cartera; el ${Math.round(RULES.base * 100)} % va a un fondo global diversificado.</li><li>Solo se activa tras un test de seis preguntas sobre tu situación y, si eres menor, con la aprobación de tu familia.</li><li>No es un seguro ni una cobertura: los fondos temáticos suelen tener más riesgo y pueden ir en dirección contraria a lo que esperas.</li></ul>`)}
@@ -613,14 +613,19 @@ function vAlta(role) {
             <button class="btn primary lg block">Crear cuenta</button>
             <p class="note">En la versión real, confirmarás tu identidad (DNI o banca digital). Esto es una demostración.</p></form>`;
     }
-    return `<div class="auth">
+    return `<div class="auth split">
+      <aside class="auth-side">${brand("#/", 34)}
+        <div><h2>Hoy, tu primer euro.<br>Mañana, tu casa.</h2><p>Empieza a invertir desde 1 €, con tu familia al lado.</p>
+          <ul><li>${ic("check")}Sin comisión de apertura</li><li>${ic("family")}Con el apoyo de tu familia</li><li>${ic("shield")}<span>Protección promocional el primer año<sup>*</sup></span></li></ul></div>
+        <small class="auth-ast">${protectNote()}</small></aside>
+      <div class="auth-main">
       <header class="auth-top">${brand("#/", 32)}${a.step ? btn(`${ic("back")}Atrás`, "altaBack", "ghost sm") : lnk("Cancelar", "#/", "ghost sm")}</header>
       <main class="auth-card">
         <ol class="auth-steps">${steps.map((s, i) => `<li class="${i < idx ? "done" : i === idx ? "on" : ""}"><span>${i < idx ? ic("check") : i + 1}</span>${s}</li>`).join("")}</ol>
         ${giftBanner()}
         ${body}
         <p class="auth-foot">${ic("lock")}Tus datos solo se usan para gestionar tu cuenta. <a href="#/legal" target="_blank" rel="noopener">Cómo los tratamos</a></p>
-      </main></div>`;
+      </main></div></div>`;
 }
 
 /* ------------------------------------------------------------------ área del joven */
@@ -814,16 +819,16 @@ function vAprende() {
     }
     return `${pageH("Aprende", "Lo esencial para invertir con criterio. Cada paso suma millas de casa.")}
     <div class="grid">
-      ${card(`<div class="cred-hero"><button class="cred-btn" data-act="openCred" aria-label="Ver tu certificado">${credVisual(true)}<span class="cred-cta">${S.exam?.passed ? "Ver certificado" : "Ver progreso"}${ic("arrow")}</span></button>${msList("stages")}</div>`, "c-12")}
       ${card(`${cardH("Fundamentos", `Cinco temas cortos (unos ${totalMin()} minutos en total). Cada tema suma ${MILES.lesson} millas de casa.`, `<span class="count">${done}/${LESSONS.length}</span>`)}
         <div class="rows">${LESSONS.map((l, i) => `<a class="row ${S.lessons[l.id] ? "ok" : ""}" href="#/tema/${l.id}/0"><span class="tick num">${S.lessons[l.id] ? ic("check") : i + 1}</span><div><b>${l.title}</b><span>${l.sub} · ${l.min} min</span></div>${ic("chev", "chev")}</a>`).join("")}</div>
         <div class="exam"><span class="mv-ic own">${ic("star")}</span><div><b>Prueba final</b><span>${passed ? `Superada el ${fmtD(S.exam.date)}.` : all ? `${RULES.examSize} preguntas; puedes fallar ${RULES.examMaxErrors}. Al superarla, CaixaBank invierte ${RULES.prize} € a tu nombre.` : `Disponible al completar los ${LESSONS.length} temas.`}</span></div>
-          ${all || passed ? lnk(passed ? "Repetir" : "Empezar", "#/prueba", passed ? "" : "primary") : `<button class="btn" disabled>Empezar</button>`}</div>`, "c-7")}
+          ${all || passed ? lnk(passed ? "Repetir" : "Empezar", "#/prueba", passed ? "" : "primary") : `<button class="btn" disabled>Empezar</button>`}</div>`, "c-7 course")}
+      ${card(`<div class="cred-hero"><button class="cred-btn" data-act="openCred" aria-label="Ver tu certificado">${credVisual(true)}<span class="cred-cta">${S.exam?.passed ? "Ver certificado" : "Ver progreso"}${ic("arrow")}</span></button>${msList("stages")}</div>`, "c-5 cert-card")}
       ${card(`${cardH("Juegos con datos de años pasados", "Partidas de un minuto, sin prisas. Dan insignias, no millas ni dinero.", played ? badge(`${ic("check")}Hoy: ${played.score}/${GAMES.find(g => g.id === played.id)?.rounds}`, "ok") : "")}
         <div class="games">${GAMES.map(g => `<a class="game ${g.id}" href="#/juego/${g.id}"><span>${ic(g.id === "titular" ? "news" : g.id === "masomenos" ? "updown" : g.id === "liga" ? "trophy" : "chart")}</span><div><b>${g.t}</b><small>${g.p}</small></div>${ic("play", "play")}</a>`).join("")}</div>
         ${badgesRow()}
         <button class="h-link fr-jump" data-act="frJump">${ic("family")}Compara tus resultados con tus amigos${ic("arrow")}</button>
-        <p class="note">Datos anuales aproximados entre ${MKT_FROM} y ${MKT_FROM + MKT[0].r.length - 1}. Rentabilidades pasadas no garantizan las futuras.</p>`, "c-5")}
+        <p class="note">Datos anuales aproximados entre ${MKT_FROM} y ${MKT_FROM + MKT[0].r.length - 1}. Rentabilidades pasadas no garantizan las futuras.</p>`, "c-12 games-card")}
       ${friendsCard()}
       ${dip}
     </div>`;
@@ -922,7 +927,7 @@ function mmReveal(ok) {
 }
 
 let lessonState = null;
-const focus = (back, i, n, body) => `<div class="focus"><header class="focus-top"><a class="icon-btn" href="${back}" aria-label="Cerrar">${ic("close")}</a>${n ? `${bar(i, n, "blue")}<span>${i} / ${n}</span>` : ""}</header><article class="focus-body">${body}</article></div>`;
+const focus = (back, i, n, body, rail = "") => `<div class="focus ${rail ? "has-rail" : ""}">${rail}<header class="focus-top"><a class="icon-btn" href="${back}" aria-label="Cerrar">${ic("close")}</a>${n ? `${bar(i, n, "blue")}<span>${i} / ${n}</span>` : ""}</header><article class="focus-body">${body}</article></div>`;
 /* Las preguntas van intercaladas: dos pantallas de explicación y una pregunta */
 function lessonSeq(l) {
     const seq = []; let qi = 0;
@@ -948,7 +953,10 @@ function vTema(id, step) {
           ${ans !== undefined ? why(ans === q.a, q.why) : ""}
           <div class="focus-nav">${lnk("Anterior", `#/tema/${id}/${step - 1}`)}${ans !== undefined ? (last ? btn("Terminar tema", "lessonDone", "primary", `data-id="${id}"`) : lnk(`Siguiente${ic("arrow")}`, `#/tema/${id}/${step + 1}`, "primary")) : ""}</div>`;
     }
-    return focus(homeLearn(), step + 1, total, body);
+    let qn = 0;
+    const rail = `<aside class="rail"><a class="rail-back" href="${homeLearn()}">${ic("back")}Fundamentos</a><h2>${l.title}</h2><p>${l.sub} · ${l.min} min</p>
+      <ol>${seq.map((x, k) => `<li class="${k < step ? "done" : k === step ? "on" : ""} ${x.c ? "" : "q"}"><a href="#/tema/${id}/${k}" ${k === step ? 'aria-current="step"' : ""}><span>${k < step ? ic("check") : ""}</span>${x.c ? x.c.h : `Pregunta ${++qn}`}</a></li>`).join("")}</ol></aside>`;
+    return focus(homeLearn(), step + 1, total, body, rail);
 }
 const opts = (q, ans, act, data = "") => `<div class="opts">${q.o.map((o, i) => `<button class="opt ${ans !== undefined && ans !== null ? (i === q.a ? "right" : i === ans ? "wrong" : "") : ""}" data-act="${act}" ${data} data-i="${i}" ${ans !== undefined && ans !== null ? "disabled" : ""}><span>${String.fromCharCode(65 + i)}</span>${o}</button>`).join("")}</div>`;
 const why = (ok, txt) => `<div class="why ${ok ? "ok" : "ko"}">${ic(ok ? "check" : "info")}<div><b>${ok ? "Correcto" : "No es correcto"}</b><p>${txt}</p></div></div>`;
