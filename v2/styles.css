@@ -495,30 +495,29 @@ body[data-view="app"] #toasts { left: calc(50% + var(--side) / 2); }
 .vals-src a { text-decoration: underline; text-underline-offset: 2px; }
 
 /* ---------------------------------------------------------------- Certificado Horizonte */
-.cred { position: relative; width: 340px; border-radius: 18px; padding: 20px 22px 18px; color: #fff; overflow: hidden; flex: none; display: flex; flex-direction: column;
+.cred { position: relative; width: 340px; aspect-ratio: 1.586; border-radius: 16px; padding: 18px 20px 16px; color: #fff; overflow: hidden; flex: none; display: flex; flex-direction: column;
     background: radial-gradient(120% 90% at 100% 0%, rgba(247, 181, 0, .3), transparent 52%), linear-gradient(155deg, #0a8fc4, #005a80 55%, #0b2f45);
     box-shadow: 0 24px 48px -26px rgba(0, 60, 90, .65), inset 0 0 0 1px rgba(255, 255, 255, .14); }
-.cred::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255, 255, 255, .035) 0 2px, transparent 2px 14px); pointer-events: none; }
-.cred.big { width: 420px; padding: 26px 28px 22px; border-radius: 22px; }
+.cred.big { width: 420px; padding: 24px 26px 20px; border-radius: 20px; }
 .cred.st0 { background: radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, .12), transparent 50%), linear-gradient(155deg, #3a4854, #161f27 72%); }
-.cred-top { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 255, 255, .82); }
-.cred-top span { white-space: nowrap; }
+.cred-top { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 255, 255, .82); }
+.cred-top span { white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; } .cred-top .cred-st, .cred-top img { flex: none; }
 .cred-top img { width: 30px; height: auto; filter: brightness(0) invert(1); opacity: .9; }
 .cred-top .cred-st { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .16); font-style: normal; font-size: 9.5px; letter-spacing: .1em; white-space: nowrap; }
-.cred-mid { position: relative; margin-top: 22px; }
+.cred-mid { position: relative; margin-top: auto; }
 .cred-mid small { display: block; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: rgba(255, 255, 255, .6); margin-bottom: 2px; }
-.cred-mid b { font-family: "Source Serif 4", Georgia, serif; font-weight: 400; font-size: 34px; letter-spacing: -.01em; line-height: 1.05; }
-.cred.big .cred-mid b { font-size: 40px; }
-.cred-name { position: relative; margin-top: 16px; font-size: 16px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cred.big .cred-name { font-size: 19px; }
-.cred-stages { position: relative; display: flex; gap: 6px; margin: 16px 0 14px; }
+.cred-mid b { font-family: "Source Serif 4", Georgia, serif; font-weight: 400; font-size: 30px; letter-spacing: -.01em; line-height: 1.05; }
+.cred.big .cred-mid b { font-size: 36px; }
+.cred-name { position: relative; margin-top: 10px; font-size: 15px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cred.big .cred-name { font-size: 18px; }
+.cred-stages { position: relative; display: flex; gap: 6px; margin: 12px 0 10px; }
 .cred-stages i { flex: 1; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .2); }
 .cred-stages i.done { background: rgba(255, 255, 255, .85); } .cred-stages i.on { background: var(--sun); box-shadow: 0 0 10px rgba(240, 182, 90, .8); }
-.cred-bottom { position: relative; display: flex; gap: 28px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .16); }
+.cred-bottom { position: relative; display: flex; gap: 28px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, .16); }
 .cred-bottom small { display: block; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 255, 255, .6); margin-bottom: 2px; }
 .cred-bottom b { font-size: 13px; font-weight: 600; white-space: nowrap; letter-spacing: .02em; }
 .hero-cred { display: flex; align-items: center; gap: 28px; }
-.hero-cred .cred { width: 320px; }
+.hero-cred .cred { width: 330px; }
 .hc-copy h2 { font-size: 24px; font-weight: 720; }
 .hc-copy p { color: var(--ink-2); margin: 8px 0 18px; }
 .cred-hero { display: flex; align-items: center; gap: 44px; }

@@ -314,7 +314,7 @@ function credVisual(big = false, sample = false) {
     const name = sample ? "Tu nombre" : `${S.teen?.name || ""} ${S.teen?.surname || ""}`.trim();
     const code = !sample && S.diploma ? esc(S.diploma.id) : "HZ-····-····";
     return `<div class="cred ${big ? "big" : ""} st${st}">
-      <div class="cred-top"><span>CaixaBank Asset Management</span>${sample ? `<img src="brand/horizonte-icono.svg" alt="" width="34" height="28">` : `<em class="cred-st">${S.exam?.passed ? "Obtenido" : "En curso"}</em>`}</div>
+      <div class="cred-top"><span>CaixaBank AM</span>${sample ? `<img src="brand/horizonte-icono.svg" alt="" width="34" height="28">` : `<em class="cred-st">${S.exam?.passed ? "Obtenido" : "En curso"}</em>`}</div>
       <div class="cred-mid"><small>Certificado</small><b>Horizonte</b></div>
       <div class="cred-name">${esc(name)}</div>
       <div class="cred-stages" aria-label="Etapa: ${STAGES[st]}">${STAGES.map((x, i) => `<i class="${i < st ? "done" : i === st ? "on" : ""}"></i>`).join("")}</div>
