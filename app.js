@@ -98,10 +98,10 @@ function installCard() {
 /* ------------------------------------------------------------------ estado */
 const blank = () => ({ v: 2, role: null, teen: null, family: null, familyAuth: false, paga: 0, weekly: 0, roundup: false,
     lessons: {}, exam: null, diploma: null, itv: [], money: [], schedules: [], fears: [], antidoteApproved: false,
-    geminiOk: false, friendsOk: false, friends: null, voted: false, chat: [], goal: { ...GOAL_DEFAULT }, games: {}, metas: [], pending: [], callReq: null, joined: {} });
+    geminiOk: false, friendsOk: false, friends: null, voted: false, chat: [], goal: { ...GOAL_DEFAULT }, games: {}, metas: [], pending: [], callReq: null, joined: {}, mix: [] });
 let S;
 try { S = { ...blank(), ...(JSON.parse(localStorage.getItem(KEY)) || {}) }; } catch (e) { S = blank(); }
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } accTouch(); };
+const save = () => { mkTouch(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } accTouch(); };
 
 /* ------------------------------------------------------------------ cálculos */
 function ageOf(birth = S.teen?.birth) {
@@ -169,7 +169,7 @@ function money() {
     const al = allocation();
     const r = al.parts.reduce((a, p) => a + p.w * FUNDS[p.fund].r / 100, 0);
     const invested = S.money.reduce((a, c) => a + c.amount, 0);
-    const value = S.money.reduce((a, c) => a + c.amount * (1 + r * yearsSince(c.date)), 0);
+    const value = Math.max(0, mkValue());
     const own = S.money.filter(isOwn).reduce((a, c) => a + c.amount, 0);
     const gifts = S.money.filter(isGift).reduce((a, c) => a + c.amount, 0);
     const prizes = S.money.filter(c => c.src === "premio").reduce((a, c) => a + c.amount, 0);
@@ -294,7 +294,7 @@ function sheet(title, body) {
 const closeSheet = () => { const el = $("#sheet"); el.classList.remove("open"); el.innerHTML = ""; };
 function addMoney(c) {
     const before = miles().total, wasFirst = !money().firstOwn;
-    S.money.push({ date: iso(new Date()), ...c });
+    S.money.push({ date: iso(new Date()), ts: Date.now(), ...c });
     S.money.sort((a, b) => a.date.localeCompare(b.date));
     save();
     const gained = miles().total - before, amt = eur(c.amount, c.amount % 1 !== 0);
@@ -347,7 +347,7 @@ function vLanding() {
         <h1>Hoy, tu primer euro.<br>Mañana, <em>tu casa</em>.</h1>
         <p class="hz-lead">Empieza a invertir desde 1 €, con tu familia al lado.</p>
         <div class="lp-cta">${lnk(`Soy joven${ic("arrow")}`, "#/alta/joven", "primary lg")}${lnk("Soy madre, padre o tutor", "#/familias", "lg")}</div>
-        <p class="hz-try"><a href="#/probar">Prueba un tema y un juego sin crear cuenta</a></p>
+        <p class="hz-try"><a href="#/probar">Prueba un tema y un juego sin crear cuenta</a> · <button type="button" class="hz-ex" data-act="example">Ver una cuenta de ejemplo</button></p>
         <ul class="hz-trust"><li>${ic("check")}Sin comisión de apertura</li><li>${ic("family")}Con el apoyo de tu familia</li><li>${ic("shield")}<span>Protección promocional el primer año<sup>*</sup></span></li></ul>
         ${trustBar()}
       </div>
@@ -649,20 +649,14 @@ function moveRow(c) {
 /* Tu dinero hoy: resumen de la semana. En esta demo, los movimientos de los fondos se simulan
    de forma reproducible para cada semana; en producción vendrían de CaixaBank AM. */
 const VOL = { global: 15, tecnologia: 25, inmobiliario: 18, energia: 22, inflacion: 7, salud: 14, movilidad: 20 };
-function weekMoves(wk = weekOf(new Date())) {
-    let h = 0; for (const ch of wk) h = (h * 31 + ch.charCodeAt(0)) | 0;
-    const rnd = () => { h = (h + 0x6D2B79F5) | 0; let t = Math.imul(h ^ (h >>> 15), 1 | h); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-    const market = Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(2 * Math.PI * rnd());
-    const out = {};
-    Object.keys(FUNDS).forEach(k => {
-        const own = Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(2 * Math.PI * rnd());
-        out[k] = FUNDS[k].r / 52 + VOL[k] / Math.sqrt(52) * (0.6 * market + 0.8 * own) / 1.0;
-    });
-    return out;
+function weekMoves(wk = weekOf(new Date()), until = Date.now()) {
+    const from = new Date(wk + "T00:00:00").getTime();
+    return Object.fromEntries(Object.keys(FUNDS).map(k => [k, (mkPrice(k, until) / mkPrice(k, from) - 1) * 100]));
 }
 function weekSummary() {
     const m = money(), mv = weekMoves(), parts = m.parts.map(p => ({ ...p, ret: mv[p.fund], chg: p.amount * mv[p.fund] / 100 }));
-    const chg = parts.reduce((a, p) => a + p.chg, 0), retPct = m.value ? chg / m.value * 100 : mv.global;
+    const mon = new Date(weekOf(new Date()) + "T00:00:00").getTime(), put = S.money.filter(c => depTime(c) > mon).reduce((a, c) => a + c.amount, 0);
+    const chg = m.value - mkValue(mon) - put, retPct = m.value > 0 ? chg / Math.max(.01, m.value - chg) * 100 : mv.global;
     const top = [...parts].sort((a, b) => Math.abs(b.ret) - Math.abs(a.ret))[0];
     const sgn = v => `${v >= 0 ? "+" : "−"}${pct(Math.abs(v), 1)}`;
     const lines = [];
@@ -731,7 +725,7 @@ function credSheet() {
           <h3 class="cs-h">${passed ? `Has superado · prueba final ${esc(d.s)}` : "Lo que aprenderás"}</h3>
           <div class="cs-skills">${LESSONS.map(l => `<span class="${S.lessons[l.id] ? "ok" : ""}">${S.lessons[l.id] ? ic("check") : ""}${l.title}</span>`).join("")}</div>
           <div class="cs-acts">${passed
-            ? `${age >= RULES.linkedinAge ? `<a class="btn primary sm" href="${esc(linkedinUrl(d))}" target="_blank" rel="noopener">${ic("plus")}Añadir a LinkedIn</a>` : `<button class="btn sm" disabled>LinkedIn a partir de los ${RULES.linkedinAge}</button>`}${btn(`${ic("send")}Compartir`, "shareCert", "sm")}${btn(`${ic("download")}Descargar`, "dlDiploma", "sm")}${btn(`${ic("link")}Copiar enlace`, "copyVerify", "sm ghost")}`
+            ? `${S.example ? "" : age >= RULES.linkedinAge ? `<a class="btn primary sm" href="${esc(linkedinUrl(d))}" target="_blank" rel="noopener">${ic("plus")}Añadir a LinkedIn</a>` : `<button class="btn sm" disabled>LinkedIn a partir de los ${RULES.linkedinAge}</button>`}${btn(`${ic("send")}Compartir`, "shareCert", "sm")}${btn(`${ic("download")}Descargar`, "dlDiploma", "sm")}${btn(`${ic("link")}Copiar enlace`, "copyVerify", "sm ghost")}`
             : lnk(done >= LESSONS.length ? "Hacer la prueba final" : done ? "Continuar Fundamentos" : "Empezar Fundamentos", done >= LESSONS.length ? "#/prueba" : "#/aprende", "primary")}</div>
         </div>
       </div></div>`;
@@ -818,7 +812,7 @@ function diplomaSVG(d) {
 }
 function linkedinUrl(d) {
     const f = T(d.f), v = T(d.v);
-    return "https://www.linkedin.com/profile/add?" + new URLSearchParams({ startTask: "CERTIFICATION_NAME", name: "Certificado Horizonte · Fundamentos de inversión", organizationName: "CaixaBank Asset Management",
+    return "https://www.linkedin.com/profile/add?" + new URLSearchParams({ startTask: "CERTIFICATION_NAME", name: "Certificado Horizonte: Fundamentos de inversión", organizationName: "CaixaBank Asset Management",
         issueYear: f.getFullYear(), issueMonth: f.getMonth() + 1, expirationYear: v.getFullYear(), expirationMonth: v.getMonth() + 1, certUrl: verifyUrl(d), certId: d.i }).toString();
 }
 function vAprende() {
@@ -890,7 +884,7 @@ function vJuego(id) {
 const LIGA_DEMO = true;
 function ligaWeek(wk) { const d = T(wk); d.setHours(0, 0, 0, 0); const open = new Date(d); open.setHours(9, 0, 0, 0); const close = new Date(d); close.setDate(close.getDate() + 4); close.setHours(17, 35, 0, 0); return { open, close }; }
 function ligaMoves(wk) {
-    const g = weekMoves(wk).global, r = prng(hashStr(wk + "|liga"));
+    const g = weekMoves(wk, ligaWeek(wk).close).global, r = prng(hashStr(wk + "|liga"));
     return { mundo: g, ibex: 0.7 * g + 2.0 * gauss(r) + 0.1, oro: 1.9 * gauss(r) + 0.15 };
 }
 function ligaNow(wk, k) {                                          // cómo va el mercado en este momento de la semana
@@ -1139,34 +1133,11 @@ function prng(seed) { let h = seed | 0; return () => { h = (h + 0x6D2B79F5) | 0;
 const hashStr = str => { let h = 2166136261; for (const ch of str) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
 const gauss = r => Math.sqrt(-2 * Math.log(r() || 1e-9)) * Math.cos(2 * Math.PI * r());
 const depT = c => new Date(c.date + "T00:00:00").getTime();
-/* Puente browniano de n pasos, anclado a 0 en los dos extremos */
-function bridge(n, seed) {
-    const r = prng(seed), w = [0];
-    for (let i = 1; i <= n; i++) w.push(w[i - 1] + gauss(r));
-    return w.map((x, i) => x - i / n * w[n]);
-}
 function valueSeries() {
-    const m = money(), now = Date.now(), deps = S.money.map(c => ({ t: Math.min(depT(c), now), g: T(c.date).getTime(), a: c.amount })).sort((x, y) => x.t - y.t);
+    const m = money(), now = Date.now(), deps = S.money.map(c => ({ t: depTime(c), a: c.amount })).sort((x, y) => x.t - y.t);
     if (!deps.length) return null;
-    const vol = m.al.parts.reduce((a, p) => a + p.w * (VOL[p.fund] || 15), 0) / 100;
-    const sd = vol / Math.sqrt(252) * 0.7, sh = sd * 0.35;                     // movimiento diario y, dentro del día, más suave
-    const start = deps[0].t, days = Math.max(1, Math.ceil((now - start) / DAY));
-    const seed = hashStr(`${S.teen?.name}|${S.teen?.birth}|${deps[0].t}`);
-    const daily = bridge(days, seed), intra = {};
-    const hourly = k => intra[k] || (intra[k] = bridge(48, seed ^ (k * 2654435761)));
-    const noise = t => {                                                // los días se cuentan hacia atrás desde ahora
-        const back = (now - t) / DAY, k = Math.floor(back), f = back - k;
-        const d0 = daily[days - k] ?? 0, d1 = daily[days - k - 1] ?? 0;
-        const h = hourly(k), hi = (1 - f) * 48, j = Math.floor(hi), hf = hi - j;
-        return sd * (d0 + (d1 - d0) * f) + sh * ((h[j] ?? 0) + ((h[j + 1] ?? 0) - (h[j] ?? 0)) * hf);
-    };
-    const n0 = noise(start), noiseAt = t => noise(t) - n0 * (now - t) / Math.max(1, now - start);   // anclado a 0 en la primera aportación y hoy
-    const at = t => {
-        let trend = 0, put = 0;
-        for (const d of deps) if (d.t <= t) { trend += d.a * (1 + m.r * Math.max(0, t - d.g) / YEAR); put += d.a; }
-        return { t, v: t >= now ? m.value : trend * Math.exp(noiseAt(t)), put };
-    };
-    return { at, start, now, deps, m };
+    const at = t => ({ t, v: t >= now ? m.value : Math.max(0, deps.reduce((s, d) => d.t <= t ? s + d.a * mkGrow(d.t, t) : s, 0)), put: deps.reduce((s, d) => d.t <= t ? s + d.a : s, 0) });
+    return { at, start: deps[0].t, now, deps, m };
 }
 function rangePoints(vs, key) {
     const span = RANGES.find(r => r[0] === key)[2], from = Math.max(vs.start, span === Infinity ? vs.start : vs.now - span);
@@ -1191,7 +1162,7 @@ function drawValueChart(box) {
     const key = box.dataset.range || vRange, pts = rangePoints(vs, key), { chg, pct: p } = rangeChange(pts);
     const span = RANGES.find(r => r[0] === key)[2], label = span !== Infinity && vs.start > vs.now - span ? "desde tu primera aportación" : RANGES.find(r => r[0] === key)[1];
     const mini = box.classList.contains("mini"), W = Math.max(mini ? 120 : 280, box.clientWidth), H = mini ? Math.max(70, box.clientHeight) : W < 560 ? 200 : 260, padR = box.classList.contains("mini") ? 0 : 64, padT = 12, padB = 12;
-    const vals = pts.flatMap(x => [x.v, x.put]), lo0 = Math.min(...vals), hi0 = Math.max(...vals), pad = Math.max((hi0 - lo0) * .12, hi0 * .004, .5);
+    const vals = pts.flatMap(x => [x.v, x.put]), lo0 = Math.min(...vals), hi0 = Math.max(...vals), pad = Math.max((hi0 - lo0) * .12, hi0 * .0012, .012);
     const lo = Math.max(0, lo0 - pad), hi = hi0 + pad;
     const X = t => (t - pts[0].t) / Math.max(1, pts[pts.length - 1].t - pts[0].t) * (W - padR), Y = v => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
     const line = pts.map((q, i) => `${i ? "L" : "M"}${X(q.t).toFixed(1)},${Y(q.v).toFixed(1)}`).join("");
@@ -1269,7 +1240,7 @@ function vDinero() {
     </div>
     `;
 }
-function applyWithdrawal(amount) { S.money.push({ date: iso(new Date()), amount: -amount, src: "retiro" }); S.money.sort((a, b) => a.date.localeCompare(b.date)); save(); }
+function applyWithdrawal(amount) { S.money.push({ date: iso(new Date()), ts: Date.now(), amount: -amount, src: "retiro" }); S.money.sort((a, b) => a.date.localeCompare(b.date)); save(); }
 function withdrawSheet() {
     const m = money(), max = Math.floor(m.value * 100) / 100, minor = !isAdult();
     sheet("Retirar dinero", `<form data-form="withdraw" class="form">
@@ -1741,7 +1712,7 @@ document.addEventListener("click", async e => {
     else if (act === "examRetry") { examState = null; render(); }
     else if (act === "dlDiploma") downloadDiploma();
     else if (act === "shareCert") {
-        const u = verifyUrl(diplomaData()), t = `He conseguido el Certificado Horizonte · Fundamentos de inversión, de CaixaBank Asset Management.`;
+        const u = verifyUrl(diplomaData()), t = `He conseguido el Certificado Horizonte: Fundamentos de inversión, de CaixaBank Asset Management.`;
         if (navigator.share) { try { await navigator.share({ title: "Certificado Horizonte", text: t, url: u }); } catch (err) { /* cancelado */ } }
         else { try { await navigator.clipboard.writeText(`${t} ${u}`); toast("Enlace copiado para compartir"); } catch (err) { prompt("Copia el enlace:", u); } }
     }

@@ -1624,3 +1624,5 @@ body[data-view="app"] .page { padding-bottom: 110px; }
 @media print { #gem { display: none; } }
 
 @media (min-width: 861px) { .games-card .games { grid-template-columns: repeat(4, 1fr); } .games-card .game, .games-card .game:first-child { padding-right: 22px; } .games-card .game:not(:first-child) { padding-left: 22px; } }
+
+.hz-ex { all: unset; cursor: pointer; color: var(--blue); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
