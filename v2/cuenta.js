@@ -23,7 +23,7 @@ function accStart() {
     S.acct = { token: accNew(), ver: 0, ok: false }; save(); accSchedule(50);
 }
 /* se llama desde save(): programa un envío cuando hay cuenta compartida */
-function accTouch() { if (S.acct && !accApplying) accSchedule(1200); }
+function accTouch() { famUpsert(); if (S.acct && !accApplying) accSchedule(1200); }
 function accSchedule(ms) { clearTimeout(accTimer); accTimer = setTimeout(accPush, ms); }
 
 async function accPush() {
@@ -96,10 +96,13 @@ function vVincular(params) {
       ${!want || want === "family" ? opt("family", `Entrar como madre, padre o tutor de ${teen}`, `Podrás aprobar decisiones, hacer regalos y ver su progreso${d.family?.name ? ` (cuenta abierta por ${fam})` : ""}.`) : ""}
       <p class="auth-foot">${ic("lock")}Quien tiene este enlace puede entrar en la cuenta. No lo compartas fuera de la familia.</p>`);
 }
-function vincGo(role) {
-    const d = vinc.data;
-    if (S.role && S.acct?.token !== vinc.token && !confirm("Este dispositivo ya tiene una cuenta. Se sustituirá por esta. ¿Continuar?")) return;
+async function vincGo(role) {
+    const d = vinc.data, addToFamily = role === "family" && S.role === "family" && S.acct && S.acct.token !== vinc.token;   // otra persona de la misma familia: se añade, no se sustituye
+    if (addToFamily) await famFlush();
+    else if (S.role && S.acct?.token !== vinc.token && !confirm("Este dispositivo ya tiene una cuenta. Se sustituirá por esta. ¿Continuar?")) return;
+    const email = S.family?.email;
     S = { ...blank(), ...d.estado, role, acct: { token: vinc.token, ver: d.version, ok: true }, chat: [], friends: null };
+    if (addToFamily && S.family && email) S.family.email = email;
     S.fears = (S.fears || []).map(normFear).filter(Boolean);
     S.joined = { ...(S.joined || {}), [role]: true };
     save(); location.hash = role === "family" ? "#/f/resumen" : "#/inicio"; toast("Cuentas conectadas");
@@ -126,3 +129,62 @@ async function accShareCopy(share, role) {
     if (share && navigator.share) { try { await navigator.share({ title: "Horizonte", text: t }); } catch (e) { /* cancelado */ } return; }
     try { await navigator.clipboard.writeText(share ? t : link); toast(share ? "Mensaje copiado" : "Enlace copiado"); } catch (e) { prompt("Copia el enlace:", link); }
 }
+
+/* ---------------------------------------------------------------- una familia con varias personas jóvenes
+   Cada persona joven tiene su propia cuenta compartida. Este móvil recuerda las que ha conectado la familia y se cambia de una a otra. */
+const famList = () => { try { return JSON.parse(localStorage.getItem("hz2_famacc") || "[]"); } catch (e) { return []; } };
+const famSave = l => { try { localStorage.setItem("hz2_famacc", JSON.stringify(l)); } catch (e) { /* nada */ } };
+function famUpsert() {
+    if (S.role !== "family" || !S.acct?.token) return;
+    const l = famList(), i = l.findIndex(a => a.token === S.acct.token), e = { token: S.acct.token, name: S.teen?.name || "" };
+    if (i < 0) l.push(e); else l[i] = e;
+    famSave(l);
+}
+async function famFlush() {
+    clearTimeout(accTimer);
+    if (S.acct) { await accPush(); try { localStorage.setItem("hz2_acc_" + S.acct.token, JSON.stringify(S)); } catch (e) { /* nada */ } }
+}
+async function famSwitch(token) {
+    if (!token || token === S.acct?.token) return;
+    await famFlush();
+    try {
+        const r = await accCall("v2_cuenta_leer", { p_token: token });
+        if (!r) throw new Error("no existe");
+        const email = S.family?.email;
+        S = { ...blank(), ...r.estado, role: "family", acct: { token, ver: r.version, ok: true }, chat: [], friends: null };
+        S.fears = (S.fears || []).map(normFear).filter(Boolean);
+        if (S.family && email) S.family.email = email;
+        accStore(); famUpsert(); location.hash = "#/f/resumen"; render(); scrollTo(0, 0);
+    } catch (e) { toast("No se ha podido cambiar de cuenta ahora."); }
+}
+function famBar() {
+    if (S.role !== "family") return "";
+    const list = famList(), cur = S.acct?.token || "";
+    if (!list.length && teenName()) list.push({ token: "", name: teenName() });
+    return `<div class="fam-bar" role="group" aria-label="Personas de la familia"><span>Cuenta de</span>${list.map(a => `<button type="button" class="chip ${a.token === cur ? "on" : ""}" data-act="famGo" data-token="${esc(a.token)}">${esc(a.name || "Cuenta")}</button>`).join("")}<button type="button" class="chip add" data-act="famAdd">${ic("plus")}Añadir a otra persona</button></div>`;
+}
+function famAddSheet() {
+    sheet("Añadir a otra persona", `<form data-form="famNew" class="form">
+      <p class="note">Otro hijo, hija o nieto. Tendrá su propia cuenta, y tú podrás cambiar de una a otra desde aquí.</p>
+      <label class="field"><span>Nombre o alias</span><input name="name" required maxlength="30"></label>
+      <label class="field"><span>Fecha de nacimiento</span><input name="birth" type="date" required></label>
+      <label class="check"><input type="checkbox" name="ok" required><span>Soy su madre, padre o tutor legal y autorizo la apertura de su cuenta. Entiendo que invertir conlleva riesgos.</span></label>
+      <button class="btn primary lg block">Crear la cuenta</button></form>`);
+}
+document.addEventListener("click", e => {
+    const b = e.target.closest('[data-act="famGo"], [data-act="famAdd"]'); if (!b) return;
+    if (b.dataset.act === "famGo") famSwitch(b.dataset.token); else famAddSheet();
+});
+document.addEventListener("submit", async e => {
+    const f = e.target.closest('[data-form="famNew"]'); if (!f) return;
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(f)), age = ageOf(d.birth);
+    if (age >= RULES.adultAge || age < 0) return toast("Con esa fecha la persona ya es mayor de edad. Revisa la fecha de nacimiento.");
+    closeSheet();
+    if (!S.acct) accStart();                                  // para que la persona actual también quede en la lista
+    await famFlush();
+    const family = { ...S.family };
+    S = { ...blank(), role: "family", family, familyAuth: true, teen: { name: d.name.trim(), surname: "", birth: d.birth }, joined: { family: true }, acct: { token: accNew(), ver: 0, ok: false } };
+    accStore(); famUpsert(); accSchedule(50); location.hash = "#/f/resumen"; render(); scrollTo(0, 0);
+    toast(`Cuenta de ${esc(S.teen.name)} creada. Ahora conéctala con su enlace.`);
+});

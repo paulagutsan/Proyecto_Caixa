@@ -330,7 +330,7 @@ function vLanding() {
     const lpYear = 8, lpNews = MKT_NEWS[lpYear];
     return `<div class="lp">
     <header class="lp-nav"><div class="lp-in">${brand("#/")}
-      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#aprende">Aprende</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#voz">Tu voz</a><a href="#proyecto">Tu proyecto</a><a href="#familias">Familias</a><a href="#preguntas">Preguntas</a></nav>
+      <nav class="lp-links" aria-label="Secciones"><a href="#ciclo">Cómo funciona</a><a href="#aprende">Aprende</a><a href="#antidoto">Antídoto</a><a href="#casa">Tu casa</a><a href="#voz">Tu voz</a><a href="#proyecto">Tu proyecto</a><a href="#familias">Familias</a><a href="#regala">Regala</a><a href="#preguntas">Preguntas</a></nav>
       <div class="lp-right">${themeBtn()}${lnk("Crear cuenta", "#/alta/joven", "primary sm")}</div></div></header>
 
     <section class="hz-hero"><div class="lp-in hz-hero-in">
@@ -436,6 +436,8 @@ function vLanding() {
         <li><span>${ic("gift")}</span><div><b>Regalos con mensaje</b><small>Cumpleaños, Navidad o cada mes. También suman millas de casa, con un tope.</small></div></li>
         <li><span>${ic("chart")}</span><div><b>Todo en euros</b><small>Lo que vale su cuenta y lo que cuesta, cada semana.</small></div></li></ul>
     </div></section>
+
+    ${giftSection()}
 
     <section class="lp-sec alt" id="preguntas"><div class="lp-in lp-narrow">
       <p class="kicker">Preguntas frecuentes</p><h2 class="serif">Lo que más nos preguntan.</h2>
@@ -600,6 +602,7 @@ function vAlta(role) {
       <header class="auth-top">${brand("#/", 32)}${a.step ? btn(`${ic("back")}Atrás`, "altaBack", "ghost sm") : lnk("Cancelar", "#/", "ghost sm")}</header>
       <main class="auth-card">
         <ol class="auth-steps">${steps.map((s, i) => `<li class="${i < idx ? "done" : i === idx ? "on" : ""}"><span>${i < idx ? ic("check") : i + 1}</span>${s}</li>`).join("")}</ol>
+        ${giftBanner()}
         ${body}
         <p class="auth-foot">${ic("lock")}Tus datos solo se usan para gestionar tu cuenta. <a href="#/legal" target="_blank" rel="noopener">Cómo los tratamos</a></p>
       </main></div>`;
@@ -1427,6 +1430,7 @@ function vFResumen() {
     const steps = [[done >= LESSONS.length, "Fundamentos", `${done} de ${LESSONS.length} temas`], [passed, "Prueba final", passed ? `${S.exam.score}/${S.exam.total} el ${fmtD(S.exam.date)}` : "Pendiente"],
         [!!m.firstOwn, "Primer euro propio", m.firstOwn ? fmtD(m.firstOwn.date) : "Aún no"], [!!S.suit, "Test de situación", S.suit ? "Hecho" : "Pendiente"]];
     return `${pageH(`Hola, ${esc(S.family?.name || "")}`, `Así avanza ${n} en Horizonte.`, lnk(`${ic("gift")}Hacer un regalo`, "#/f/regalar", "primary"))}
+    ${famBar()}
     <div class="grid">
       ${connectCard("family")}
       ${card(`${cardH("Pendiente de tu aprobación")}${pendingRows()}`, "c-12")}
@@ -1455,6 +1459,8 @@ function pendingRows() {
 function vFRegalar() {
     const n = esc(teenName()), sent = S.money.filter(isGift).reverse();
     return `${pageH("Regalos", `Regala a ${n} dinero para su futuro, con un mensaje.`)}
+    ${famBar()}
+    <p class="note fam-other">¿Quieres regalar a otra persona, aunque no tenga cuenta? <a href="#/regalar">Hazlo aquí</a>.</p>
     <div class="grid">
       ${card(`${cardH("Nuevo regalo", `Cada 5 € suman ${MILES.giftPer5} milla de casa, hasta ${MILES.giftMonthCap} al mes.`)}
         <form class="form two" data-form="gift">
@@ -1471,6 +1477,7 @@ function vFRegalar() {
 function vFPermisos() {
     const al = allocation(), n = esc(teenName()), adult = isAdult(), wpct = w => pct(w * 100, (w * 100) % 1 ? 1 : 0);
     return `${pageH("Permisos", adult ? `${n} ya es mayor de edad y decide sobre su cuenta.` : `Hasta los ${RULES.adultAge} años, las decisiones importantes de la cuenta de ${n} necesitan tu aprobación.`)}
+    ${famBar()}
     <div class="grid">
       ${card(`${cardH("Antídoto", al.fears.length ? `${n} ha elegido invertir una parte en lo que le preocupa.` : `${n} aún no ha elegido su Antídoto.`, al.fears.length && !adult && S.suit?.ok ? toggle("approve", S.antidoteApproved, "Aprobar Antídoto") : "")}
         ${al.fears.length ? `${stack(al.planned)}<div class="rows">${al.planned.map(p => `<div class="row">${sw(p.fund)}<div><b>${FUNDS[p.fund].name} · ${wpct(p.w)}</b><span>${p.fear ? esc(p.fear.label) : "Cartera base diversificada"}</span></div></div>`).join("")}</div><p class="note">${S.suit ? `Test de situación: ${{ sat: "permite un Antídoto pequeño", base: "solo cartera base", corto: "plazo corto: no se recomienda invertir este dinero", revisar: "pendiente de repasar" }[S.suit.level] || ""}.` : `${n} aún no ha hecho el test de seis preguntas, necesario para activar un Antídoto.`} No es un seguro: ese fondo puede perder valor.</p>` : ""}`, "c-6")}
@@ -1538,6 +1545,8 @@ function render() {
     if (r === "verificar") { html = vVerificar(params); view = "public"; }
     else if (r === "legal") { html = vLegal(); view = "public"; }
     else if (r === "vincular") { html = vVincular(params); view = "public"; }
+    else if (r === "regalar") { html = vRegalar(); view = "public"; }
+    else if (r === "regalo") { html = vRegalo(params); view = "public"; }
     else if (r === "tema" && learner) { html = vTema(parts[1], parts[2]); view = "focus"; if (!html) { location.hash = homeLearn(); return; } }
     else if (r === "juego" && learner) { html = vJuego(parts[1]); view = "focus"; if (!html) { location.hash = homeLearn(); return; } }
     else if (r === "prueba" && S.role === "teen") { html = vExamen(); view = "focus"; }
@@ -1569,6 +1578,7 @@ function finishTeen() {
     S.teen = { name: d.name.trim(), surname: "", birth: d.birth };
     if (d.fname) { S.family = { name: d.fname.trim(), relation: d.relation, email: d.femail || "" }; S.familyAuth = true; S.joined = { teen: true }; }
     save(); if (d.fname) accStart(); alta = null; location.hash = "#/inicio"; toast(`Te damos la bienvenida a Horizonte, ${esc(S.teen.name)}`);
+    if (gfPending()) setTimeout(() => giftClaim(gfPending()), 900);
 }
 document.addEventListener("click", async e => {
     const b = e.target.closest("[data-act]");
@@ -1673,7 +1683,7 @@ document.addEventListener("click", async e => {
     else if (act === "invite") { const t = b.dataset.text; if (navigator.share) { try { await navigator.share({ title: "Horizonte", text: t }); } catch (err) { /* cancelado */ } } else { try { await navigator.clipboard.writeText(t); toast("Invitación copiada. Compártela por WhatsApp o por correo."); } catch (err) { prompt("Copia la invitación:", t); } } }
     else if (act === "cancelSched") { S.schedules.splice(+b.dataset.i, 1); save(); toast("Aportación mensual cancelada"); rerender(); }
     else if (act === "switchRole") { S.role = S.role === "family" ? "teen" : "family"; save(); location.hash = S.role === "family" ? "#/f/resumen" : "#/inicio"; }
-    else if (act === "reset") { if (confirm("Se borrarán todos los datos de este dispositivo. ¿Continuar?")) { S = blank(); save(); ranking = null; sb2Save(null); setPendingInvite(""); soc = { red: [], partidas: [], loaded: false, loading: false, err: "" }; location.hash = "#/"; render(); } }
+    else if (act === "reset") { if (confirm("Se borrarán todos los datos de este dispositivo. ¿Continuar?")) { try { localStorage.removeItem("hz2_famacc"); } catch (err) { /* nada */ } S = blank(); save(); ranking = null; sb2Save(null); setPendingInvite(""); soc = { red: [], partidas: [], loaded: false, loading: false, err: "" }; location.hash = "#/"; render(); } }
 });
 document.addEventListener("change", e => {
     const t = e.target, act = t.dataset.act;
@@ -1806,8 +1816,9 @@ function downloadDiploma() {
 
 if (S.diploma && !S.diploma.reg) setTimeout(certRegister, 1500);
 accInit();
+if (S.role === "teen" && gfPending()) setTimeout(() => giftClaim(gfPending()), 1500);
 window.addEventListener("hashchange", () => {
-    if (/^#(ciclo|por-que|aprende|antidoto|casa|voz|proyecto|familias|preguntas)$/.test(location.hash)) return;
+    if (/^#(ciclo|por-que|aprende|antidoto|casa|voz|proyecto|familias|regala|preguntas)$/.test(location.hash)) return;
     closeSheet(); render(); scrollTo(0, 0);
 });
 render();
