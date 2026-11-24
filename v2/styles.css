@@ -1502,3 +1502,16 @@ fieldset.field { border: 0; padding: 0; margin: 0; } fieldset.field legend { fon
 .ht .note { font-size: 12.5px; color: var(--ink-3); }
 @media (max-width: 720px) { .ht-t1 { font-size: 23px; } .ht-t2 { font-size: 20px; } .ht-t3 { font-size: 16px; } }
 .hz-copy .lp-cta .btn { margin-left: 0 !important; margin-right: 0 !important; }
+/* misma escala, peso y azul que el titular de la portada */
+.ht { max-width: 500px; }
+.ht-k { font-size: 14.5px; }
+.ht-big { font-size: clamp(40px, 3.9vw, 56px); font-weight: 700; letter-spacing: -.035em; line-height: 1.08; color: var(--blue); margin: 4px 0; }
+.ht-say { font-size: 16px; font-weight: 500; letter-spacing: 0; color: var(--ink-2); }
+.ht-plot { margin-top: 14px; }
+.ht-a { stroke-width: 3.5; } .ht-b { stroke-width: 2; } .ht-gap { stroke: var(--blue); stroke-width: 2; stroke-dasharray: 2 4; }
+.ht-t1 { font-size: 18px; font-weight: 680; } .ht-t2 { font-size: 16px; }
+.ht-range { margin-top: 12px; } .ht-range span { font-size: 14px; } .ht-range b { font-size: 14px; }
+.ht-range input { height: 4px; } .ht-range input::-webkit-slider-thumb { width: 20px; height: 20px; border-width: 5px; }
+.ht-range input::-moz-range-thumb { width: 10px; height: 10px; border-width: 5px; }
+.ht .note { font-size: 12px; }
+@media (max-width: 720px) { .ht-t1 { font-size: 22px; } .ht-t2 { font-size: 20px; } }

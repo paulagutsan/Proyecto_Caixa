@@ -3,7 +3,7 @@
    cambio publicado se ve al momento; si no hay conexión, usa la última copia guardada.
    Solo actúa dentro de /v2/: la versión 1 y el resto del sitio no se ven afectados.
    Nunca guarda nada de Supabase ni de Gemini (datos de cuenta, amigos, asistente). */
-const CACHE = "horizonte-v2-44";
+const CACHE = "horizonte-v2-45";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./brand/horizonte-icono.svg", "./brand/horizonte-logo.png"];
 
 self.addEventListener("install", e => {
