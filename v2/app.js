@@ -356,11 +356,11 @@ function vLanding() {
       </div>
       <div class="hz-visual">
         <div class="ht" data-hero>
-          <p class="ht-k">Si pones <b data-o="amt"></b> al mes durante 40 años, podrías tener</p>
+          <p class="ht-k">Si pones <b data-o="amt"></b> al mes durante <b data-o="yrs"></b>, podrías tener</p>
           <p class="ht-big"><span data-o="v"></span></p>
           <p class="ht-say">Tú pones <b data-o="put"></b>. <em data-o="time"></em> los pone el tiempo.</p>
           <div class="ht-plot" data-o="plot"></div>
-          <label class="ht-range"><span>Cambia lo que pones cada mes</span><input type="range" min="10" max="100" step="5" value="50" data-i="hero" aria-label="Euros al mes"></label>
+          <label class="ht-range"><span>Cada mes pones <b data-o="amt2"></b></span><input type="range" min="10" max="100" step="1" value="50" data-i="hero" aria-label="Euros al mes"></label>
           <p class="note" data-o="note"></p>
         </div>
       </div>
@@ -458,35 +458,49 @@ function vLanding() {
 /* Portada: lo que hace el tiempo. Misma cuota mensual durante 40 años, frente a empezar 10 años más tarde. */
 const HT = { years: 40, wait: 10 };
 const htA = (m, t, g) => fv(m, t, 0, RATE(g)), htB = (m, t, g) => t <= HT.wait ? 0 : fv(m, t - HT.wait, 0, RATE(g));
-function heroPlot(m, g) {
-    const W = 560, H = 300, mr = 132, mt = 16, mb = 28, N = HT.years, va = htA(m, N, g), vb = htB(m, N, g), vp = m * 12 * N, top = va * 1.04;
-    const X = t => 4 + (W - 4 - mr) * t / N, Y = v => H - mb - (H - mt - mb) * v / top;
+/* El eje crece más despacio que el importe: al mover la barra, la curva sube y baja y las cifras del eje también se adaptan */
+const HT_W = 560, HT_L = 4, HT_R = 132;
+function heroPlot(m, g, yr) {
+    const W = HT_W, H = 300, mt = 16, mb = 28, N = HT.years, top = htA(100, N, g) * Math.sqrt(m / 100) * 1.03, step = [1e3, 2e3, 5e3, 1e4, 2e4, 5e4].find(v => top / v < 4.5) || 1e5;
+    const X = t => HT_L + (W - HT_L - HT_R) * t / N, Y = v => H - mb - (H - mt - mb) * v / top;
     const L = f => Array.from({ length: N * 2 + 1 }, (_, k) => `${X(k / 2).toFixed(1)},${Y(f(k / 2)).toFixed(1)}`).join(" ");
-    const xe = X(N), ya = Y(va), yb = Y(vb), yp = Y(vp), y0 = Y(0), A = L(t => htA(m, t, g));
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Empezando hoy, ${eur(va)}; dentro de 10 años, ${eur(vb)}; lo que pones, ${eur(vp)}">
+    const fa = t => htA(m, t, g), fb = t => htB(m, t, g), fp = t => m * 12 * t, xe = X(N), y0 = Y(0), A = L(fa), xy = X(yr);
+    const ticks = [1, 2, 3, 4].map(i => i * step).filter(v => v < top).map(v => `<line x1="${HT_L}" x2="${xe}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--line)"/><text x="${HT_L}" y="${Y(v) - 5}" class="ht-t4">${eur(v)}</text>`).join("");
+    // rótulos a la derecha, separados al menos 37 px para que nunca se pisen
+    const labs = [[fp(yr), "Lo que pones", "ht-t2"], [fb(yr), "En 10 años", "ht-t2"], [fa(yr), "Empiezas hoy", "ht-t1"]].map(([v, t, c]) => ({ v, t, c, y: Math.min(Y(v), y0 - 14) }));
+    labs.sort((p, q) => p.v - q.v || (p.c > q.c ? -1 : 1));
+    for (let i = 1; i < 3; i++) labs[i].y = Math.min(labs[i].y, labs[i - 1].y - 37);
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="A los ${yr} años: empezando hoy, ${eur(fa(yr))}; empezando en 10 años, ${eur(fb(yr))}; lo que pones, ${eur(fp(yr))}">
       <defs><linearGradient id="htg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" style="stop-color:var(--blue)" stop-opacity=".02"/><stop offset="1" style="stop-color:var(--blue)" stop-opacity=".36"/></linearGradient></defs>
-      <polygon points="${A} ${xe},${yp} 4,${y0}" fill="url(#htg)"/>
-      <polygon points="4,${y0} ${xe},${yp} ${xe},${y0}" style="fill:var(--ink-3)" fill-opacity=".2"/>
-      <line x1="4" x2="${xe}" y1="${y0}" y2="${y0}" style="stroke:var(--line-2)"/>
-      <polyline class="ht-b" points="${L(t => htB(m, t, g))}" fill="none"/>
+      ${ticks}
+      <polygon points="${A} ${xe},${Y(fp(N))} ${HT_L},${y0}" fill="url(#htg)"/>
+      <polygon points="${HT_L},${y0} ${xe},${Y(fp(N))} ${xe},${y0}" style="fill:var(--ink-3)" fill-opacity=".22"/>
+      <line x1="${HT_L}" x2="${xe}" y1="${y0}" y2="${y0}" style="stroke:var(--line-2)"/>
+      <polyline class="ht-b" points="${L(fb)}" fill="none"/>
       <polyline class="ht-a" pathLength="1" points="${A}" fill="none"/>
-      <circle cx="${xe}" cy="${ya}" r="6" style="fill:var(--blue)"/><circle cx="${xe}" cy="${yb}" r="4" style="fill:var(--ink-3)"/>
-      <text x="${xe + 14}" y="${ya + 5}" class="ht-t1">${eur(va)}</text><text x="${xe + 14}" y="${ya + 22}" class="ht-t3">Empiezas hoy</text>
-      <text x="${xe + 14}" y="${yb + 2}" class="ht-t2">${eur(vb)}</text><text x="${xe + 14}" y="${yb + 19}" class="ht-t3">En 10 años</text>
-      <text x="${xe + 14}" y="${(yp + y0) / 2}" class="ht-t2">${eur(vp)}</text><text x="${xe + 14}" y="${(yp + y0) / 2 + 17}" class="ht-t3">Lo que pones</text>
-      <text x="4" y="${H - 6}" class="ht-t3">Hoy</text><text x="${X(20)}" y="${H - 6}" text-anchor="middle" class="ht-t3">20 años</text><text x="${xe}" y="${H - 6}" text-anchor="end" class="ht-t3">40 años</text></svg>`;
+      ${yr < N ? `<line x1="${xy}" x2="${xy}" y1="${mt}" y2="${y0}" class="ht-cur"/>` : ""}
+      <circle cx="${xy}" cy="${Y(fa(yr))}" r="6" style="fill:var(--blue);stroke:var(--surface)" stroke-width="2"/><circle cx="${xy}" cy="${Y(fb(yr))}" r="4" style="fill:var(--ink-3)"/>
+      ${labs.map(l => `<text x="${xe + 14}" y="${l.y + 2}" class="${l.c}">${eur(l.v)}</text><text x="${xe + 14}" y="${l.y + 17}" class="ht-t3">${l.t}</text>`).join("")}
+      <text x="${HT_L}" y="${H - 6}" class="ht-t3">Hoy</text>${[10, 20, 30].map(t => `<text x="${X(t)}" y="${H - 6}" text-anchor="middle" class="ht-t3">${t}</text>`).join("")}<text x="${xe}" y="${H - 6}" text-anchor="end" class="ht-t3">40 años</text></svg>`;
 }
 function bindLanding() {
     const hero = $("[data-hero]"); if (!hero) return;
-    const input = $('[data-i="hero"]', hero), o = (k, v) => { $(`[data-o="${k}"]`, hero).textContent = v; };
+    const input = $('[data-i="hero"]', hero), plot = $('[data-o="plot"]', hero), o = (k, v) => { $(`[data-o="${k}"]`, hero).textContent = v; };
+    let yr = HT.years;
     const show = () => {
-        const m = +input.value, g = EST.gross;
-        const put = m * 12 * HT.years, va = htA(m, HT.years, g);
-        o("put", eur(put)); o("v", eur(va)); o("amt", eur(m)); o("time", eur(va - put));
-        $('[data-o="plot"]', hero).innerHTML = heroPlot(m, g);
+        const m = +input.value, g = EST.gross, put = m * 12 * yr, va = htA(m, yr, g);
+        o("put", eur(put)); o("v", eur(va)); o("amt", eur(m)); o("amt2", eur(m)); o("time", eur(va - put)); o("yrs", `${yr} ${yr === 1 ? "año" : "años"}`);
+        plot.innerHTML = heroPlot(m, g, yr);
         input.style.setProperty("--p", `${(m - 10) / 90 * 100}%`);
-        o("note", `Estimación al ${g} % anual, sin descontar comisiones ni inflación. Con un 3 % serían ${eur(htA(m, HT.years, 3))}; con un 8 %, ${eur(htA(m, HT.years, 8))}. Quien espera 10 años pone lo mismo al mes, pero durante 30. No es una promesa: tu dinero también puede bajar.`);
+        o("note", `Desliza la barra o recorre la gráfica. Estimación al ${g} % anual, sin descontar comisiones ni inflación. Con un 3 % serían ${eur(htA(m, yr, 3))}; con un 8 %, ${eur(htA(m, yr, 8))}. No es una promesa: tu dinero también puede bajar.`);
     };
+    const move = e => {
+        const r = plot.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * HT_W;
+        const y = Math.max(1, Math.min(HT.years, Math.round((x - HT_L) / (HT_W - HT_L - HT_R) * HT.years)));
+        if (y !== yr) { yr = y; hero.classList.add("still"); show(); }
+    };
+    plot.addEventListener("pointermove", move); plot.addEventListener("pointerdown", move);
+    plot.addEventListener("pointerleave", () => { if (yr !== HT.years) { yr = HT.years; show(); } });
     input.addEventListener("input", () => { hero.classList.add("still"); show(); });
     show();
 }

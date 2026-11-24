@@ -1533,3 +1533,6 @@ fieldset.field { border: 0; padding: 0; margin: 0; } fieldset.field legend { fon
 .ideas-tabs a { display: inline-flex; align-items: center; gap: 8px; padding: 0 0 12px; font-size: 15px; font-weight: 600; white-space: nowrap; color: var(--ink-3); border-bottom: 2px solid transparent; } .ideas-tabs a.on { color: var(--ink); border-color: var(--blue); } .ideas-tabs .ic { width: 18px; height: 18px; }
 @media (max-width: 720px) { .vp { grid-template-columns: 1fr; } .vp-c { padding: 22px; } }
 .vp-foot .btn { margin: 0 !important; } .ideas-tabs { margin-top: 6px; }
+
+.ht-plot { cursor: crosshair; touch-action: pan-y; } .ht-cur { stroke: var(--blue); stroke-width: 1.5; stroke-dasharray: 3 4; } .ht-t4 { font-size: 11px; fill: var(--ink-4); }
+.ht .note { min-height: 4.6em; } .ht-k b, .ht-say b, .ht-say em { font-variant-numeric: tabular-nums; }
