@@ -76,6 +76,20 @@ const themeIcon = () => ic(isDark() ? "sun" : "moon");
 const themeLabel = () => isDark() ? "Cambiar a modo día" : "Cambiar a modo noche";
 const themeBtn = (cls = "") => `<button class="icon-btn theme-btn ${cls}" data-act="theme" aria-label="${themeLabel()}" title="${themeLabel()}">${themeIcon()}</button>`;
 
+/* ------------------------------------------------------------------ instalar como app (PWA) */
+let installEvt = null;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (location.hash.startsWith("#/ajustes")) rerender(); });
+addEventListener("appinstalled", () => { installEvt = null; toast("Horizonte ya está en tu pantalla de inicio"); });
+const isStandalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+function installCard() {
+    const body = isStandalone() ? `<p class="note">Ya estás usando Horizonte como app. ${ic("check")}</p>`
+        : installEvt ? `<p class="inst-p">Ábrela desde tu pantalla de inicio, a pantalla completa y también sin conexión.</p>${btn(`${ic("download")}Instalar Horizonte`, "installApp", "primary")}`
+        : isIOS() ? `<ol class="inst-steps"><li>Abre esta página en <b>Safari</b>.</li><li>Pulsa <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li><li>Elige <b>Añadir a pantalla de inicio</b>.</li></ol>`
+        : `<p class="inst-p">En el móvil, abre esta página con Chrome y pulsa <b>Instalar app</b> en el menú ⋮. En el ordenador, usa el icono de instalar de la barra de direcciones.</p>`;
+    return card(`${cardH("Horizonte en tu móvil", "Instálala como una app más, con su icono.")}${body}`, "c-12");
+}
+
 /* ------------------------------------------------------------------ estado */
 const blank = () => ({ v: 2, role: null, teen: null, family: null, familyAuth: false, paga: 0, weekly: 0, roundup: false,
     lessons: {}, exam: null, diploma: null, itv: [], money: [], schedules: [], fears: [], antidoteApproved: false,
@@ -1397,6 +1411,7 @@ function vAjustes() {
           <button class="btn primary full">Guardar cambios</button></form>`, "c-7")}
       ${card(`${cardH("Cuenta")}${S.family ? `<p class="note">${fam ? "Estás en el área familiar." : "Estás en tu área personal."} En este dispositivo puedes cambiar de área.</p><div class="actions">${btn(`${ic("switch")}${fam ? `Ir al área de ${esc(teenName())}` : "Ir al área familiar"}`, "switchRole")}</div>` : ""}
         <p class="note">Los datos se guardan en este dispositivo y puedes descargarlos cuando quieras.</p><div class="actions">${btn("Descargar mis datos", "exportData")}${btn("Cerrar sesión y borrar datos", "reset", "danger")}</div>`, "c-5")}
+      ${installCard()}
     </div>${legal()}`;
 }
 
@@ -1488,6 +1503,7 @@ document.addEventListener("click", async e => {
         render(); scrollTo(0, 0);
     }
     else if (act === "gameAgain") { newGame(b.dataset.id); render(); }
+    else if (act === "installApp") { if (installEvt) { installEvt.prompt(); const r = await installEvt.userChoice; installEvt = null; if (r.outcome !== "accepted") toast("Puedes instalarla cuando quieras desde aquí"); rerender(); } }
     else if (act === "mmGuess") mmGuess(b.dataset.v);
     else if (act === "ligaPick") {
         const wk = weekOf(new Date());

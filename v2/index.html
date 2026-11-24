@@ -3,27 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#071621">
+    <meta name="theme-color" content="#007eae">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Horizonte">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="description" content="Horizonte, de CaixaBank Asset Management: del primer euro a tu primera casa. Formación financiera, inversión acompañada durante el primer año y ventajas en tu primera hipoteca, para jóvenes y sus familias.">
     <title>Horizonte · Del primer euro a tu primera casa</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="icon" href="brand/horizonte-marca.png" type="image/png">
-    <link rel="apple-touch-icon" href="brand/horizonte-marca.png">
+    <link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..600;1,8..60,300..600&display=swap" rel="stylesheet">
-    <script>try { const t = localStorage.getItem("hz2_theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); document.documentElement.dataset.theme = t; } catch (e) { document.documentElement.dataset.theme = "light"; }</script>
-    <link rel="stylesheet" href="styles.css?v=34">
+    <script>try { const t = localStorage.getItem("hz2_theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); document.documentElement.dataset.theme = t; document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b1218" : "#ffffff"; } catch (e) { document.documentElement.dataset.theme = "light"; }</script>
+    <link rel="stylesheet" href="styles.css?v=35">
 </head>
 <body>
     <div id="app"></div>
     <div id="sheet"></div>
     <div id="toasts" aria-live="polite"></div>
-    <script src="config.js?v=34"></script>
-    <script src="data.js?v=34"></script>
-    <script src="gemini.js?v=34"></script>
-    <script src="amigos.js?v=34"></script>
-    <script src="comunidad.js?v=34"></script>
-    <script src="app.js?v=34"></script>
+    <script src="config.js?v=35"></script>
+    <script src="data.js?v=35"></script>
+    <script src="gemini.js?v=35"></script>
+    <script src="amigos.js?v=35"></script>
+    <script src="comunidad.js?v=35"></script>
+    <script src="app.js?v=35"></script>
+    <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
 </body>
 </html>

@@ -1,13 +1,24 @@
 {
-  "name": "Horizonte · Del primer euro a la primera casa",
+  "id": "./",
+  "name": "Horizonte · Del primer euro a tu primera casa",
   "short_name": "Horizonte",
-  "description": "Del primer euro a tu primera casa. CaixaBank Asset Management.",
-  "start_url": "./",
+  "description": "Aprende a invertir, invierte en lo que te preocupa y gana millas para tu primera casa. CaixaBank Asset Management.",
+  "lang": "es",
+  "start_url": "./#/inicio",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "theme_color": "#007eae",
+  "categories": ["finance", "education"],
   "icons": [
-    { "src": "brand/horizonte-marca.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "brand/horizonte-marca-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Aportar", "url": "./#/dinero", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Juegos", "url": "./#/aprende", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

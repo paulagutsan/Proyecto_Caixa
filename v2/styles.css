@@ -1334,3 +1334,11 @@ fieldset.field { border: 0; padding: 0; margin: 0; } fieldset.field legend { fon
     .lg-stats { grid-template-columns: minmax(0, 1fr); gap: 10px; } .lg-stats > div + div { padding-left: 0; border-left: 0; }
 }
 .lg .mm-learn { margin: 22px 0 0; max-width: none; }
+.inst-p { font-size: 14.5px; color: var(--ink-2); margin-bottom: 14px; }
+.inst-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14.5px; color: var(--ink-2); }
+/* como app instalada: respetar la zona de la cámara y de la barra del sistema */
+@media (display-mode: standalone) {
+    .topbar { padding-top: env(safe-area-inset-top); height: calc(58px + env(safe-area-inset-top)); }
+    .lp-nav { padding-top: env(safe-area-inset-top); }
+    .focus-top { padding-top: calc(14px + env(safe-area-inset-top)); }
+}
