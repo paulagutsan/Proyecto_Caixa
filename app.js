@@ -98,7 +98,7 @@ function installCard() {
 /* ------------------------------------------------------------------ estado */
 const blank = () => ({ v: 2, role: null, teen: null, family: null, familyAuth: false, paga: 0, weekly: 0, roundup: false,
     lessons: {}, exam: null, diploma: null, itv: [], money: [], schedules: [], fears: [], antidoteApproved: false,
-    geminiOk: false, friendsOk: false, friends: null, voted: false, chat: [], goal: { ...GOAL_DEFAULT }, games: {}, metas: [], suit: null, pending: [], callReq: null, joined: {} });
+    geminiOk: false, friendsOk: false, friends: null, voted: false, chat: [], goal: { ...GOAL_DEFAULT }, games: {}, metas: [], pending: [], callReq: null, joined: {} });
 let S;
 try { S = { ...blank(), ...(JSON.parse(localStorage.getItem(KEY)) || {}) }; } catch (e) { S = blank(); }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } accTouch(); };
@@ -145,10 +145,8 @@ function normFear(x) {
 const fearOf = x => { const f = normFear(x); return f ? { ...f, why: f.fund ? FUND_WHY[f.fund] : "" } : null; };
 S.fears = (S.fears || []).map(normFear).filter(Boolean);
 function addFear(text) {
-    let t = String(text || "").trim().replace(/\s+/g, " ").slice(0, 80);
-    if (!S.suit?.ok) return toast("Primero haz el test de seis preguntas");
+    const t = String(text || "").trim().replace(/\s+/g, " ").slice(0, 80);
     if (t.length < 3) return toast("Escribe un poco más");
-    if (/(cancer|enfermedad|ansiedad|depres|suicid|diagnost|tumor|\bvih\b|mental|adiccion|droga|embaraz)/.test(plainTxt(t)) && !FEARS.some(f => plainTxt(f.label) === plainTxt(t))) { t = "La salud de mi familia"; toast("Para proteger tu privacidad guardamos solo el tema: «La salud de mi familia»"); }
     if (S.fears.length >= RULES.maxFears) return toast(`Puedes tener ${RULES.maxFears}. Quita una para añadir otra.`);
     if (S.fears.some(f => plainTxt(f.label) === plainTxt(t))) return toast("Ya lo tienes");
     const pre = FEARS.find(f => plainTxt(f.label) === plainTxt(t)), fund = pre?.fund || classifyFear(t);
@@ -160,14 +158,12 @@ function addFear(text) {
     rerender();
 }
 
-/* El Antídoto solo se activa si el test de situación lo permite y, si eres menor, tu familia lo aprueba */
 function allocation() {
     const fears = S.fears.slice(0, RULES.maxFears).map(fearOf).filter(f => f && f.fund);
-    const suitOk = !!S.suit?.ok;
-    const active = fears.length > 0 && suitOk && (S.antidoteApproved || isAdult());
+    const active = fears.length > 0 && (S.antidoteApproved || isAdult());
     const planned = fears.length ? [{ fund: "global", w: RULES.base }, ...fears.map(f => ({ fund: f.fund, w: RULES.antidote / fears.length, fear: f }))] : [{ fund: "global", w: 1 }];
     const parts = active ? planned : [{ fund: "global", w: 1 }];
-    return { active, pending: fears.length > 0 && !active, needSuit: fears.length > 0 && !suitOk, fears, parts, planned };
+    return { active, pending: fears.length > 0 && !active, fears, parts, planned };
 }
 function money() {
     const al = allocation();
@@ -397,19 +393,19 @@ function vLanding() {
 
     <section class="hz-dark" id="antidoto"><div class="lp-in anti-grid">
       <div class="anti-l">
-        <p class="kicker gold">El Antídoto · opcional</p><h2 class="serif">Una parte pequeña, en lo que te importa.</h2>
-        <p class="lp-lead">Si quieres, el ${Math.round(RULES.antidote * 100)} % de tu cartera puede ir a un tema que te preocupa, como la IA o la vivienda. Es una apuesta temática: puede ganar, puede perder y a veces irá en dirección contraria a tu cartera. Por eso es pequeña y solo se activa tras un test breve.</p>
+        <p class="kicker gold">El Antídoto</p><h2 class="serif">Invierte en lo que te preocupa.</h2>
+        <p class="lp-lead">Si inviertes en aquello que te da miedo y ese miedo se cumple, esa parte de tu dinero gana valor justo cuando más lo necesitas. Así, lo que te preocupa pesa menos en tu bolsillo.</p>
         <ol class="anti-steps">
-          <li><span>1</span><div><b>Haces un test de seis preguntas</b><p>Para ver si encaja con tu situación: plazo, experiencia y cómo reaccionas a una caída.</p></div></li>
-          <li><span>2</span><div><b>Eliges un tema</b><p>Por ejemplo, la IA o la vivienda. Ves qué riesgo tiene antes de decidir.</p></div></li>
-          <li><span>3</span><div><b>El ${Math.round(RULES.antidote * 100)} % va ahí</b><p>El ${Math.round(RULES.base * 100)} % restante va a un fondo global diversificado. Y, si eres menor, tu familia lo aprueba.</p></div></li>
+          <li><span>1</span><div><b>Eliges lo que te preocupa</b><p>Por ejemplo, que la IA cambie el trabajo que quieres o no poder pagarte una casa.</p></div></li>
+          <li><span>2</span><div><b>Una parte se invierte ahí</b><p>El ${Math.round(RULES.antidote * 100)} % va a empresas de ese tema; el ${Math.round(RULES.base * 100)} %, a un fondo global diversificado.</p></div></li>
+          <li><span>3</span><div><b>Si ocurre, compensa</b><p>Si la IA avanza o los pisos suben, esas empresas suelen ganar más, y esa parte de tu dinero sube con ellas.</p></div></li>
         </ol>
       </div>
       <div class="anti-r">
         <p class="anti-q">¿Qué te preocupa a ti?</p>
         <div class="lp-fears">${FEARS.map((f, i) => `<button class="lf ${i === 0 ? "on" : ""}" data-act="lpFear" data-id="${f.id}"><span>${ic(f.id)}</span>${f.label}</button>`).join("")}</div>
         <div class="lf-out" data-o="lf"><b>${FUNDS[FEARS[0].fund].name}</b><p>${FEARS[0].why}</p></div>
-        <p class="hz-small">No es un seguro ni una cobertura: tu dinero puede bajar, incluso cuando lo que temes ocurre. Siempre dentro de una selección cerrada de fondos de CaixaBank AM; consulta el DFI de cada uno.</p>
+        <p class="hz-small">Funciona como una cobertura, no como una garantía: reduce el golpe, pero tu dinero puede bajar. Siempre dentro de una selección cerrada de fondos de CaixaBank AM, y Gemini te lo explica con tus propios números.</p>
       </div>
     </div></section>
 
@@ -563,9 +559,9 @@ function vLegal() {
       ${sec("Lo que cuesta", `<p>Horizonte no cobra comisión de apertura. El coste de cada fondo figura en su documento de datos fundamentales (DFI), disponible antes de invertir.</p>`)}
       ${sec("Protección promocional del primer año", `<ul><li>Es una promoción de CaixaBank, no un fondo garantizado ni un seguro.</li><li>Cubre la diferencia si, a los ${RULES.protectMonths} meses de la primera aportación, las primeras aportaciones (tuyas o de tu familia, hasta ${RULES.protectCap} €) valen menos de lo aportado.</li><li>Tope de ${RULES.protectCap} € por persona. No cubre rendimientos ni aportaciones posteriores al tope.</li><li>Solo si no has vendido o retirado antes de los ${RULES.protectMonths} meses.</li><li>Dotación limitada (${PROMO.budgetTxt}): puede agotarse y se publicará su estado.</li></ul>`)}
       ${sec("Millas de casa y bonificación hipotecaria", `<ul><li>Suman: temas de Fundamentos, la prueba final, aportaciones propias cada mes, la constancia semanal, la revisión anual y los regalos de tu familia (con tope mensual).</li><li>No suman: los juegos (dan insignias) ni tener más dinero que nadie.</li><li>Si pides tu primera hipoteca con CaixaBank, las millas pueden convertirse en una bonificación sobre el diferencial de hasta ${pts(MILES.maxCut)} puntos, sobre las condiciones vigentes el día de la firma y según las condiciones de vinculación voluntaria que entonces se ofrezcan.</li><li>No obliga a contratar ningún producto y se rige por la Ley 5/2019. Las cifras de «Tu casa» son ilustraciones, no una oferta.</li><li>Las millas no caducan. Si nunca compras casa, no pierdes nada.</li></ul>`)}
-      ${sec("El Antídoto", `<ul><li>Es opcional y pequeño: como máximo el ${Math.round(RULES.antidote * 100)} % de la cartera; el ${Math.round(RULES.base * 100)} % va a un fondo global diversificado.</li><li>Solo se activa tras un test de seis preguntas sobre tu situación y, si eres menor, con la aprobación de tu familia.</li><li>No es un seguro ni una cobertura: los fondos temáticos suelen tener más riesgo y pueden ir en dirección contraria a lo que esperas.</li></ul>`)}
+      ${sec("El Antídoto", `<ul><li>El ${Math.round(RULES.base * 100)} % de tu dinero va a un fondo global diversificado y el ${Math.round(RULES.antidote * 100)} % a los temas que eliges, dentro de una selección cerrada de fondos de CaixaBank Asset Management.</li><li>Si eres menor, tu familia lo aprueba.</li><li>No es una garantía: reduce el impacto si lo que temes ocurre, pero las inversiones pueden perder valor.</li></ul>`)}
       ${sec("Menores de edad", `<ul><li>Hasta los 18, la persona titular legal es la madre, padre o tutor, que aprueba el Antídoto, las retiradas y los permisos.</li><li>En la versión real, la persona adulta se identifica con su DNI o banca digital y, si hay otro progenitor con patria potestad, también da su conformidad.</li><li>A los 18, la cuenta pasa a tu nombre cuando confirmas tu identidad.</li></ul>`)}
-      ${sec("Tus datos, en claro", `<ul><li><b>Qué guardamos:</b> tu nombre o alias, tu edad, tu progreso y tus movimientos. En esta demostración se guardan solo en tu dispositivo.</li><li><b>Qué sale de tu dispositivo:</b> si eliges un Antídoto, solo el tema (nunca texto libre) y un tramo de edad, de forma anónima, para el mapa de preocupaciones. Si activas amigos, tu nombre con la inicial del apellido y tus resultados.</li><li><b>Gemini:</b> sin permiso responde con información general. Con permiso usa los datos de tu cuenta, sin tu nombre. Nunca se usa para publicidad.</li><li>Puedes descargar tus datos o borrarlos en Ajustes cuando quieras.</li></ul><p><b>En una frase para una persona de 14 años:</b> solo usamos lo imprescindible para que la app funcione, no vendemos nada y puedes pedir que lo borremos.</p>`)}
+      ${sec("Tus datos, en claro", `<ul><li><b>Qué guardamos:</b> tu nombre o alias, tu edad, tu progreso y tus movimientos. En esta demostración se guardan solo en tu dispositivo.</li><li><b>Qué sale de tu dispositivo:</b> si eliges un Antídoto, solo el tema y un tramo de edad, de forma anónima, para el mapa de preocupaciones. Si activas amigos, tu nombre con la inicial del apellido y tus resultados.</li><li><b>Gemini:</b> sin permiso responde con información general. Con permiso usa los datos de tu cuenta, sin tu nombre. Nunca se usa para publicidad.</li><li>Puedes descargar tus datos o borrarlos en Ajustes cuando quieras.</li></ul><p><b>En una frase para una persona de 14 años:</b> solo usamos lo imprescindible para que la app funcione, no vendemos nada y puedes pedir que lo borremos.</p>`)}
       ${sec("El certificado", `<p>El Certificado Horizonte lleva un código. Quien lo reciba puede comprobarlo en la página de verificación, que consulta nuestro registro y muestra el nombre con la inicial del apellido, la fecha y el resultado. Si el código no existe en el registro, la página no lo da por bueno.</p>`)}
     </div></section><div class="lp-in lp-foot">${brand("#/", 30)}</div></div>`;
 }
@@ -680,7 +676,7 @@ function greeting() {
         : !S.exam?.passed && done < LESSONS.length ? `Llevas ${done} de ${LESSONS.length} temas. Tu certificado está cerca.`
         : !S.exam?.passed ? "Solo te queda la prueba final."
         : !m.firstOwn ? "Ya tienes tu certificado. Ahora, tu primer euro."
-        : !S.suit ? "Siguiente paso: haz el test de seis preguntas y, si quieres, elige un Antídoto."
+        : !S.fears.length ? "Siguiente paso: elige tu Antídoto."
         : !(S.weekly > 0 || S.roundup) ? "Automatiza tu ahorro y olvídate."
         : !st.thisWeek ? "Haz algo esta semana para no perder tu racha."
         : st.current >= 2 ? `${st.current} semanas seguidas. Así se llega a casa.`
@@ -729,7 +725,7 @@ function vInicio() {
     const steps = [
         ["aprende", "Aprende", S.exam?.passed, S.exam?.passed ? "Certificado" : `${Object.keys(S.lessons).length} de ${LESSONS.length} temas`, "#/aprende"],
         ["invierte", "Invierte", !!m.firstOwn, m.firstOwn ? eur(m.value, true) : "Tu primer euro", "#/dinero"],
-        ["entiende", "Anticípate", !!S.suit, S.fears.length ? (m.al.active ? "Antídoto activo" : "Antídoto pendiente") : S.suit ? "Test hecho" : "Test y Antídoto", "#/antidoto"],
+        ["entiende", "Anticípate", S.fears.length > 0, S.fears.length ? (m.al.active ? "Antídoto activo" : "Antídoto pendiente") : "Elige tu Antídoto", "#/antidoto"],
         ["millas", "Gana millas", st.current >= 4, `${num(mi.total)} millas`, "#/casa"],
         ["casa", "Tu casa", false, `−${pts(mi.cut)} puntos`, "#/casa"],
     ];
@@ -737,7 +733,7 @@ function vInicio() {
     const tasks = [
         [!!S.exam?.passed, "Supera Fundamentos", `Cinco temas y una prueba. Primera inversión: ${RULES.prize} € a tu nombre.`, "#/aprende"],
         [!!m.firstOwn, "Pon tu primer euro", "Con 1 € basta. Es el paso que te convierte en inversor.", "#/dinero"],
-        [!!S.suit, "Haz el test y, si quieres, elige un Antídoto", "Seis preguntas sobre tu situación. El Antídoto es opcional y pequeño.", "#/antidoto"],
+        [S.fears.length > 0, "Elige tu Antídoto", "Dinos qué te preocupa de tu futuro.", "#/antidoto"],
         [S.weekly > 0 || S.roundup, "Automatiza tu ahorro", "Una cantidad fija cada semana, sin acordarte.", "#/dinero"],
         [!!S.joined?.family, "Conecta a tu familia", "Envíales el enlace: podrán autorizarte y regalarte dinero para tu casa.", "#/familia"],
     ];
@@ -1173,7 +1169,7 @@ function vDinero() {
             <div class="seg" role="radiogroup" aria-label="Euros a la semana">${weeklyOpts.map(v => `<button role="radio" aria-checked="${S.weekly === v}" class="${S.weekly === v ? "on" : ""}" data-act="setWeekly" data-v="${v}">${v ? `${v} €` : "No"}</button>`).join("")}</div></div>
           <div class="auto-row"><div><b>Redondeo de compras</b><span>Cuando tengas tu tarjeta, cada compra se redondeará al euro siguiente y la diferencia se invertirá. Pagas 3,40 € y se invierten 0,60 €.</span></div>${badge("Próximamente")}</div>
         </div>`, "c-12")}
-      ${card(`${cardH("Dónde está tu dinero", m.al.active ? `Cartera base ${pct(RULES.base * 100)} · Antídoto ${pct(RULES.antidote * 100)}` : m.al.needSuit ? "Tu Antídoto espera a que hagas el test." : m.al.pending ? "Tu Antídoto espera la aprobación de tu familia." : "Todo en la cartera base.", m.al.active ? "" : lnk(S.fears.length ? "Ver Antídoto" : "Elegir Antídoto", "#/antidoto", "sm ghost"))}
+      ${card(`${cardH("Dónde está tu dinero", m.al.active ? `Cartera base ${pct(RULES.base * 100)} · Antídoto ${pct(RULES.antidote * 100)}` : m.al.pending ? "Tu Antídoto espera la aprobación de tu familia." : "Todo en la cartera base.", m.al.active ? "" : lnk(S.fears.length ? "Ver Antídoto" : "Elegir Antídoto", "#/antidoto", "sm ghost"))}
         ${stack(m.parts)}<div class="rows">${m.parts.map(pp => `<div class="row">${sw(pp.fund)}<div><b>${FUNDS[pp.fund].name}</b><span>${pp.fear ? "Antídoto · " + esc(pp.fear.label) : FUNDS[pp.fund].sub}</span></div><b class="amt">${eur(pp.amount, true)}</b></div>`).join("")}</div>`, "c-12")}
       ${card(`${cardH("Primer año acompañado", `Promoción de CaixaBank: si a los ${RULES.protectMonths} meses tus primeros ${RULES.protectCap} € aportados (tuyos o de tu familia) valen menos y no has vendido, CaixaBank repone la diferencia.`)}
         <div class="protect"><div class="pr-num"><b>${eur(m.protect?.active ? m.protect.base : 0)}</b><span>de ${RULES.protectCap} € con protección</span></div>${bar(m.protect?.active ? m.protect.base : 0, RULES.protectCap, "blue")}
@@ -1269,40 +1265,25 @@ function chatHTML() {
         + (typing ? `<div class="amsg"><span class="am-av" aria-hidden="true">${ic("spark")}</span><div class="am-body typing" aria-label="Preparando la respuesta"><i></i><i></i><i></i></div></div>` : "");
 }
 let moreIdeas = false;
-function suitCard() {
-    const su = S.suit, redo = btn("Repetir el test", "openSuit", "sm ghost");
-    if (!su) return card(`${cardH("Antes de empezar: seis preguntas", "Dos minutos para ver si el Antídoto encaja con tu situación. Si eres menor, hacedlo juntos.")}
-      <p class="note">No hay respuestas buenas ni malas: sirven para proteger tu dinero y el de tu familia.</p><div class="actions">${btn("Hacer el test", "openSuit", "primary")}</div>`, "c-12");
-    const msg = { corto: ["Tu plazo es corto", "warn", "Si vas a necesitar este dinero en menos de 3 años, o es para algo en pocos meses, la bolsa no es lo más adecuado. Puedes seguir aprendiendo, pero te recomendamos no invertir este dinero. El Antídoto no está disponible."],
-        revisar: ["Repasa antes de invertir", "warn", "Antes de invertir conviene tener claro que se puede recuperar menos de lo aportado. Repasa los temas de Fundamentos y repite el test. El Antídoto no está disponible."],
-        base: ["Cartera base", "", "Con tus respuestas, tu cartera será solo el fondo global diversificado. El Antídoto no está disponible por ahora: necesita un plazo de al menos 5 años, algo de experiencia y poder aguantar una caída."],
-        sat: ["Puedes elegir un Antídoto", "ok", `Con tus respuestas, puedes dedicar como máximo el ${Math.round(RULES.antidote * 100)} % de tu cartera a un tema que te importa. ${isAdult() ? "" : "Tu familia tiene que aprobarlo."}`] }[su.level] || ["Resultado", "", ""];
-    return card(`${cardH("Tu test", `Hecho el ${fmtD(su.date)}.`, badge(msg[0], msg[1]))}<p>${msg[2]}</p><div class="actions">${redo}</div>`, "c-12");
-}
-function suitSheet() {
-    sheet("Seis preguntas", `<form data-form="suit" class="form suit">${SUIT.map(q => `<fieldset class="suit-q"><legend>${q.q}</legend>${q.o.map(([t, v]) => `<label class="check"><input type="radio" name="${q.id}" value="${v}" required><span>${t}</span></label>`).join("")}</fieldset>`).join("")}
-      <p class="note">Si eres menor, contestad juntos. Puedes repetirlo cuando quieras.</p><button class="btn primary lg block">Ver mi resultado</button></form>`);
-}
 function vAntidoto() {
     const m = money(), al = m.al, can = geminiAllowed();
     const r = ranking || { counts: {}, total: 0 }, showRank = r.total >= RANK_MIN;
     const rank = FEARS.map(f => ({ f, n: r.counts[f.id] || 0 })).sort((a, b) => b.n - a.n);
-    const mine = S.fears.map(fearOf), full = S.fears.length >= RULES.maxFears, suitOk = !!S.suit?.ok;
+    const mine = S.fears.map(fearOf), full = S.fears.length >= RULES.maxFears;
     const ideas = FEAR_IDEAS.filter(t => !S.fears.some(f => f.label === t)), shown = moreIdeas ? ideas : ideas.slice(0, 4);
-    return `${pageH("Antídoto", "Opcional: una parte pequeña de tu cartera en un tema que te importa.")}
+    return `${pageH("Antídoto", "Invierte una parte de tu dinero en lo que te preocupa del futuro.")}
     <div class="grid">
       ${card(`<div class="ad-hero">
-          <div class="ad-why"><span class="kicker">Cómo funciona</span>
-            <h2>Una apuesta pequeña, no un seguro.</h2>
-            <p>El ${pct(RULES.base * 100)} de tu dinero va a la cartera base. Como máximo el otro ${pct(RULES.antidote * 100)} se invierte en un fondo temático ligado a lo que te preocupa.</p>
-            <ul class="ad-if"><li><span class="ad-ic good">${ic("check")}</span><div><b>Si ese tema va bien</b>, esa parte puede ganar.</div></li>
-              <li><span class="ad-ic bad">${ic("info")}</span><div><b>Si va mal</b>, esa parte puede perder, y a veces irá en dirección contraria a lo que esperas. Por eso es pequeña.</div></li></ul></div>
-          <div class="ad-mapcol"><div class="ad-maph"><span>Tu mapa</span>${al.fears.length ? badge(al.active ? "Activo" : al.needSuit ? "Falta el test" : "Pendiente de tu familia", al.active ? "ok" : "warn") : ""}</div>${antidoteMap(m)}</div>
+          <div class="ad-why"><span class="kicker">Por qué invertir en lo que te preocupa</span>
+            <h2>Funciona como un seguro, pero invertido.</h2>
+            <p>El ${pct(RULES.base * 100)} de tu dinero va a la cartera base. El otro ${pct(RULES.antidote * 100)} se invierte en empresas a las que les va mejor justo si pasa lo que temes.</p>
+            <ul class="ad-if"><li><span class="ad-ic bad">${ic("spark")}</span><div><b>Si pasa</b>, tu Antídoto tiende a subir y compensa parte del golpe.</div></li>
+              <li><span class="ad-ic good">${ic("check")}</span><div><b>Si no pasa</b>, mejor todavía: tu cartera base sigue creciendo.</div></li></ul></div>
+          <div class="ad-mapcol"><div class="ad-maph"><span>Tu mapa</span>${al.fears.length ? badge(al.active ? "Activo" : "Pendiente de tu familia", al.active ? "ok" : "warn") : ""}</div>${antidoteMap(m)}</div>
         </div>`, "c-12")}
-      ${suitCard()}
-      ${suitOk ? card(`${cardH("¿Qué te preocupa a ti?", "Escoge un tema general. Lo asociamos a un fondo temático: no es un seguro contra lo que temes.", `<span class="count">${S.fears.length}/${RULES.maxFears}</span>`)}
+
+      ${card(`${cardH("¿Qué te preocupa a ti?", "Escríbelo con tus palabras. Lo traducimos al fondo que gana si eso ocurre.", `<span class="count">${S.fears.length}/${RULES.maxFears}</span>`)}
         ${full ? "" : `<form class="ad-add" data-form="fearAdd"><input name="t" maxlength="80" autocomplete="off" placeholder="Por ejemplo: que las carreteras estén cada vez peor" aria-label="Lo que te preocupa" required><button class="btn primary">${ic("plus")}Añadir</button></form>
-          <p class="note">Escribe solo un tema general. No pongas datos personales ni de salud tuyos o de otras personas.</p>
           ${ideas.length ? `<div class="ad-ideas"><span>Ideas</span>${shown.map(t => `<button class="chip" data-act="fearIdea" data-t="${esc(t)}">${esc(t)}</button>`).join("")}${ideas.length > 4 ? `<button class="ad-more" data-act="moreIdeas">${moreIdeas ? "Menos" : `+${ideas.length - 4} ideas`}</button>` : ""}</div>` : ""}`}
         ${mine.length ? `<div class="ad-mine">${mine.map((f, i) => `<div class="ad-item">
             <span class="ad-dot" style="background:${FUND_COLOR[f.fund] || "var(--ink-4)"}">${ic(FUND_ICON[f.fund] || "spark")}</span>
@@ -1310,7 +1291,7 @@ function vAntidoto() {
               <label class="ad-change"><span>${f.fund ? "Se invierte en" : "Elige a qué fondo asociarlo"}</span><select data-act="fearFund" data-i="${i}">${f.fund ? "" : `<option value="">Elige…</option>`}${Object.keys(FUND_WHY).map(k => `<option value="${k}" ${k === f.fund ? "selected" : ""}>${FUNDS[k].name}</option>`).join("")}</select></label>
               ${f.fund ? `<small>${FUND_WHY[f.fund]}</small>` : ""}</div>
             ${btn(ic("close"), "fearDel", "icon-btn", `data-i="${i}" aria-label="Quitar"`)}</div>`).join("")}</div>` : ""}
-        <p class="note">No es un seguro ni una cobertura: el fondo temático puede perder valor aunque lo que temes ocurra. Siempre con fondos de CaixaBank Asset Management; consulta el documento de datos fundamentales (DFI) de cada uno antes de invertir.</p>`, "c-12") : ""}
+        <p class="note">No es una garantía: reduce el impacto si lo que temes ocurre, pero las inversiones pueden perder valor. Siempre con fondos de CaixaBank Asset Management.</p>`, "c-12")}
 
       ${card(`${cardH(`<span class="gem">${ic("spark")}Asistente Horizonte</span>`, can ? "Pregunta lo que quieras sobre tu dinero. Responde con tus datos." : "Pregunta lo que quieras sobre invertir. Respuestas generales.")}
         <div class="chat" id="chat">${chatHTML()}</div>
@@ -1318,9 +1299,9 @@ function vAntidoto() {
         <form class="ask" data-form="ask"><input name="q" placeholder="Escribe tu consulta" aria-label="Tu consulta" autocomplete="off" required><button class="icon-btn primary" aria-label="Enviar">${ic("send")}</button></form>
         ${can ? "" : `<p class="note">Estas respuestas son generales y no usan ningún dato de tu cuenta. Con el permiso de tu familia te responderé con tus propios números. ${btn("Pedir permiso", "askPerm", "sm", 'data-p="gemini"')}</p>`}
         <p class="note">Información orientativa, no es asesoramiento financiero.</p>`, "c-7")}
-      ${card(`${cardH("Lo que preocupa a otras personas en Horizonte", "Respuestas anónimas de usuarios de la app. No es una encuesta representativa.")}
+      ${card(`${cardH("Lo que preocupa a tu generación", "Ranking anónimo de jóvenes en España.")}
         ${showRank ? `<div class="rank">${rank.map((x, i) => `<div class="rk ${S.fears.some(f => f.id === x.f.id) ? "mine" : ""}"><span class="rk-n">${i + 1}</span><div><b>${x.f.label}</b>${bar(x.n, rank[0].n, "blue")}</div><span class="rk-p">${pct(x.n / r.total * 100)}</span></div>`).join("")}</div><p class="note">${num(r.total)} respuestas anónimas.</p>`
-          : `<p class="ad-soon">Lo publicaremos cuando haya al menos ${RANK_MIN} respuestas, para que nadie pueda ser identificado.${S.voted ? " Tu respuesta ya cuenta." : ""}</p>`}`, "c-5")}
+          : `<p class="ad-soon">Lo publicaremos cuando haya al menos ${RANK_MIN} respuestas, para que sea representativo y nadie pueda ser identificado.${S.voted ? " Tu respuesta ya cuenta." : ""}</p>`}`, "c-5")}
     </div>`;
 }
 /* Mapa del Antídoto: de tu dinero a cada inversión, con ramas tan gruesas como el peso de cada parte */
@@ -1432,7 +1413,7 @@ function vFamiliaJoven() {
     const al = allocation(), gifts = S.money.filter(isGift).reverse(), ok = geminiAllowed(), adult = isAdult(), pend = S.pending || [];
     const invite = `Estoy aprendiendo a invertir en Horizonte, de CaixaBank. Desde el área familiar puedes ayudarme con mi primera casa: ${location.origin}${location.pathname}#/alta/familia`;
     const ask = txt => adult ? "" : btn("Pedir", "invite", "sm", `data-text="${esc(`Hola, ¿me das permiso para ${txt} en Horizonte? Entra en el área familiar y mira «Permisos»: ${location.origin}${location.pathname}`)}"`);
-    const antState = al.fears.length ? (al.active ? "Aprobado" : al.needSuit ? "Falta el test" : "Pendiente de aprobación") : S.suit ? (S.suit.ok ? "Aún no lo has elegido" : "No disponible con tus respuestas") : "Falta el test";
+    const antState = al.fears.length ? (al.active ? "Aprobado" : "Pendiente de aprobación") : "Aún no lo has elegido";
     return `${pageH("Familia", "Tu familia puede regalarte dinero para tu futuro, aprobar tus decisiones y ver tu progreso.")}
     <div class="grid">
       ${connectCard("teen")}
@@ -1451,7 +1432,7 @@ function vFamiliaJoven() {
 function vFResumen() {
     const m = money(), mi = miles(), n = esc(teenName()), done = Object.keys(S.lessons).length, passed = !!S.exam?.passed;
     const steps = [[done >= LESSONS.length, "Fundamentos", `${done} de ${LESSONS.length} temas`], [passed, "Prueba final", passed ? `${S.exam.score}/${S.exam.total} el ${fmtD(S.exam.date)}` : "Pendiente"],
-        [!!m.firstOwn, "Primer euro propio", m.firstOwn ? fmtD(m.firstOwn.date) : "Aún no"], [!!S.suit, "Test de situación", S.suit ? "Hecho" : "Pendiente"]];
+        [!!m.firstOwn, "Primer euro propio", m.firstOwn ? fmtD(m.firstOwn.date) : "Aún no"], [S.fears.length > 0, "Antídoto", S.fears.length ? (m.al.active ? "Activo" : "Pendiente") : "Aún no"]];
     return `${pageH(`Hola, ${esc(S.family?.name || "")}`, `Así avanza ${n} en Horizonte.`, lnk(`${ic("gift")}Hacer un regalo`, "#/f/regalar", "primary"))}
     ${famBar()}
     <div class="grid">
@@ -1474,8 +1455,7 @@ function callCard() {
 function pendingRows() {
     const al = allocation(), rows = [], n = esc(teenName());
     (S.pending || []).forEach(x => rows.push(`<div class="row"><span class="mv-ic warn">${ic("back")}</span><div><b>Retirada de ${eur(x.amount, true)}</b><span>Pedida el ${fmtD(x.date)} por ${n}.${money().protect?.active ? " Si se aprueba antes de los 12 meses, pierde la protección del primer año." : ""}</span></div><div class="fr-btns">${btn("Rechazar", "wdNo", "sm ghost", `data-id="${x.id}"`)}${btn("Aprobar", "wdOk", "sm primary", `data-id="${x.id}"`)}</div></div>`));
-    if (al.pending && !al.needSuit) rows.push(`<a class="row" href="#/f/permisos"><span class="mv-ic warn">${ic("shield")}</span><div><b>Aprobar su Antídoto</b><span>Ha elegido: ${al.fears.map(f => esc(f.label.toLowerCase())).join(" y ")}.</span></div>${ic("chev", "chev")}</a>`);
-    if (al.needSuit) rows.push(`<div class="row"><span class="mv-ic warn">${ic("shield")}</span><div><b>Falta el test de ${n}</b><span>Ha elegido un Antídoto, pero necesita hacer antes las seis preguntas sobre su situación.</span></div></div>`);
+    if (al.pending) rows.push(`<a class="row" href="#/f/permisos"><span class="mv-ic warn">${ic("shield")}</span><div><b>Aprobar su Antídoto</b><span>Ha elegido: ${al.fears.map(f => esc(f.label.toLowerCase())).join(" y ")}.</span></div>${ic("chev", "chev")}</a>`);
     if (!S.geminiOk && !isAdult()) rows.push(`<a class="row" href="#/f/permisos"><span class="mv-ic warn">${ic("spark")}</span><div><b>Permiso para Gemini</b><span>Para explicarle su dinero con sus propios números.</span></div>${ic("chev", "chev")}</a>`);
     return rows.length ? `<div class="rows">${rows.join("")}</div>` : empty("check", "Todo al día", "No hay nada pendiente de aprobar.");
 }
@@ -1502,8 +1482,8 @@ function vFPermisos() {
     return `${pageH("Permisos", adult ? `${n} ya es mayor de edad y decide sobre su cuenta.` : `Hasta los ${RULES.adultAge} años, las decisiones importantes de la cuenta de ${n} necesitan tu aprobación.`)}
     ${famBar()}
     <div class="grid">
-      ${card(`${cardH("Antídoto", al.fears.length ? `${n} ha elegido invertir una parte en lo que le preocupa.` : `${n} aún no ha elegido su Antídoto.`, al.fears.length && !adult && S.suit?.ok ? toggle("approve", S.antidoteApproved, "Aprobar Antídoto") : "")}
-        ${al.fears.length ? `${stack(al.planned)}<div class="rows">${al.planned.map(p => `<div class="row">${sw(p.fund)}<div><b>${FUNDS[p.fund].name} · ${wpct(p.w)}</b><span>${p.fear ? esc(p.fear.label) : "Cartera base diversificada"}</span></div></div>`).join("")}</div><p class="note">${S.suit ? `Test de situación: ${{ sat: "permite un Antídoto pequeño", base: "solo cartera base", corto: "plazo corto: no se recomienda invertir este dinero", revisar: "pendiente de repasar" }[S.suit.level] || ""}.` : `${n} aún no ha hecho el test de seis preguntas, necesario para activar un Antídoto.`} No es un seguro: ese fondo puede perder valor.</p>` : ""}`, "c-6")}
+      ${card(`${cardH("Antídoto", al.fears.length ? `${n} ha elegido invertir una parte en lo que le preocupa.` : `${n} aún no ha elegido su Antídoto.`, al.fears.length && !adult ? toggle("approve", S.antidoteApproved, "Aprobar Antídoto") : "")}
+        ${al.fears.length ? `${stack(al.planned)}<div class="rows">${al.planned.map(p => `<div class="row">${sw(p.fund)}<div><b>${FUNDS[p.fund].name} · ${wpct(p.w)}</b><span>${p.fear ? esc(p.fear.label) : "Cartera base diversificada"}</span></div></div>`).join("")}</div>` : ""}`, "c-6")}
       ${card(`${cardH("Gemini", "Permitir que Gemini use la información de su cuenta (aportaciones y objetivos) para explicarle su dinero. Nunca se usa para publicidad.", adult ? "" : toggle("gemOk", S.geminiOk, "Permitir Gemini"))}
         <p class="note">Puedes retirar el permiso en cualquier momento.</p>`, "c-6")}
       ${card(`${cardH("Amigos en los juegos", `Permitir que ${n} conecte con sus amigos para comparar los resultados de los juegos. Solo se comparten su nombre con la inicial del apellido y sus aciertos; nada de su dinero.`, adult ? "" : toggle("frOk", S.friendsOk, "Permitir amigos en los juegos"))}
@@ -1656,7 +1636,6 @@ document.addEventListener("click", async e => {
     else if (act === "accStart") { accStart(); rerender(); }
     else if (act === "accCopy" || act === "accShare") accShareCopy(act === "accShare", b.dataset.role);
     else if (act === "openWithdraw") withdrawSheet();
-    else if (act === "openSuit") suitSheet();
     else if (act === "shareInv") investorCard(true);
     else if (act === "dlInv") investorCard(false);
     else if (act === "wdOk" || act === "wdNo") {
@@ -1762,11 +1741,6 @@ document.addEventListener("submit", e => {
         if (isAdult()) { applyWithdrawal(amount); toast(`Retirada de ${eur(amount, true)} hecha`); }
         else { (S.pending ||= []).push({ id: "w" + Date.now().toString(36), amount, date: iso(new Date()) }); save(); toast("Solicitud enviada a tu familia"); }
         rerender();
-    } else if (k === "suit") {
-        const ans = Object.fromEntries(SUIT.map(q => [q.id, +d[q.id]])), res = suitResult(ans);
-        S.suit = { ...res, ans };
-        if (!res.ok) { S.antidoteApproved = false; if (S.fears.length) S.fears = []; }
-        save(); closeSheet(); toast(res.ok ? "Test hecho: puedes elegir un Antídoto" : "Test hecho: de momento, solo cartera base"); rerender();
     } else if (k === "contribute") {
         const amount = Math.round(+d.amount * 100) / 100;
         if (!(amount > 0)) return;

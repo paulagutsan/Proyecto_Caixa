@@ -52,7 +52,7 @@ function gIntent(raw) {
 function gNext(c) {
     if (!c.diploma) return { label: `Completar Fundamentos (${c.lessonsDone}/${c.lessonsTotal})`, href: "#/aprende", why: `Al superar la prueba final, CaixaBank invierte ${G_EUR(c.prize)} a tu nombre.` };
     if (!c.hasOwn) return { label: "Poner tu primer euro", href: "#/dinero", why: `Con 1 € basta, y tus primeros ${G_EUR(c.protectCap)} aportados tienen protección promocional durante 12 meses.` };
-    if (!c.fears.length) return { label: "Elegir tu Antídoto", href: "#/antidoto", why: "Si quieres, una parte pequeña de tu cartera en un tema que te importa, tras un test breve." };
+    if (!c.fears.length) return { label: "Elegir tu Antídoto", href: "#/antidoto", why: "Dinos qué te preocupa de tu futuro y preparamos tu reparto." };
     if (!(c.weekly > 0 || c.roundup)) return { label: "Automatizar tu ahorro", href: "#/dinero", why: "Una cantidad semanal fija suma millas cada mes." };
     return { label: "Hacer la revisión anual", href: "#/antidoto", why: `Tu próxima revisión es antes del ${c.itvDue}.` };
 }
@@ -99,13 +99,13 @@ function localGemini(question, c) {
         }
         case "antidote": {
             if (!c.fears.length) {
-                return R("Tu Antídoto", "Todavía no has elegido qué te preocupa de tu futuro. Antes hay un test de seis preguntas; si encaja, puedes marcar hasta dos temas y como máximo el 10 % de tu cartera irá a ellos. Es una apuesta temática, no un seguro.",
+                return R("Tu Antídoto", "Todavía no has elegido qué te preocupa de tu futuro. Marca hasta dos temas y preparo el reparto: una parte de tu dinero invierte justo en lo que temes.",
                     [["Reparto", `${Math.round(RULES.base * 100)} % fondo global · ${Math.round(RULES.antidote * 100)} % Antídoto`]],
                     [{ label: "Elegir mi Antídoto", href: "#/antidoto", primary: true }], ["tu reparto"]);
             }
             return R("Tu Antídoto",
                 `${c.fears.map(f => `${f.fundName} por «${f.label.toLowerCase()}» (${G_EUR(f.amount)})`).join(" y ")}. ${c.fears[0].why} ` +
-                `${c.antidoteActive ? "" : "Tu familia aún tiene que aprobarlo. "}No es un seguro ni una cobertura: esa parte puede ganar o perder.`,
+                `${c.antidoteActive ? "" : "Tu familia aún tiene que aprobarlo. "}Reduce el golpe si lo que temes ocurre; no es una garantía.`,
                 [["Fondo global", G_EUR(c.baseAmount)], ["Antídoto", G_EUR(c.antidoteAmount)], ["Estado", c.antidoteActive ? "Activo" : "Pendiente de aprobación"]],
                 [{ label: "Ver mi reparto", href: "#/dinero", primary: true }, topic("drop")], ["tus preocupaciones", "tu reparto"]);
         }
