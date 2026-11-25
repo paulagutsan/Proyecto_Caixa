@@ -315,7 +315,7 @@ const empty = (icon, t, p, action = "") => `<div class="empty"><span class="empt
 const stack = parts => `<div class="stack">${parts.map(p => `<i class="f-${p.fund}" style="width:${(p.w * 100).toFixed(2)}%"></i>`).join("")}</div>`;
 const sw = fund => `<span class="sw f-${fund}"></span>`;
 const toggle = (act, on, label) => `<label class="switch"><input type="checkbox" data-act="${act}" ${on ? "checked" : ""} aria-label="${esc(label)}"><i></i></label>`;
-const legal = () => `<footer class="legal">${ic("info")}<p>${LEGAL} <a href="#/legal">Condiciones y avisos legales</a></p></footer>`;
+const legal = (short = false) => `<footer class="legal">${ic("info")}<p>${short ? LEGAL.replace(/La protección del primer año es una promoción.*?\(Ley 5\/2019\)\. /, "") : LEGAL} <a href="#/legal">Condiciones y avisos legales</a></p></footer>`;
 const brand = (href, h = 38) => `<a class="brand" href="${href}" aria-label="Horizonte"><img class="brand-star" src="brand/horizonte-logo.png" alt="" width="${Math.round(h * 1.46)}" height="${h}"><span class="brand-text"><span class="brand-word">Horizonte</span><small class="brand-sub">CaixaBank Asset Management</small></span></a>`;
 
 function credVisual(big = false, sample = false) {
@@ -399,7 +399,6 @@ function vLanding() {
         <ol class="anti-steps">
           <li><span>1</span><div><b>Eliges lo que te preocupa</b><p>Por ejemplo, que la IA cambie el trabajo que quieres o no poder pagarte una casa.</p></div></li>
           <li><span>2</span><div><b>Una parte se invierte ahí</b><p>El ${Math.round(RULES.antidote * 100)} % va a empresas de ese tema; el ${Math.round(RULES.base * 100)} %, a un fondo global diversificado.</p></div></li>
-          <li><span>3</span><div><b>Si ocurre, compensa</b><p>Si la IA avanza o los pisos suben, esas empresas suelen ganar más, y esa parte de tu dinero sube con ellas.</p></div></li>
         </ol>
       </div>
       <div class="anti-r">
@@ -450,7 +449,7 @@ function vLanding() {
     </div></section>
 
     <section class="hz-final"><div class="lp-in"><h2 class="serif">Da el primer paso hoy.</h2><p class="hz-lead">Crea tu cuenta en dos minutos. Si eres menor, tu familia la autoriza en otros dos.</p><div class="lp-cta center">${lnk(`Soy joven${ic("arrow")}`, "#/alta/joven", "white lg")}${lnk("Soy madre, padre o tutor", "#/familias", "lg light")}</div></div></section>
-    <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}
+    <div class="lp-in lp-foot">${brand("#/", 30)}${legal(true)}
       <div class="lp-ast">${protectNote()}
       <p><sup>**</sup> Hasta ${pts(MILES.maxCut)} puntos, sobre las condiciones vigentes al firmar tu primera hipoteca con CaixaBank. No es una oferta ni obliga a contratar ningún producto (Ley 5/2019). <a href="#/legal">Ver todas las condiciones</a></p></div></div>
     </div>`;
@@ -567,7 +566,7 @@ function vFamilias() {
       <div class="faq">${obj.map(([q, a]) => `<details><summary>${q}${ic("plus")}</summary><p>${a}</p></details>`).join("")}</div>
       <div class="lp-cta">${lnk(`Crear cuenta familiar${ic("arrow")}`, "#/alta/familia", "primary lg")}</div>
     </div></section>
-    <div class="lp-in lp-foot">${brand("#/", 30)}${legal()}<div class="lp-ast">${protectNote()}</div></div></div>`;
+    <div class="lp-in lp-foot">${brand("#/", 30)}${legal(true)}<div class="lp-ast">${protectNote()}<p>Bonificación en la hipoteca: hasta ${pts(MILES.maxCut)} puntos, sobre las condiciones vigentes al firmar tu primera hipoteca con CaixaBank. No es una oferta ni obliga a contratar ningún producto (Ley 5/2019). <a href="#/legal">Ver todas las condiciones</a></p></div></div></div>`;
 }
 function vLegal() {
     const sec = (t, body) => `<section class="lg-sec"><h2>${t}</h2>${body}</section>`;
@@ -673,7 +672,7 @@ function weekSummary() {
 }
 function weekCard(cls = "c-12") {
     const w = weekSummary(), can = geminiAllowed();
-    return card(`${cardH(`<span class="gem">${ic("spark")}Tu dinero hoy</span>`, `Semana del ${fmtD(weekOf(new Date()))}`, btn(can ? "Pregúntale a Gemini" : "Pregunta al asistente", "goAsk", "sm"))}
+    return card(`${cardH(`<span class="gem">${ic("spark")}Tu dinero hoy</span>`, `Semana del ${fmtD(weekOf(new Date()))}`)}
       <div class="week">${w.lines.map(l => `<p>${l}</p>`).join("")}</div>
       <div class="week-funds">${(w.parts.length ? w.parts : [{ fund: "global" }]).map(p => `<div>${sw(p.fund)}<span>${FUNDS[p.fund].name}</span><b class="${w.mv[p.fund] >= 0 ? "up" : "down"}">${w.mv[p.fund] >= 0 ? "+" : "−"}${pct(Math.abs(w.mv[p.fund]), 1)}</b></div>`).join("")}</div>
       `, cls);
@@ -764,7 +763,7 @@ function vInicio() {
         <div class="h-week"><span class="h-k">${ic("spark")}Tu dinero hoy · semana del ${fmtD(weekOf(new Date()))}</span>
           ${w.lines.map(l => `<p>${l}</p>`).join("")}
           <p class="h-funds">${(w.parts.length ? w.parts : [{ fund: "global" }]).map(p => `<span>${sw(p.fund)}${FUNDS[p.fund].name} <b class="${w.mv[p.fund] >= 0 ? "up" : "down"}">${sg(w.mv[p.fund])}</b></span>`).join("")}</p>
-          <button class="h-link" data-act="goAsk">${can ? "Pregúntale a Gemini" : "Pregunta al asistente"}${ic("arrow")}</button></div>
+          </div>
       </section>
 
       <dl class="h-stats">
@@ -1220,9 +1219,9 @@ function vDinero() {
           <div class="vc-foot"><div class="vc-ranges" role="tablist" aria-label="Periodo">${RANGES.map(([k]) => `<button role="tab" class="${k === vRange ? "on" : ""}" aria-selected="${k === vRange}" data-act="vRange" data-k="${k}">${k}</button>`).join("")}</div>
           <div class="vc-key"><span><i class="k1"></i>Tu dinero</span><span><i class="k2"></i>Lo que has añadido</span></div></div>`
         : `<div class="vchart-empty">${empty("chart", "Tu curva empieza con tu primer euro", "Aquí verás cómo se mueve tu dinero cada día.", btn("Hacer mi primera aportación", "openContribute", "primary"))}</div>`}`, "c-12 money-card")}
-      ${card(`${cardH("Últimas inversiones", "Todo lo que se ha invertido a tu nombre.", has ? btn(`${ic("download")}Extracto en Excel`, "csv", "sm") : "")}
-        ${has ? `<div class="rows moves">${moves.slice(0, allMoves ? 50 : 6).map(moveRow).join("")}</div>
-        ${moves.length > 6 ? `<button class="more" data-act="allMoves">${allMoves ? "Ver menos" : `Ver los ${moves.length} movimientos`}</button>` : ""}` : empty("chart", "Aún no hay inversiones", "Aparecerán aquí y podrás descargarlas en Excel.")}`, "c-12")}
+      ${has ? card(`${cardH("Últimas inversiones", "Todo lo que se ha invertido a tu nombre.", btn(`${ic("download")}Extracto en Excel`, "csv", "sm"))}
+        <div class="rows moves">${moves.slice(0, allMoves ? 50 : 6).map(moveRow).join("")}</div>
+        ${moves.length > 6 ? `<button class="more" data-act="allMoves">${allMoves ? "Ver menos" : `Ver los ${moves.length} movimientos`}</button>` : ""}`, "c-12") : ""}
       ${investorCardUI(m)}
       ${weekCard("c-12")}
       ${pend.length ? card(`${cardH("Retiradas pendientes", `Tu familia tiene que aprobarlas.`)}<div class="rows">${pend.map(x => `<div class="row"><span class="mv-ic warn">${ic("back")}</span><div><b>${eur(x.amount, true)}</b><span>Pedida el ${fmtD(x.date)} · pendiente de aprobación</span></div>${btn("Cancelar", "wdNo", "sm ghost", `data-id="${x.id}"`)}</div>`).join("")}</div>`, "c-12") : ""}
@@ -1237,7 +1236,7 @@ function vDinero() {
       ${card(`${cardH("Primer año acompañado", `Promoción de CaixaBank: si a los ${RULES.protectMonths} meses tus primeros ${RULES.protectCap} € aportados (tuyos o de tu familia) valen menos y no has vendido, CaixaBank repone la diferencia.`)}
         <div class="protect"><div class="pr-num"><b>${eur(m.protect?.active ? m.protect.base : 0)}</b><span>de ${RULES.protectCap} € con protección</span></div>${bar(m.protect?.active ? m.protect.base : 0, RULES.protectCap, "blue")}
         <p class="note">${m.protect ? (m.protect.lost ? `Has retirado dinero antes de los ${RULES.protectMonths} meses: la protección ya no aplica.` : m.protect.active ? `Del ${fmtD(m.protect.start)} al ${fmtD(m.protect.end)} · quedan ${m.protect.daysLeft} días` : `Tu periodo de protección terminó el ${fmtD(m.protect.end)}.`) : "Empieza con tu primera aportación."}</p></div>
-        <details class="terms" open><summary>Condiciones${ic("plus")}</summary><ul><li>Es una promoción, no un fondo garantizado ni un seguro: tu dinero sigue invertido y puede bajar.</li><li>Tope de ${RULES.protectCap} € por persona y ${RULES.protectMonths} meses desde tu primera aportación.</li><li>Cubre las primeras aportaciones, no los rendimientos ni lo que aportes por encima del tope.</li><li>Solo si no vendes ni retiras antes de los ${RULES.protectMonths} meses.</li><li>Dotación limitada: puede agotarse. <a href="#/legal">Ver condiciones completas</a>.</li></ul></details>`, "c-12")}
+        <details class="terms"><summary>Condiciones${ic("plus")}</summary><ul><li>Es una promoción, no un fondo garantizado ni un seguro: tu dinero sigue invertido y puede bajar.</li><li>Tope de ${RULES.protectCap} € por persona y ${RULES.protectMonths} meses desde tu primera aportación.</li><li>Cubre las primeras aportaciones, no los rendimientos ni lo que aportes por encima del tope.</li><li>Solo si no vendes ni retiras antes de los ${RULES.protectMonths} meses.</li><li>Dotación limitada: puede agotarse. <a href="#/legal">Ver condiciones completas</a>.</li></ul></details>`, "c-12")}
     </div>
     `;
 }
@@ -1335,9 +1334,8 @@ function vAntidoto() {
     return `${pageH("Antídoto", "Invierte una parte de tu dinero en lo que te preocupa del futuro.")}
     <div class="grid">
       ${card(`<div class="ad-hero">
-          <div class="ad-why"><span class="kicker">Por qué invertir en lo que te preocupa</span>
+          <div class="ad-why">
             <h2>Funciona como un seguro, pero invertido.</h2>
-            <p>El ${pct(RULES.base * 100)} de tu dinero va a la cartera base. El otro ${pct(RULES.antidote * 100)} se invierte en empresas a las que les va mejor justo si pasa lo que temes.</p>
             <ul class="ad-if"><li><span class="ad-ic bad">${ic("spark")}</span><div><b>Si pasa</b>, tu Antídoto tiende a subir y compensa parte del golpe.</div></li>
               <li><span class="ad-ic good">${ic("check")}</span><div><b>Si no pasa</b>, mejor todavía: tu cartera base sigue creciendo.</div></li></ul></div>
           <div class="ad-mapcol"><div class="ad-maph"><span>Tu mapa</span>${al.fears.length ? badge(al.active ? "Activo" : "Pendiente de tu familia", al.active ? "ok" : "warn") : ""}</div>${antidoteMap(m)}</div>
@@ -1410,7 +1408,7 @@ function vCasa() {
         <div class="mh-meter"><span>Rebaja acumulada</span>${bar(mi.cut, MILES.maxCut, "gold")}<small>${pts(mi.cut)} de ${pts(MILES.maxCut)} puntos posibles</small></div></div>`, "c-12")}
       ${card(`${cardH("Cómo se ganan")}<div class="rows">${rules.map(([t, n, s]) => `<div class="row"><div><b>${t}</b>${s ? `<span>${s}</span>` : ""}</div><b class="amt gold">${n}</b></div>`).join("")}</div>
         <p class="note">${num(MILES.perPoint / 100)} millas equivalen a 0,01 puntos de bonificación posible, hasta un máximo de ${pts(MILES.maxCut)} puntos.</p>`, "c-6")}
-      ${card(`${cardH("Condiciones")}<ul class="plain"><li>Se canjean como bonificación en tu primera hipoteca con CaixaBank, según las condiciones vigentes el día de la firma.</li><li>Es una bonificación posible, no una oferta ni un precio cerrado, y no obliga a contratar otros productos (Ley 5/2019). Puede ir ligada a condiciones de vinculación voluntaria que entonces se ofrezcan.</li><li>No caducan. Si no compras vivienda, no pierdes nada: tu dinero sigue siendo tuyo.</li><li>Los regalos tienen un tope mensual. <a href="#/legal">Ver condiciones completas</a>.</li></ul>`, "c-6")}
+      ${card(`${cardH("Condiciones")}<ul class="plain"><li>Es una bonificación posible, no una oferta ni un precio cerrado, y no obliga a contratar otros productos (Ley 5/2019). Puede ir ligada a condiciones de vinculación voluntaria que entonces se ofrezcan.</li><li>No caducan. Si no compras vivienda, no pierdes nada: tu dinero sigue siendo tuyo.</li><li>Los regalos tienen un tope mensual. <a href="#/legal">Ver condiciones completas</a>.</li></ul>`, "c-6")}
       ${card(`${cardH("Historial de millas")}${mi.items.length ? `<div class="rows">${mi.items.slice(0, 15).map(i => `<div class="row"><div><b>${esc(i.label)}</b><span>${fmtD(i.date)}</span></div><b class="amt gold">+${i.n}</b></div>`).join("")}</div>` : empty("house", "Aún no tienes millas", "Empieza por Fundamentos: cada tema suma.", lnk("Ir a Aprende", "#/aprende", "primary"))}`, "c-12")}
     </div>`;
 }
