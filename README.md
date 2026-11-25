@@ -18,7 +18,7 @@ Horizonte quiere que la primera inversión de un joven, y después su primera ca
 | --- | --- | --- |
 | **Aprendizaje** | El freno número uno es «no sé por dónde empezar» | Temas cortos con ejemplos y preguntas, una prueba final y un certificado para LinkedIn |
 | **Adrenalina** | Hoy esa emoción la ponen las apuestas y la cripto | Juegos con datos reales, contrarreloj y con amigos, sin apostar nada |
-| **Motivación** | Nadie invierte «por invertir» | El Antídoto (inviertes en lo que te preocupa) y Tu casa (millas que rebajan tu primera hipoteca) |
+| **Motivación** | Nadie invierte «por invertir» | El Antídoto (inviertes en lo que te preocupa) y Tus millas (descuentos en productos de CaixaBank o una rebaja en tu primera hipoteca) |
 | **Movimiento** | Aprendemos de dinero en redes y con amigos | Amigos en los juegos, Tus ideas (Tu voz y Tu proyecto) y la familia |
 
 Y debajo de todo: **fácil, rápido y de fiar**.
@@ -27,23 +27,25 @@ Y debajo de todo: **fácil, rápido y de fiar**.
 
 ### Sin cuenta
 
-- **Portada:** cómo funciona, Aprende, Antídoto, Tu casa, Tus ideas, familias, regalos y preguntas frecuentes.
+- **Portada:** cómo funciona, Aprende, Antídoto, Tus millas, Tus ideas, familias, regalos y preguntas frecuentes.
 - **Prueba sin cuenta:** un tema y un juego para probar Horizonte sin dar ningún dato. Lo que hagas se conserva si luego creas la cuenta.
-- **Alta en dos minutos:** como joven o como familia. Si eres menor, tu familia autoriza la cuenta.
+- **Alta en dos minutos:** como joven o como familia, en dos pasos que hay que completar. Si eres menor, tu familia autoriza la cuenta.
 - **Regalar:** cualquiera puede preparar un regalo con un importe y un mensaje. Se genera un enlace y quien lo recibe lo canjea al crear su cuenta. En la demo no se cobra nada.
 - **Verificar un certificado:** cada certificado tiene un código que se comprueba en la web.
 
 ### Para la persona joven
 
 - **Inicio:** tus cuatro pasos (aprende, invierte, anticípate y gana millas) y lo siguiente que toca.
-- **Dinero:** tu saldo, cómo ha ido la semana, el gráfico de tu dinero, aportaciones y redondeo, y «tu primer año acompañado». Tu primera inversión, de 20 €, te la regalamos al superar Fundamentos, y el primer año va protegido.
+- **Dinero:** tu saldo, cómo ha ido la semana, el gráfico de tu dinero, en qué sectores está invertido, aportaciones y redondeo, y «tu primer año acompañado». Tu primera inversión, de 20 €, te la regalamos al superar Fundamentos. Además, como promoción, si a los 12 meses tus primeros 100 € aportados valen menos y no has vendido, CaixaBank repone la diferencia.
 - **Aprende:** Fundamentos en cinco temas (ahorrar o invertir, las caídas pasan, no todo en la misma cesta, ni apuestas ni estafas, y cómo funciona Horizonte). Cada tema tiene tarjetas con ejemplos y preguntas para comprobar lo aprendido. Al final hay una prueba de 10 preguntas y un certificado con fecha y código, para descargar o añadir a LinkedIn. También están los juegos:
   - **El titular:** un titular real de un año. ¿La bolsa mundial acabó ese año arriba o abajo?
   - **¿Cuál rindió más?:** dos inversiones, un año. Eliges la que más subió.
   - **Más o menos:** ¿la segunda inversión acabó con más o con menos dinero? Encadenas aciertos con cada vez menos tiempo.
   - **Liga del lunes:** cada semana predices si el IBEX, la bolsa mundial y el oro acabarán arriba o abajo. Se resuelve el viernes con el cierre.
 - **Antídoto:** el 75 % de tu dinero va a una cartera base diversificada y el 25 % a lo que te preocupa del futuro. Lo escribes con tus palabras («que la IA haga el trabajo que quiero», «no poder pagarme una casa»…) y se convierte en un fondo temático, que ves dibujado en tu mapa. Puedes tener hasta dos preocupaciones. Hay además un ranking anónimo de lo que preocupa a tu generación.
-- **Tu casa:** mueves cuánto apartas al mes, hasta 2.000 €, y ves cuándo tendrías la entrada. Aprender, jugar y aportar suma millas de casa, que rebajan el interés de tu primera hipoteca con CaixaBank.
+- **Tus millas:** se ganan aprendiendo, jugando, aportando cada mes y con constancia, nunca por tener más dinero. Tienen dos pestañas:
+  - **Catálogo:** descuentos en productos y servicios de CaixaBank y sus marcas (tecnología, hogar, salud y mascotas, movilidad y viajes). Las millas valen lo mismo en todos: 25 millas = 1 €, así que el porcentaje depende del precio, y el descuento nunca pasa de la mitad.
+  - **Tu casa:** mueves cuánto apartas al mes, hasta 2.000 €, y ves cuándo tendrías la entrada, con la subida de la vivienda (3,5 % al año) y la inflación (2 %) incluidas, en euros de entonces o de hoy. Si guardas las millas, pueden rebajar hasta 0,20 puntos el interés de tu primera hipoteca con CaixaBank. Guardadas para la casa valen bastante más que en el catálogo.
 - **Tus ideas:**
   - **Tu voz:** propuestas de juntas de accionistas para deslizar. Dices qué preferirías y ves qué opina la comunidad. Es consultivo: en un fondo, quien vota es la gestora.
   - **Tu proyecto:** cuentas tu proyecto en privado y ves qué empresas asociadas, de ejemplo, podrían apoyarlo. No se comparte nada sin tu permiso.
@@ -62,7 +64,7 @@ Y debajo de todo: **fácil, rápido y de fiar**.
 
 - **Real:** el contenido de Aprende, los juegos con datos históricos de mercado, el asistente con Gemini, los amigos, los votos de Tu voz, los regalos, los certificados verificables y la cuenta compartida (con Supabase).
 - **Simulado:** el mercado del día a día (saldo, semana y Liga del lunes). `mercado.js` genera un índice por fondo igual para todo el mundo. Para usar datos reales basta con cambiar `mkPrice(fondo, instante)` por los valores liquidativos de los fondos.
-- **De ejemplo:** las empresas asociadas de Tu proyecto y la cuenta de ejemplo.
+- **De ejemplo:** las empresas asociadas de Tu proyecto, los precios y descuentos del catálogo de millas y la cuenta de ejemplo.
 
 ## Arrancar en local
 
@@ -100,6 +102,7 @@ El plan gratuito de Gemini es solo para pruebas y para la demo. Un lanzamiento r
 | `app.js` | La app: portada, pantallas, navegación y lógica |
 | `data.js` | Contenido: temas, juegos, fondos, preocupaciones del Antídoto y reglas (premio, protección, millas) |
 | `mercado.js` | El mercado simulado del prototipo |
+| `millas.js` | Tus millas: catálogo, Tu casa y en qué está invertida la cartera base |
 | `gemini.js`, `asistente.js` | El asistente: llamada a Gemini, respuestas locales y botón flotante |
 | `amigos.js` | Amigos y resultados de los juegos |
 | `comunidad.js` | Tu voz y Tu proyecto |
@@ -111,7 +114,7 @@ El plan gratuito de Gemini es solo para pruebas y para la demo. Un lanzamiento r
 | `supabase/` | Scripts de base de datos y la función de Gemini |
 | `entrega/` | Entregables del concurso (presentaciones y vídeo del MVP) |
 | `redireccion/`, `v2/`, `public/` | Redirecciones de los enlaces antiguos |
-| `v1/`, `server.js` | La versión 1, guardada sin cambios |
+| `v1/`, `server.js`, `data/` | La versión 1, guardada sin cambios, con su servidor y sus datos |
 
 ## Versión 1
 
