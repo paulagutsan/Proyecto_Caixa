@@ -602,7 +602,12 @@ function vAlta(role) {
             <label class="field"><span>¿Cómo quieres que te llamemos?</span><input name="name" required maxlength="30" autocomplete="given-name" value="${esc(d.name || "")}"></label>
             <label class="field"><span>¿Cuántos años tienes?</span><input name="age" type="number" inputmode="numeric" min="5" max="40" required value="${esc(d.age ?? "")}"></label>
             <button class="btn primary lg block">Continuar</button>${terms}
-            <p class="note">Si tienes menos de 18, en el siguiente paso tu madre, padre o tutor completa la autorización.</p></form>`;
+            <p class="note">Si tienes menos de 18, en el siguiente paso tu madre, padre o tutor completa la autorización. Si no, solo dinos quién te acompaña.</p></form>`;
+        else if (d.age >= RULES.adultAge) body = `<h1>Tu familia</h1><p class="sub">Horizonte se vive en familia. Dinos quién te acompaña; como eres mayor de edad, nadie tiene que autorizar tu cuenta ni puede verla si no la invitas.</p>
+          <form data-form="alta1" class="form">
+            <label class="field"><span>Nombre de la persona que te acompaña</span><input name="fname" required maxlength="40" autocomplete="off" value="${esc(d.fname || "")}"></label>
+            <label class="field"><span>Relación</span><select name="relation" required><option value="">Elige una opción</option>${["Madre", "Padre", "Abuela", "Abuelo", "Tía", "Tío", "Hermana", "Hermano", "Otra persona de confianza"].map(r => `<option ${d.relation === r ? "selected" : ""}>${r}</option>`).join("")}</select></label>
+            <button class="btn primary lg block">Entrar en Horizonte</button></form>`;
         else body = `<h1>Autorización de tu familia</h1><p class="sub">Como eres menor de edad, tu madre, padre o tutor legal tiene que abrir y autorizar la cuenta. Pasadle el móvil: son dos minutos.</p>
           <form data-form="alta1" class="form">
             <label class="field"><span>Nombre de la persona que autoriza</span><input name="fname" required maxlength="40" autocomplete="name" value="${esc(d.fname || "")}"></label>
@@ -1548,15 +1553,23 @@ function render() {
     if (r === "antidoto" && !ranking) loadRanking().then(() => { if (location.hash.startsWith("#/antidoto")) rerender(); });
     gemRender();
 }
+new MutationObserver(altaCheck).observe($("#app") || document.body, { childList: true });
 function rerender() { const y = scrollY; render(); scrollTo({ top: y, behavior: "instant" }); }
 
 /* ------------------------------------------------------------------ eventos */
+/* El botón del alta solo se activa con todo relleno */
+function altaCheck() {
+    const f = $('.auth-card form[data-form^="alta"]'); if (!f) return;
+    const ok = f.checkValidity() && $$("input[required]:not([type=checkbox])", f).every(i => i.value.trim());
+    $("button.btn.primary", f).disabled = !ok;
+}
+["input", "change"].forEach(t => document.addEventListener(t, e => { if (e.target.closest?.('[data-form^="alta"]')) altaCheck(); }));
 function finishTeen() {
     const d = alta.data, keep = { lessons: S.lessons || {}, games: S.games || {}, mmBest: S.mmBest };      // lo probado sin cuenta se conserva
     S = { ...blank(), ...keep }; S.role = "teen";
     S.teen = { name: d.name.trim(), surname: "", birth: d.birth };
-    if (d.fname) { S.family = { name: d.fname.trim(), relation: d.relation, email: d.femail || "" }; S.familyAuth = true; S.joined = { teen: true }; }
-    save(); if (d.fname) accStart(); alta = null; location.hash = "#/inicio"; toast(`Te damos la bienvenida a Horizonte, ${esc(S.teen.name)}`);
+    if (d.fname) { S.family = { name: d.fname.trim(), relation: d.relation, email: d.femail || "" }; if (d.femail) { S.familyAuth = true; S.joined = { teen: true }; } }
+    save(); if (d.femail) accStart(); alta = null; location.hash = "#/inicio"; toast(`Te damos la bienvenida a Horizonte, ${esc(S.teen.name)}`);
     if (gfPending()) setTimeout(() => giftClaim(gfPending()), 900);
 }
 document.addEventListener("click", async e => {
@@ -1690,12 +1703,15 @@ document.addEventListener("submit", e => {
     const d = Object.fromEntries(new FormData(f)), k = f.dataset.form;
     if (k === "alta0") {
         const age = Math.round(+d.age);
+        if (!d.name.trim()) return toast("Escribe tu nombre");
         if (!(age >= 5 && age <= 40)) return toast("Escribe tu edad");
         Object.assign(alta.data, { name: d.name.trim(), age });
-        if (age >= RULES.adultAge) { alta.data.birth = birthFromAge(age); finishTeen(); return; }
+        if (age >= RULES.adultAge) alta.data.birth = birthFromAge(age);
         alta.step = 1; render();
     } else if (k === "altaF1") { const er = birthError(d.birth); if (er) return toast(er); Object.assign(alta.data, { name: d.name.trim(), birth: d.birth }); alta.step = 2; render(); }
     else if (k === "alta1") {
+        if (!(d.fname || "").trim()) return toast("Escribe el nombre de tu familiar");
+        if (alta.data.age >= RULES.adultAge) { if (!d.relation) return toast("Elige la relación"); Object.assign(alta.data, d); return finishTeen(); }
         const er = birthError(d.birth, 5); if (er) return toast(er);
         const age = ageOf(d.birth);
         if (age >= RULES.adultAge || age < 0) return toast("Con esa fecha, la persona ya es mayor de edad. Revisa la fecha de nacimiento.");
