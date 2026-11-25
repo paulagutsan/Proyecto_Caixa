@@ -13,8 +13,11 @@ const HOUSE = {
 const grow = (v, g, months) => v * Math.pow(1 + g / 100, months / 12);
 
 /* ---------------------------------------------------------------- catálogo */
-const CAT_TIERS = [[250, 2], [500, 4], [1000, 6], [2000, 8], [4000, 10]];       // millas → % de descuento
-const CAT_CAP = 100;                                                            // máximo por canje, en euros
+/* Las millas valen lo mismo en cualquier producto: 25 millas = 1 €. El porcentaje depende del precio
+   (250 millas son un 1 % de un viaje de 1.000 € y un 4 % de una consola de 250 €). Nunca más de la mitad del precio. */
+const MILE_EUR = 0.04;                                                          // euros de descuento por milla
+const CAT_STEPS = [250, 500, 1000, 2000, 4000];                                 // millas que se pueden canjear de una vez
+const CAT_MAXPCT = 50;                                                          // tope: el descuento no pasa de la mitad del precio
 const CATALOG = [
     { id: "tv", g: "Tecnología", ic: "tv", t: "Televisor OLED", b: "Samsung, Sony, TCL · Facilitea", p: 900 },
     { id: "movil", g: "Tecnología", ic: "phone", t: "Móvil o tableta", b: "Apple, Samsung, Xiaomi · Facilitea", p: 600 },
@@ -34,15 +37,18 @@ const CATALOG = [
 ];
 let catGroup = "Todo";
 const milesSpent = () => (S.redeem || []).reduce((a, r) => a + r.n, 0);
-const catSave = (p, pc) => Math.min(CAT_CAP, p * pc / 100);
+const catEur = n => n * MILE_EUR;
+const catFits = (c, n) => catEur(n) <= c.p * CAT_MAXPCT / 100;
+const catPct = (c, n) => { const v = catEur(n) / c.p * 100; return pct(v, v < 10 && v % 1 ? 1 : 0); };
+const catBest = (c, have) => [...CAT_STEPS].reverse().find(n => n <= have && catFits(c, n));
 const milesReview = `Sujeto a revisión según la situación económica, los tipos de interés y las condiciones que ofrezca CaixaBank en cada momento. No es una oferta.`;
 
 const milesTabs = cur => `<nav class="ideas-tabs" aria-label="Tus millas"><a href="#/casa" class="${cur === "casa" ? "on" : ""}">${ic("house")}Tu casa</a><a href="#/catalogo" class="${cur === "catalogo" ? "on" : ""}">${ic("gift")}Catálogo</a></nav>`;
 function milesHead(cur) {
-    const mi = miles(), next = CAT_TIERS.find(x => x[0] > mi.total), best = [...CAT_TIERS].reverse().find(x => x[0] <= mi.total);
+    const mi = miles(), next = CAT_STEPS.find(n => n > mi.total), best = [...CAT_STEPS].reverse().find(n => n <= mi.total);
     return `${pageH("Tus millas", "Gánalas con tu constancia y úsalas en lo que quieras: tu primera casa o productos y servicios de CaixaBank.")}
     <div class="mls"><div class="mls-n"><b>${num(mi.total)}</b><span>millas disponibles</span></div>
-      <dl><div><dt>Si las guardas para tu casa</dt><dd>hasta −${pts(mi.cut)} puntos</dd></div><div><dt>Si las usas en el catálogo</dt><dd>${best ? `hasta un ${best[1]} % menos` : `desde ${num(CAT_TIERS[0][0])} millas`}</dd></div>${next ? `<div><dt>Siguiente escalón</dt><dd>${num(next[0] - mi.total)} millas más</dd></div>` : ""}</dl></div>
+      <dl><div><dt>Si las guardas para tu casa</dt><dd>hasta −${pts(mi.cut)} puntos</dd></div><div><dt>Si las usas en el catálogo</dt><dd>${best ? `hasta ${eur(catEur(best))} de descuento` : `desde ${num(CAT_STEPS[0])} millas`}</dd></div>${next ? `<div><dt>Siguiente escalón</dt><dd>${num(next - mi.total)} millas más</dd></div>` : ""}</dl></div>
     ${milesTabs(cur)}`;
 }
 
@@ -134,31 +140,33 @@ function bindProj() {
 
 /* ---------------------------------------------------------------- pestaña 2: catálogo */
 function vCatalogo() {
-    const mi = miles(), groups = ["Todo", ...new Set(CATALOG.map(c => c.g))], list = CATALOG.filter(c => catGroup === "Todo" || c.g === catGroup), best = [...CAT_TIERS].reverse().find(x => x[0] <= mi.total), used = [...(S.redeem || [])].reverse();
+    const mi = miles(), groups = ["Todo", ...new Set(CATALOG.map(c => c.g))], list = CATALOG.filter(c => catGroup === "Todo" || c.g === catGroup), used = [...(S.redeem || [])].reverse();
     return `${milesHead("catalogo")}
     <div class="grid">
-      ${card(`${cardH("Elige en qué usarlas", "Productos y servicios de CaixaBank y sus marcas.")}
+      ${card(`${cardH("Elige en qué usarlas", `Productos y servicios de CaixaBank y sus marcas. Tus millas valen lo mismo en todos: ${num(1 / MILE_EUR)} millas = 1 € de descuento.`)}
         <div class="chips cat-f">${groups.map(g => `<button class="chip ${g === catGroup ? "on" : ""}" data-act="mlGroup" data-g="${esc(g)}">${g}</button>`).join("")}</div>
-        <div class="cat">${list.map(c => `<button class="cat-i" data-act="mlOpen" data-id="${c.id}"><span>${ic(c.ic)}</span><div><b>${c.t}</b><small>${c.b}</small></div><em>${best ? `−${best[1]} %<small>hasta ${eur(catSave(c.p, best[1]))}</small>` : `desde ${num(CAT_TIERS[0][0])}<small>millas</small>`}</em></button>`).join("")}</div>`, "c-12")}
-      ${card(`${cardH("Cuánto te descuentan")}<table class="mtab"><thead><tr><th>Millas</th><th>Descuento</th><th></th></tr></thead><tbody>${CAT_TIERS.map(([n, p]) => `<tr class="${mi.total >= n ? "ok" : ""}"><td><b>${num(n)}</b></td><td>${p} %</td><td>${mi.total >= n ? badge(`${ic("check")}Disponible`, "ok") : `Faltan ${num(n - mi.total)}`}</td></tr>`).join("")}</tbody></table>
-        <p class="note">Máximo ${eur(CAT_CAP)} por canje. Precios y descuentos de ejemplo. ${milesReview}</p>`, "c-6")}
-      ${card(`${cardH("Tus canjes")}${used.length ? `<div class="rows">${used.map(u => `<div class="row"><div><b>${esc(u.t)} · −${u.pc} %</b><span>${fmtD(u.date)} · código ${esc(u.code)}</span></div>${btn("Devolver", "mlBack", "sm ghost", `data-c="${esc(u.code)}"`)}</div>`).join("")}</div>` : empty("gift", "Aún no has usado tus millas", "Cuando canjees, verás aquí tu código de descuento.")}`, "c-6")}
+        <div class="cat">${list.map(c => `<button class="cat-i" data-act="mlOpen" data-id="${c.id}"><span>${ic(c.ic)}</span><div><b>${c.t}</b><small>${c.b}</small></div><em>${(b => b ? `−${eur(catEur(b))}<small>${catPct(c, b)} de ${eur(c.p)}</small>` : `desde ${num(CAT_STEPS[0])}<small>millas</small>`)(catBest(c, mi.total))}</em></button>`).join("")}</div>
+        <p class="note">Precios de ejemplo. El descuento nunca pasa de la mitad del precio. ${milesReview}</p>`, "c-12")}
+      ${card(`${cardH("Tus canjes")}${used.length ? `<div class="rows">${used.map(u => `<div class="row"><div><b>${esc(u.t)} · −${u.v != null ? eur(u.v) : `${u.pc} %`}</b><span>${fmtD(u.date)} · código ${esc(u.code)}</span></div>${btn("Devolver", "mlBack", "sm ghost", `data-c="${esc(u.code)}"`)}</div>`).join("")}</div>` : empty("gift", "Aún no has usado tus millas", "Cuando canjees, verás aquí tu código de descuento.")}`, "c-12")}
     </div>`;
 }
 function catSheet(id) {
     const c = CATALOG.find(x => x.id === id), mi = miles(); if (!c) return;
+    const opts = CAT_STEPS.filter((n, i) => catFits(c, n) || i === 0), house = mortgageSaving(cutOf(1000));
     sheet(c.t, `<p class="sub">${c.b}</p><form data-form="mlUse" class="form"><input type="hidden" name="id" value="${c.id}">
-      <div class="cat-opts">${CAT_TIERS.map(([n, p], i) => `<label class="cat-o ${mi.total < n ? "off" : ""}"><input type="radio" name="n" value="${n}" required ${mi.total < n ? "disabled" : ""}><span><b>${num(n)} millas</b><small>${mi.total < n ? `Te faltan ${num(n - mi.total)}` : `Te quedarían ${num(mi.total - n)}`}</small></span><em>−${p} %<small>≈ ${eur(catSave(c.p, p))} en ${eur(c.p)}</small></em></label>`).join("")}</div>
-      ${mi.total >= CAT_TIERS[0][0] ? `<button class="btn primary lg block">Usar mis millas</button>` : lnk("Ganar millas en Aprende", "#/aprende", "primary lg block")}
-      <p class="note">Las millas que uses aquí ya no cuentan para tu casa. ${isAdult() ? "" : "La compra la hace tu madre, padre o tutor. "}Precio de ejemplo. ${milesReview}</p></form>`);
+      <div class="cat-opts">${opts.map(n => { const off = mi.total < n || !catFits(c, n); return `<label class="cat-o ${off ? "off" : ""}"><input type="radio" name="n" value="${n}" required ${off ? "disabled" : ""}><span><b>${num(n)} millas</b><small>${!catFits(c, n) ? "Más de la mitad del precio" : mi.total < n ? `Te faltan ${num(n - mi.total)}` : `Te quedarían ${num(mi.total - n)}`}</small></span><em>−${eur(catEur(n))}<small>${catPct(c, n)} de ${eur(c.p)}</small></em></label>`; }).join("")}</div>
+      ${mi.total >= CAT_STEPS[0] && catFits(c, CAT_STEPS[0]) ? `<button class="btn primary lg block">Usar mis millas</button>` : lnk("Ganar millas en Aprende", "#/aprende", "primary lg block")}
+      <p class="note">Cada ${num(1 / MILE_EUR)} millas valen 1 € en cualquier producto. Guardadas para tu casa valen más: 1.000 millas te ahorrarían unos ${eur(Math.round(house / 10) * 10)} de intereses en tu primera hipoteca. Las que uses aquí ya no cuentan para tu casa. ${isAdult() ? "" : "La compra la hace tu madre, padre o tutor. "}Precio de ejemplo. ${milesReview}</p></form>`);
 }
 document.addEventListener("submit", e => {
     const f = e.target.closest('[data-form="mlUse"]'); if (!f) return;
     e.preventDefault();
-    const d = Object.fromEntries(new FormData(f)), n = +d.n, tier = CAT_TIERS.find(x => x[0] === n), c = CATALOG.find(x => x.id === d.id);
-    if (!tier || !c || miles().total < n) return toast("No tienes millas suficientes");
-    (S.redeem ||= []).push({ id: c.id, t: c.t, n, pc: tier[1], date: iso(new Date()), code: makeId().replace("HZ-", "ML-") });
-    save(); closeSheet(); toast(`Descuento del ${tier[1]} % conseguido`); rerender();
+    const d = Object.fromEntries(new FormData(f)), n = +d.n, c = CATALOG.find(x => x.id === d.id);
+    if (!c || !CAT_STEPS.includes(n) || !catFits(c, n)) return toast("Ese canje no está disponible");
+    if (miles().total < n) return toast("No tienes millas suficientes");
+    const v = catEur(n);
+    (S.redeem ||= []).push({ id: c.id, t: c.t, n, v, pc: Math.round(v / c.p * 1000) / 10, date: iso(new Date()), code: makeId().replace("HZ-", "ML-") });
+    save(); closeSheet(); toast(`Descuento de ${eur(v)} conseguido`); rerender();
 });
 document.addEventListener("click", e => {
     const b = e.target.closest('[data-act^="ml"]'); if (!b) return;
