@@ -89,7 +89,7 @@ document.addEventListener("submit", async e => {
     const g = { code: gfCode(), de: d.de.trim(), para: d.para.trim(), importe, ocasion: d.ocasion, mensaje: (d.mensaje || "").trim() };
     try {
         await gfCall("v2_regalo_crear", { p_codigo: g.code, p_de: g.de, p_para: g.para, p_importe: g.importe, p_ocasion: g.ocasion, p_mensaje: g.mensaje });
-        gfMade = g; render(); scrollTo(0, 0);
+        gfMade = g; render(); scrollTo({ top: 0, behavior: "instant" });
     } catch (err) { toast("No se ha podido preparar el regalo ahora. Inténtalo en un momento."); }
 });
 document.addEventListener("click", async e => {

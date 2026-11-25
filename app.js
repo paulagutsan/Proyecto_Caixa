@@ -363,6 +363,7 @@ function vLanding() {
           <p class="note" data-o="note"></p>
         </div>
       </div>
+      <nav class="hz-path" aria-label="Las ideas de Horizonte">${[["#aprende", "book", "Aprende", "Temas, juegos y certificado"], ["#por-que", "chart", "Invierte", "Desde 1 €, con tu familia"], ["#antidoto", "spark", "Anticípate", "El Antídoto"], ["#casa", "star", "Gana millas", "Tu casa o el catálogo"], ["#voz", "bulb", "Tus ideas", "Tu voz y tu proyecto"]].map(([h, i, t, p]) => `<a href="${h}">${ic(i)}<span><b>${t}</b><small>${p}</small></span></a>`).join("")}</nav>
     </div></section>
 
     <section class="lp-sec" id="ciclo"><div class="lp-in">
@@ -499,7 +500,7 @@ function bindMiles() {
     }
 }
 function bindLanding() {
-    requestAnimationFrame(lpScroll);
+    lpReveal();
     bindMiles();
     const hero = $("[data-hero]"); if (!hero) return;
     const input = $('[data-i="hero"]', hero), plot = $('[data-o="plot"]', hero), o = (k, v) => { $(`[data-o="${k}"]`, hero).textContent = v; };
@@ -1547,7 +1548,7 @@ function render() {
     if (r === "antidoto" && !ranking) loadRanking().then(() => { if (location.hash.startsWith("#/antidoto")) rerender(); });
     gemRender();
 }
-function rerender() { const y = scrollY; render(); scrollTo(0, y); }
+function rerender() { const y = scrollY; render(); scrollTo({ top: y, behavior: "instant" }); }
 
 /* ------------------------------------------------------------------ eventos */
 function finishTeen() {
@@ -1575,7 +1576,7 @@ document.addEventListener("click", async e => {
             else if (g.score > S.games[t].score) { S.games[t] = { id: g.id, score: g.score }; save(); }
             friendsAfterGame(g.id, g.score);
         } else { g.i++; g.ans = null; }
-        render(); scrollTo(0, 0);
+        render(); scrollTo({ top: 0, behavior: "instant" });
     }
     else if (act === "gameAgain") { newGame(b.dataset.id); render(); }
     else if (act === "installApp") { if (installEvt) { installEvt.prompt(); const r = await installEvt.userChoice; installEvt = null; if (r.outcome !== "accepted") toast("Puedes instalarla cuando quieras desde aquí"); rerender(); } }
@@ -1611,7 +1612,7 @@ document.addEventListener("click", async e => {
                 save();
             }
         } else { x.i++; x.ans = null; }
-        render(); scrollTo(0, 0);
+        render(); scrollTo({ top: 0, behavior: "instant" });
     }
     else if (act === "vincGo") vincGo(b.dataset.role);
     else if (act === "vincRetry") vincLoad(vinc.token);
@@ -1800,26 +1801,14 @@ function downloadDiploma() {
 if (S.diploma && !S.diploma.reg) setTimeout(certRegister, 1500);
 accInit();
 if (S.role === "teen" && gfPending()) setTimeout(() => giftClaim(gfPending()), 1500);
-/* Portada: cada página aparece mientras la anterior se va (los dos contenidos se acercan y se funden) */
-const lpCalm = matchMedia("(prefers-reduced-motion: reduce), (max-width: 860px)");
-let lpTick = 0;
-function lpScroll() {
-    lpTick = 0;
-    if (!$("#ciclo")) return;
-    const nav = $(".lp-nav")?.getBoundingClientRect().height || 0, H = Math.max(1, innerHeight - nav);
-    $$(".lp > section").forEach(x => {
-        const r = x.getBoundingClientRect(), top = r.top - nav, bot = r.bottom - innerHeight;
-        let p = top > 0 ? top / H : bot < 0 ? bot / H : 0;                     // 0 = en pantalla; 1 = aún por llegar; -1 = ya se ha ido
-        p = lpCalm.matches || x.classList.contains("hz-final") ? 0 : Math.max(-1, Math.min(1, p));
-        x.style.setProperty("--p", p.toFixed(3));
-        x.style.setProperty("--o", Math.max(0, 1 - Math.max(0, Math.abs(p) - .1) / .6).toFixed(3));
-    });
+/* Portada: cada sección aparece una sola vez, con suavidad, y se queda quieta */
+function lpReveal() {
+    if (!$("#ciclo") || !window.IntersectionObserver || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
+    $$(".lp > section:not(.hz-hero) > .lp-in").forEach(x => { x.classList.add("rv"); io.observe(x); });
 }
-const lpAsk = () => { lpTick ||= requestAnimationFrame(lpScroll); };
-addEventListener("scroll", lpAsk, { passive: true });
-addEventListener("resize", lpAsk);
 window.addEventListener("hashchange", () => {
     if (/^#(ciclo|por-que|aprende|antidoto|casa|voz|proyecto|familias|regala|preguntas)$/.test(location.hash)) return;
-    closeSheet(); render(); scrollTo(0, 0);
+    closeSheet(); render(); scrollTo({ top: 0, behavior: "instant" });
 });
 render();
