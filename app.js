@@ -346,7 +346,7 @@ function vLanding() {
 
     <section class="hz-hero"><div class="lp-in hz-hero-in">
       <div class="hz-copy">
-        <h1>Hoy, tu primer euro.<br>Mañana, <em>tu casa</em>.</h1>
+        <h1>Hoy, tu primer euro.<br>Mañana, <em>tu horizonte</em>.</h1>
         <p class="hz-lead">Empieza a invertir desde 1 €, con tu familia al lado.</p>
         <div class="lp-cta">${lnk(`Soy joven${ic("arrow")}`, "#/alta/joven", "primary lg")}${lnk("Soy madre, padre o tutor", "#/familias", "lg")}</div>
         <p class="hz-try"><a href="#/probar">Prueba un tema y un juego sin crear cuenta</a> · <button type="button" class="hz-ex" data-act="example">Ver una cuenta de ejemplo</button></p>
@@ -636,7 +636,7 @@ function vAlta(role) {
     }
     return `<div class="auth split">
       <aside class="auth-side">${brand("#/", 34)}
-        <div><h2>Hoy, tu primer euro.<br>Mañana, tu casa.</h2><p>Empieza a invertir desde 1 €, con tu familia al lado.</p>
+        <div><h2>Hoy, tu primer euro.<br>Mañana, tu horizonte.</h2><p>Empieza a invertir desde 1 €, con tu familia al lado.</p>
           <ul><li>${ic("check")}Sin comisión de apertura</li><li>${ic("family")}Con el apoyo de tu familia</li><li>${ic("shield")}<span>Protección promocional el primer año<sup>*</sup></span></li></ul></div>
         <small class="auth-ast">${protectNote()}</small></aside>
       <div class="auth-main">

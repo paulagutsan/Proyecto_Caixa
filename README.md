@@ -2,7 +2,7 @@
 
 **Pruébala:** [paulagutsan.github.io/Horizonte](https://paulagutsan.github.io/Horizonte/)
 
-> Hoy, tu primer euro. Mañana, tu casa.
+> Hoy, tu primer euro. Mañana, tu horizonte.
 
 Horizonte es una app de CaixaBank Asset Management para que la gente joven empiece a invertir desde 1 €, aprenda por el camino y lo haga con su familia al lado. La hemos hecho para el reto **CaixaBank Asset Management × Google**. Somos Paula Gutiérrez, Claudia Agromayor y Jorge Álvarez, de Comillas ICAI.
 
