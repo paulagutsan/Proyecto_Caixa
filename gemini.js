@@ -25,7 +25,7 @@ const G_TOPICS = [
     { id: "house", q: "¿Cómo va mi objetivo de casa?", label: "Mi objetivo de casa" },
     { id: "drop", q: "¿Qué pasa si el mercado cae?", label: "Si el mercado cae" },
     { id: "antidote", q: "¿Cómo funciona mi Antídoto?", label: "Mi Antídoto" },
-    { id: "miles", q: "¿Cuántas millas de casa tengo?", label: "Mis millas de casa" },
+    { id: "miles", q: "¿Cuántas millas tengo?", label: "Mis millas" },
     { id: "save", q: "¿Cuánto debería apartar cada semana?", label: "Cuánto apartar" },
     { id: "human", q: "Quiero hablar con una persona", label: "Hablar con una persona" },
 ];
@@ -70,11 +70,11 @@ function localGemini(question, c) {
         case "hello": {
             return R(`${gHello()}${c.name ? `, ${c.name}` : ""}`,
                 `Pregúntame lo que quieras sobre tu dinero, tu Antídoto o tu casa. Te respondo con los datos de tu cuenta. ${next.why}`,
-                [["Tu dinero", c.value > 0 ? G_EUR(c.value) : "0 €"], ["Millas de casa", G_NUM(c.miles)]],
+                [["Tu dinero", c.value > 0 ? G_EUR(c.value) : "0 €"], ["Millas", G_NUM(c.miles)]],
                 [{ label: next.label, href: next.href, primary: true }], ["tu cuenta"]);
         }
         case "thanks":
-            return R("A tu disposición", "Si necesitas algo más sobre tu cuenta, tu Antídoto o tus millas de casa, aquí estoy.", [], [topic("house"), topic("miles")]);
+            return R("A tu disposición", "Si necesitas algo más sobre tu cuenta, tu Antídoto o tus millas, aquí estoy.", [], [topic("house"), topic("miles")]);
         case "bye":
             return R("Hasta pronto", "Tu cuenta queda al día. Vuelve cuando quieras revisar tu progreso.", [], []);
         case "house": {
@@ -111,11 +111,11 @@ function localGemini(question, c) {
         }
         case "miles": {
             if (c.miles === 0) {
-                return R("Millas de casa", `Aún no tienes millas. Cada tema de Fundamentos suma ${MILES.lesson}, superar la prueba final ${MILES.theory} y tu primer euro propio ${MILES.firstOwn}. Si pides tu primera hipoteca con CaixaBank, pueden convertirse en una bonificación de hasta ${pts(MILES.maxCut)} puntos, según las condiciones de ese momento.`,
+                return R("Millas", `Aún no tienes millas. Cada tema de Fundamentos suma ${MILES.lesson}, superar la prueba final ${MILES.theory} y tu primer euro propio ${MILES.firstOwn}. Si pides tu primera hipoteca con CaixaBank, pueden convertirse en una bonificación de hasta ${pts(MILES.maxCut)} puntos, según las condiciones de ese momento, o usarlas en el catálogo por descuentos de hasta el 10 %.`,
                     [["Rebaja máxima", `${pts(MILES.maxCut)} puntos`], ["Por tema", `${MILES.lesson} millas`], ["Prueba final", `${MILES.theory} millas`]],
                     [{ label: "Empezar Fundamentos", href: "#/aprende", primary: true }], ["tus millas"]);
             }
-            return R("Millas de casa", `A tu ritmo sumas unas ${G_NUM(c.milesYear)} millas al año. A los ${c.goalAge} tendrías unas ${G_NUM(c.milesAtGoal)}: ${c.cutAtGoalTxt} puntos de bonificación posible en el diferencial, unos ${G_EUR(c.savingAtGoal)} menos de intereses en una hipoteca de ejemplo. Es una ilustración, no una oferta.`,
+            return R("Millas", `A tu ritmo sumas unas ${G_NUM(c.milesYear)} millas al año. A los ${c.goalAge} tendrías unas ${G_NUM(c.milesAtGoal)}: ${c.cutAtGoalTxt} puntos de bonificación posible en el diferencial, unos ${G_EUR(c.savingAtGoal)} menos de intereses en una hipoteca de ejemplo. Es una ilustración, no una oferta.`,
                 [["Millas hoy", G_NUM(c.miles)], ["Rebaja hoy", `${c.cutTxt} puntos`], [`Millas a los ${c.goalAge}`, G_NUM(c.milesAtGoal)]],
                 [{ label: "Ver mis millas", href: "#/casa", primary: true }, topic("house")], ["tus millas", "tu ritmo de aportación"]);
         }
@@ -148,7 +148,7 @@ function localGemini(question, c) {
             return R("Hablar con una persona", `Tu familia puede pedir desde Familia que un gestor de CaixaBank le llame para resolver dudas, sin compromiso.`,
                 [["Quién la pide", "Tu madre, padre o tutor"]], [{ label: "Ir a Familia", href: "#/familia", primary: true }], []);
         case "family":
-            return R("Tu familia", `Tu familia puede regalarte dinero, puntual o cada mes, con un mensaje, aprobar tu Antídoto y ver tu progreso. Los regalos suman millas de casa: ${MILES.giftPer5} por cada 5 €, con un tope de ${MILES.giftMonthCap} al mes.`,
+            return R("Tu familia", `Tu familia puede regalarte dinero, puntual o cada mes, con un mensaje, aprobar tu Antídoto y ver tu progreso. Los regalos suman millas: ${MILES.giftPer5} por cada 5 €, con un tope de ${MILES.giftMonthCap} al mes.`,
                 [["Regalos recibidos", G_EUR(c.gifts || 0)], ["Millas por regalos", `${MILES.giftPer5} por cada 5 €`], ["Tope mensual", `${MILES.giftMonthCap} millas`]],
                 [{ label: "Ir a Familia", href: "#/familia", primary: true }], ["tu familia"]);
         default:

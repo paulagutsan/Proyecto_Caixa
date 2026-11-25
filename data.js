@@ -18,7 +18,7 @@ const RULES = {
     houseAge: 27,
 };
 
-/* Millas de casa: se convierten en una rebaja del diferencial de una hipoteca con CaixaBank */
+/* Millas: se convierten en una rebaja del diferencial de una hipoteca con CaixaBank */
 const MILES = {
     lesson: 10,          // cada tema de Fundamentos
     theory: 100,         // superar la prueba final
@@ -49,7 +49,7 @@ const TALKS = [
     "Hablad de una meta cercana, como el carné o un viaje, y de cuánto apartar cada semana.",
     "Preguntadle qué es la comisión de un fondo y cuánto paga cada año, en euros.",
     "Contadle cómo fue vuestra primera vez ahorrando para algo grande.",
-    "Repasad sus millas de casa: cuántas lleva y qué le falta para el siguiente paso.",
+    "Repasad sus millas: cuántas lleva y qué le falta para el siguiente paso.",
 ];
 
 /* Valores: los tres de CaixaBank (calidad, confianza y compromiso social, según su web corporativa)
@@ -108,6 +108,12 @@ const FEAR_IDEAS = [
 const FUND_ICON = { tecnologia: "ia", inmobiliario: "casa", energia: "clima", inflacion: "precios", salud: "salud", movilidad: "coche", infraestructuras: "road", agua: "drop", global: "precios" };
 
 const ICONS = {
+    tv: '<rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8M12 17v4"/>',
+    phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/>',
+    pad: '<path d="M7 8h10a4.5 4.5 0 0 1 4.4 5.4l-.6 3a2.3 2.3 0 0 1-4 1L15 15H9l-1.800 2.400a2.300 2.300 0 0 1-4-1l-.6-3A4.500 4.500 0 0 1 7 8z"/><path d="M8 10.500v3M6.500 12h3M16 11.500h.01M17.500 13h.01"/>',
+    watch: '<rect x="7" y="7" width="10" height="10" rx="3"/><path d="M9 7l.6-4h4.800l.6 4M9 17l.6 4h4.800l.6-4M12 10v2.200l1.500 1"/>',
+    plane: '<path d="M21 3 3 10.500l6.500 3L13 20.500z"/><path d="m9.500 13.500 4-4"/>',
+    paw: '<circle cx="6" cy="10.500" r="1.800"/><circle cx="10" cy="6" r="1.800"/><circle cx="14.500" cy="6" r="1.800"/><circle cx="18" cy="10.500" r="1.800"/><path d="M12 11.500c-2.600 0-5 2.700-5 5 0 1.800 1.500 2.700 3 2.500 1.400-.2 2.600-.2 4 0 1.500.2 3-.7 3-2.500 0-2.300-2.400-5-5-5z"/>',
     road: '<path d="M8 3 5 21M16 3l3 18M12 4v3M12 10.5v3M12 17v3"/>',
     drop: '<path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
     ia: '<path d="M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2"/><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9.5 15l1.6-6h1.8l1.6 6M10.1 13h3.8"/>',
@@ -147,21 +153,21 @@ const CYCLE = [
     { id: "invierte", t: "Invierte", p: `Desde 1 €, con tu familia detrás. Tus primeros ${RULES.protectCap} € tienen protección promocional durante el primer año<sup>*</sup>.`, ic: "chart" },
     { id: "entiende", t: "Anticípate", p: "Cada semana, qué ha pasado con tu dinero y por qué. Y tu Antídoto: invierte en lo que te preocupa.", ic: "spark" },
     { id: "millas", t: "Gana millas", p: "Aprender, jugar, aportar con constancia y revisar tu plan cada año suma millas. Nunca por tener más dinero que nadie.", ic: "star" },
-    { id: "casa", t: "Tu casa", p: "Si un día pides tu primera hipoteca con CaixaBank, tus millas pueden convertirse en una bonificación, según las condiciones de ese momento.", ic: "house" },
+    { id: "casa", t: "Tus objetivos", p: "Usa tus millas en lo que quieras: rebajar tu primera hipoteca con CaixaBank o conseguir descuentos en productos y servicios.", ic: "house" },
 ];
 const FAQ = [
     { q: "¿Hay una edad para empezar?", a: "Aprender no tiene edad: puedes hacer los temas y los juegos sin crear cuenta. Para abrir una cuenta e invertir, una persona menor de edad necesita que su madre, padre o tutor legal la abra y la autorice con su propia identidad. Hasta los 18, esa persona es la titular legal y tú eres la persona usuaria; a los 18, la cuenta pasa a tu nombre cuando confirmas tu identidad." },
     { q: "¿Puedo perder dinero?", a: `Sí. Invertir siempre tiene riesgo y el valor puede bajar. Como promoción, durante tu primer año CaixaBank repone la diferencia si tus primeros ${RULES.protectCap} € aportados (tuyos o de tu familia) valen menos a los ${RULES.protectMonths} meses, siempre que no hayas vendido antes. Tiene tope de ${RULES.protectCap} € por persona, dotación limitada (${PROMO.budgetTxt}) y no cubre nada más.` },
     { q: "¿Qué es el Certificado Horizonte?", a: `Una acreditación de CaixaBank Asset Management que demuestra que sabes lo esencial antes de invertir: interés compuesto, riesgo y plazo, diversificación y cómo evitar estafas. Al superar Fundamentos, CaixaBank invierte ${RULES.prize} € a tu nombre (uno por persona, una vez verificada tu identidad) y recibes un certificado con un código que cualquiera puede comprobar en nuestra página de verificación. Puedes añadirlo a LinkedIn a partir de los 16.` },
     { q: "¿Qué es el Antídoto?", a: `En lugar de preguntarte cuánto riesgo quieres, te preguntamos qué te preocupa de tu futuro. El ${Math.round(RULES.base * 100)} % de tu dinero va a un fondo global diversificado y el ${Math.round(RULES.antidote * 100)} % a los temas que eliges, dentro de una selección cerrada de fondos de CaixaBank Asset Management. Reduce el golpe si lo que temes ocurre; no es una garantía.` },
-    { q: "¿Cómo funcionan las millas de casa?", a: "Las ganas al aprender, al jugar con datos reales, al aportar cada mes, al mantener tu constancia semanal, con la revisión anual y con los regalos de tu familia (con un tope mensual). Si un día pides tu primera hipoteca con CaixaBank, las millas pueden convertirse en una bonificación sobre las condiciones de ese momento, según las condiciones de vinculación voluntaria que se ofrezcan. No obligan a contratar nada, no caducan y, si nunca compras casa, no pierdes nada." },
+    { q: "¿Cómo funcionan las millas?", a: "Las ganas al aprender, al jugar con datos reales, al aportar cada mes, al mantener tu constancia semanal, con la revisión anual y con los regalos de tu familia (con un tope mensual). Nunca por tener más dinero. Tú decides en qué usarlas: guardarlas para una posible rebaja del interés de tu primera hipoteca con CaixaBank, o canjearlas por descuentos en el catálogo (tecnología, hogar, seguros, movilidad y viajes). No caducan ni obligan a contratar nada, y sus condiciones pueden revisarse según la situación económica." },
     { q: "¿Qué hace Gemini con mis datos?", a: "Sin permiso, Gemini responde solo con información general y sin ningún dato tuyo. Con el permiso de tu familia (y a partir de los 18, el tuyo), usa la información de tu cuenta, sin tu nombre, para explicarte tu dinero con tus propios números. Nunca se usa para publicidad y puedes retirar el permiso cuando quieras." },
     { q: "¿Cómo puede ayudar mi familia?", a: "Desde el área familiar pueden hacer regalos puntuales o aportaciones mensuales con un mensaje, aprobar tu Antídoto y tus retiradas, decidir los permisos y ver tu progreso. También pueden pedir que un gestor de CaixaBank les llame." },
     { q: "¿Puedo sacar mi dinero?", a: "Sí. Si eres mayor de edad, pides la retirada y listo. Si eres menor, la solicitud llega a tu familia para que la apruebe. Si retiras antes de los 12 meses, pierdes la protección promocional del primer año. Mientras no vendas, una caída es solo un número en pantalla." },
     { q: "¿Esto es un juego de apuestas?", a: "No. En los juegos no se apuesta dinero: se practica con datos reales de 25 años de mercados y se suman unas pocas millas al día por aprender." },
     { q: "¿Cuánto cuesta Horizonte?", a: `Horizonte no cobra comisión de apertura, pero invertir tiene un coste. Los fondos de CaixaBank Asset Management cobran una comisión de gestión; como referencia, en torno al ${feeTxt} % al año, es decir, unos ${feeTxt} € por cada 100 € invertidos. Te la mostramos siempre en euros, y el documento de datos fundamentales de cada fondo detalla su coste exacto.` },
 ];
-const LEGAL = "Horizonte es un servicio de CaixaBank Asset Management, propuesto en el reto CaixaBank AM × Google. Invertir conlleva riesgos, incluida la pérdida del capital invertido. Los valores que se muestran son estimaciones con fines informativos y no garantizan rentabilidades futuras. La protección del primer año es una promoción sujeta a condiciones: tope de 500 € por persona, 12 meses, solo si no se vende antes y hasta agotar la dotación publicada. Las millas de casa son una bonificación posible sobre las condiciones vigentes en el momento de la firma de una hipoteca, según las condiciones de vinculación voluntaria que entonces se ofrezcan, y no obligan a contratar ningún producto (Ley 5/2019). Antes de invertir, consulta el documento de datos fundamentales (DFI) de cada fondo.";
+const LEGAL = "Horizonte es un servicio de CaixaBank Asset Management, propuesto en el reto CaixaBank AM × Google. Invertir conlleva riesgos, incluida la pérdida del capital invertido. Los valores que se muestran son estimaciones con fines informativos y no garantizan rentabilidades futuras. La protección del primer año es una promoción sujeta a condiciones: tope de 500 € por persona, 12 meses, solo si no se vende antes y hasta agotar la dotación publicada. Las millas pueden convertirse en una bonificación posible sobre las condiciones vigentes en el momento de la firma de una hipoteca, según las condiciones de vinculación voluntaria que entonces se ofrezcan, y no obligan a contratar ningún producto (Ley 5/2019). Antes de invertir, consulta el documento de datos fundamentales (DFI) de cada fondo.";
 
 const SOURCES = {
     premio: { label: "Primera inversión (Fundamentos)", own: true },
@@ -300,9 +306,9 @@ const LESSONS = [
         { h: "Tu primer año, acompañado", p: [
             `Durante tus primeros 12 meses, los primeros <b>${RULES.protectCap} €</b> aportados (tuyos o de tu familia) tienen una protección promocional: si al cumplir el año valen menos, CaixaBank repone la diferencia.`,
             "Solo cuenta si no vendes antes de los 12 meses, tiene tope y hay una dotación limitada. No cubre nada más." ] },
-        { h: "Millas de casa", p: [
-            "Cada tema que completas, cada juego, cada mes que aportas, tu constancia semanal y cada regalo de tu familia suman <b>millas de casa</b>.",
-            "Años después, si pides tu primera hipoteca con CaixaBank, pueden convertirse en una bonificación sobre las condiciones de ese momento. No caducan ni te obligan a nada." ] },
+        { h: "Millas", p: [
+            "Cada tema que completas, cada juego, cada mes que aportas, tu constancia semanal y cada regalo de tu familia suman <b>millas</b>.",
+            "Las usas en lo que quieras: guardarlas para una posible rebaja de tu primera hipoteca con CaixaBank o canjearlas por descuentos en el catálogo. No caducan." ] },
         { h: "Tu familia te acompaña", p: [
             "Hasta los 18, tu madre, padre o tutor es la persona titular de la cuenta: aprueba tu Antídoto, tus retiradas y los permisos de la app, y puede regalarte dinero para tu casa.",
             "A los 18, la cuenta pasa a tu nombre cuando confirmas tu identidad, y tu certificado pasa a «Inversor certificado»." ] },
@@ -313,7 +319,7 @@ const LESSONS = [
       check: [
         { q: "¿Qué parte de tu dinero va a la cartera base?", o: ["El 25 %", "El 75 %", "Todo"], a: 1, why: "La base global (75 %) reparte el riesgo; el Antídoto es el otro 25 %." },
         { q: "¿Qué cubre el primer año acompañado?", o: ["Todo tu dinero para siempre", "Tus primeros 500 € durante 12 meses, si no vendes", "Solo el dinero que te regalan"], a: 1, why: "Es una promoción con tope: 500 € y 12 meses, si no vendes antes." },
-        { q: "¿Para qué sirven las millas de casa?", o: ["Para viajar gratis", "Para una posible bonificación en tu futura hipoteca", "Para comprar videojuegos"], a: 1, why: "Se canjean en una hipoteca con CaixaBank como rebaja del diferencial." },
+        { q: "¿Para qué sirven las millas?", o: ["Para ganar más rentabilidad", "Para rebajar tu futura hipoteca o conseguir descuentos", "Para pagar menos impuestos"], a: 1, why: "Puedes guardarlas para tu primera hipoteca con CaixaBank o usarlas en el catálogo." },
         { q: "Si tienes 16 años, ¿quién aprueba tu Antídoto?", o: ["Nadie", "Tu madre, padre o tutor", "Tus amigos"], a: 1, why: "Hasta los 18, tu familia aprueba las decisiones de la cuenta." },
       ] },
 ];
