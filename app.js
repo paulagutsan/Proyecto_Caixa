@@ -498,6 +498,7 @@ function bindMiles() {
     }
 }
 function bindLanding() {
+    requestAnimationFrame(lpScroll);
     bindMiles();
     const hero = $("[data-hero]"); if (!hero) return;
     const input = $('[data-i="hero"]', hero), plot = $('[data-o="plot"]', hero), o = (k, v) => { $(`[data-o="${k}"]`, hero).textContent = v; };
@@ -1880,6 +1881,24 @@ function downloadDiploma() {
 if (S.diploma && !S.diploma.reg) setTimeout(certRegister, 1500);
 accInit();
 if (S.role === "teen" && gfPending()) setTimeout(() => giftClaim(gfPending()), 1500);
+/* Portada: cada página aparece mientras la anterior se va (los dos contenidos se acercan y se funden) */
+const lpCalm = matchMedia("(prefers-reduced-motion: reduce), (max-width: 860px)");
+let lpTick = 0;
+function lpScroll() {
+    lpTick = 0;
+    if (!$("#ciclo")) return;
+    const nav = $(".lp-nav")?.getBoundingClientRect().height || 0, H = Math.max(1, innerHeight - nav);
+    $$(".lp > section").forEach(x => {
+        const r = x.getBoundingClientRect(), top = r.top - nav, bot = r.bottom - innerHeight;
+        let p = top > 0 ? top / H : bot < 0 ? bot / H : 0;                     // 0 = en pantalla; 1 = aún por llegar; -1 = ya se ha ido
+        p = lpCalm.matches || x.classList.contains("hz-final") ? 0 : Math.max(-1, Math.min(1, p));
+        x.style.setProperty("--p", p.toFixed(3));
+        x.style.setProperty("--o", Math.max(0, 1 - Math.max(0, Math.abs(p) - .1) / .6).toFixed(3));
+    });
+}
+const lpAsk = () => { lpTick ||= requestAnimationFrame(lpScroll); };
+addEventListener("scroll", lpAsk, { passive: true });
+addEventListener("resize", lpAsk);
 window.addEventListener("hashchange", () => {
     if (/^#(ciclo|por-que|aprende|antidoto|casa|voz|proyecto|familias|regala|preguntas)$/.test(location.hash)) return;
     closeSheet(); render(); scrollTo(0, 0);
