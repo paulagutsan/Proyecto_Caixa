@@ -1,84 +1,120 @@
 # Horizonte
 
-> **Horizonte:** [paulagutsan.github.io/Horizonte](https://paulagutsan.github.io/Horizonte/) · archivos en la raíz del repositorio. Los enlaces antiguos a `/v2/` redirigen aquí.
->
-> **Versión 1 (guardada, no enlazada):** [/v1](https://paulagutsan.github.io/Horizonte/v1/) · carpeta `v1/`, sin cambios en su código. Los enlaces antiguos a `/public/` redirigen a ella.
->
-> - El mapa de miedos de la v2 usa Supabase si se ejecuta una vez `supabase/schema-v2.sql`; si no, muestra datos de ejemplo.
+**Pruébala:** [paulagutsan.github.io/Horizonte](https://paulagutsan.github.io/Horizonte/)
 
+> Hoy, tu primer euro. Mañana, tu casa.
 
-Web app para la Generación Z: ponle nombre a tu dinero, simula tu futuro y ahorra con tu círculo.
+Horizonte es una app de CaixaBank Asset Management para que la gente joven empiece a invertir desde 1 €, aprenda por el camino y lo haga con su familia al lado. La hemos hecho para el reto **CaixaBank Asset Management × Google**. Somos Paula Gutiérrez, Claudia Agromayor y Jorge Álvarez, de Comillas ICAI.
 
-## Arrancar
+Funciona en el ordenador y en el móvil, y se puede instalar como una app. Los enlaces antiguos (`/Proyecto_Caixa/` y `/v2/`) redirigen aquí.
+
+## El reto
+
+CaixaBank ya tiene a los jóvenes: imagin, su banco digital, tiene unos 4 millones de clientes, la mayoría menores de 35 años. El problema llega cuando empiezan a invertir y se van a otra parte: una app de trading, cripto o lo que recomienda un influencer. El 42 % de los jóvenes tiene un interés muy alto en invertir, pero solo el 12 % cree saber de inversión, y el 41 % de los inversores de la Generación Z empezó por miedo a quedarse fuera.
+
+Horizonte quiere que la primera inversión de un joven, y después su primera casa, sean con CaixaBank. Se apoya en cuatro pilares:
+
+| Pilar | Por qué | Qué hace Horizonte |
+| --- | --- | --- |
+| **Aprendizaje** | El freno número uno es «no sé por dónde empezar» | Temas cortos con ejemplos y preguntas, una prueba final y un certificado para LinkedIn |
+| **Adrenalina** | Hoy esa emoción la ponen las apuestas y la cripto | Juegos con datos reales, contrarreloj y con amigos, sin apostar nada |
+| **Motivación** | Nadie invierte «por invertir» | El Antídoto (inviertes en lo que te preocupa) y Tu casa (millas que rebajan tu primera hipoteca) |
+| **Movimiento** | Aprendemos de dinero en redes y con amigos | Amigos en los juegos, Tus ideas (Tu voz y Tu proyecto) y la familia |
+
+Y debajo de todo: **fácil, rápido y de fiar**.
+
+## Qué hay en la app
+
+### Sin cuenta
+
+- **Portada:** cómo funciona, Aprende, Antídoto, Tu casa, Tus ideas, familias, regalos y preguntas frecuentes.
+- **Prueba sin cuenta:** un tema y un juego para probar Horizonte sin dar ningún dato. Lo que hagas se conserva si luego creas la cuenta.
+- **Alta en dos minutos:** como joven o como familia. Si eres menor, tu familia autoriza la cuenta.
+- **Regalar:** cualquiera puede preparar un regalo con un importe y un mensaje. Se genera un enlace y quien lo recibe lo canjea al crear su cuenta. En la demo no se cobra nada.
+- **Verificar un certificado:** cada certificado tiene un código que se comprueba en la web.
+
+### Para la persona joven
+
+- **Inicio:** tus cuatro pasos (aprende, invierte, anticípate y gana millas) y lo siguiente que toca.
+- **Dinero:** tu saldo, cómo ha ido la semana, el gráfico de tu dinero, aportaciones y redondeo, y «tu primer año acompañado». Tu primera inversión, de 20 €, te la regalamos al superar Fundamentos, y el primer año va protegido.
+- **Aprende:** Fundamentos en cinco temas (ahorrar o invertir, las caídas pasan, no todo en la misma cesta, ni apuestas ni estafas, y cómo funciona Horizonte). Cada tema tiene tarjetas con ejemplos y preguntas para comprobar lo aprendido. Al final hay una prueba de 10 preguntas y un certificado con fecha y código, para descargar o añadir a LinkedIn. También están los juegos:
+  - **El titular:** un titular real de un año. ¿La bolsa mundial acabó ese año arriba o abajo?
+  - **¿Cuál rindió más?:** dos inversiones, un año. Eliges la que más subió.
+  - **Más o menos:** ¿la segunda inversión acabó con más o con menos dinero? Encadenas aciertos con cada vez menos tiempo.
+  - **Liga del lunes:** cada semana predices si el IBEX, la bolsa mundial y el oro acabarán arriba o abajo. Se resuelve el viernes con el cierre.
+- **Antídoto:** el 75 % de tu dinero va a una cartera base diversificada y el 25 % a lo que te preocupa del futuro. Lo escribes con tus palabras («que la IA haga el trabajo que quiero», «no poder pagarme una casa»…) y se convierte en un fondo temático, que ves dibujado en tu mapa. Puedes tener hasta dos preocupaciones. Hay además un ranking anónimo de lo que preocupa a tu generación.
+- **Tu casa:** mueves cuánto apartas al mes, hasta 2.000 €, y ves cuándo tendrías la entrada. Aprender, jugar y aportar suma millas de casa, que rebajan el interés de tu primera hipoteca con CaixaBank.
+- **Tus ideas:**
+  - **Tu voz:** propuestas de juntas de accionistas para deslizar. Dices qué preferirías y ves qué opina la comunidad. Es consultivo: en un fondo, quien vota es la gestora.
+  - **Tu proyecto:** cuentas tu proyecto en privado y ves qué empresas asociadas, de ejemplo, podrían apoyarlo. No se comparte nada sin tu permiso.
+- **Amigos:** te conectas con un código, como en LinkedIn, solo para ver los resultados de los juegos. Hasta los 18 años necesita permiso de la familia.
+- **Asistente con Gemini:** un botón flotante en toda la app. Responde con las cifras de tu cuenta, sin tu nombre, y no recomienda productos: te lo explica y decides tú.
+- **Familia y Ajustes:** quién te acompaña, modo noche e instalar la app.
+
+### Para la familia
+
+- **Resumen:** cómo va la persona joven.
+- **Regalos:** aportaciones y regalos a su cuenta.
+- **Permisos:** autorizar la cuenta y lo que necesita permiso antes de los 18 (por ejemplo, los amigos o el asistente con Gemini).
+- **Cuenta compartida:** la familia y la persona joven usan la misma cuenta desde dos móviles, cada una con su vista, y lo que hace una lo ve la otra.
+
+## Qué es real y qué es de ejemplo
+
+- **Real:** el contenido de Aprende, los juegos con datos históricos de mercado, el asistente con Gemini, los amigos, los votos de Tu voz, los regalos, los certificados verificables y la cuenta compartida (con Supabase).
+- **Simulado:** el mercado del día a día (saldo, semana y Liga del lunes). `mercado.js` genera un índice por fondo igual para todo el mundo. Para usar datos reales basta con cambiar `mkPrice(fondo, instante)` por los valores liquidativos de los fondos.
+- **De ejemplo:** las empresas asociadas de Tu proyecto y la cuenta de ejemplo.
+
+## Arrancar en local
+
+Es una web estática, sin dependencias ni compilación:
 
 ```bash
-npm start            # http://localhost:3000  (Node >= 18, sin dependencias)
+python3 -m http.server 8099     # y abre http://localhost:8099
 ```
 
-Asistente con IA gratuita, sin configurar nada: usa [Pollinations](https://pollinations.ai) (sin clave). También funciona en GitHub Pages, porque el navegador lo llama directamente.
+Usa el puerto 8099: es el que acepta la función de Gemini además de GitHub Pages.
 
-Opcional, para respuestas más estables (ambas claves son gratuitas):
+## Puesta en marcha de Supabase (una vez)
 
-```bash
-OPENROUTER_API_KEY=sk-or-... npm start   # modelos gratuitos de OpenRouter (por defecto google/gemma-4-31b-it:free)
-GEMINI_API_KEY=... npm start             # capa gratuita de Google AI Studio
-```
+La web funciona sin esto, con datos de ejemplo y respuestas locales del asistente. Para la parte social y Gemini, en el proyecto de Supabase:
 
-Orden de uso: OpenRouter → Gemini → Pollinations → respuestas predefinidas.
+1. **Authentication → Sign In / Providers:** activa **Allow anonymous sign-ins**.
+2. **SQL Editor → New query:** pega y ejecuta, en este orden (se pueden repetir sin problema):
+   - [`supabase/v2-todo.sql`](supabase/v2-todo.sql): mapa de preocupaciones del Antídoto y amigos en los juegos.
+   - [`supabase/v2-juegos.sql`](supabase/v2-juegos.sql): añade «Más o menos» y la «Liga del lunes» a Amigos.
+   - [`supabase/schema-v2-certificados.sql`](supabase/schema-v2-certificados.sql): registro y verificación de certificados.
+   - [`supabase/schema-v2-cuentas.sql`](supabase/schema-v2-cuentas.sql): cuenta compartida entre familia y joven.
+   - [`supabase/schema-v2-regalos.sql`](supabase/schema-v2-regalos.sql): regalos por enlace.
+   - [`supabase/schema-social.sql`](supabase/schema-social.sql): totales de Tu voz (si no lo ejecutasteis para la v1).
+3. **Gemini:** despliega la Edge Function [`supabase/functions/horizonte-gemini`](supabase/functions/horizonte-gemini) y guarda tu clave de Google AI Studio como secreto `GEMINI_API_KEY`. Los pasos están en su [README](supabase/functions/horizonte-gemini/README.md).
 
-## Cuentas gratuitas con Supabase
+La configuración pública está en [`config.js`](config.js). La clave *publishable* de Supabase es pública por diseño. **Nunca** pongas en el repositorio la `service_role` ni la clave de Gemini.
 
-El acceso necesita un servicio con base de datos; GitHub Pages solo sirve archivos. Supabase tiene un plan gratuito sin tarjeta. Se configura una vez:
-
-1. Crea una cuenta en [supabase.com](https://supabase.com) y un proyecto nuevo (región UE; guarda la contraseña de la base de datos).
-2. **Authentication → Sign In / Providers → Email**: desactiva **Confirm email** para que las personas entren al registrarse.
-3. **SQL Editor → New query**: pega el contenido de [`supabase/schema.sql`](supabase/schema.sql) y pulsa **Run**. Crea la tabla `perfiles` con seguridad por fila: cada persona solo lee y escribe lo suyo.
-4. **Project Settings → API** (o el botón **Connect**): copia la **Project URL** y la clave **anon public** (o *publishable*) y pégalas en [`v1/config.js`](v1/config.js).
-5. Sube el cambio a GitHub. Esa clave es pública por diseño; **nunca** pegues la `service_role` ni una clave `secret`.
-6. **Parte social** (Círculos, liga de amigos, Draft Night online y los totales de «Tu voz»): en **SQL Editor → New query** pega [`supabase/schema-social.sql`](supabase/schema-social.sql) y pulsa **Run**. Hay que ejecutarlo después de `schema.sql` y es seguro repetirlo. Crea las tablas con seguridad por fila y las funciones SQL que usa la web; solo las personas con sesión pueden llamarlas. Sin este paso la cuenta funciona, pero Círculos, liga y Draft online avisan de que falta ejecutarlo.
-
-Para probarlo: registra dos cuentas (dos navegadores o una ventana privada), elige alias en *Juegos → Liga de amigos* y añádelas entre sí.
-
-Nota: en el plan gratuito, un proyecto sin actividad durante una semana se pausa y se reactiva desde el panel.
-
-## Qué hace
-
-- **Aprende**: cursos cortos tipo Duolingo organizados en tres niveles (Primeros pasos, Cómo crece el dinero, Para ir más lejos) y 11 cursos: ahorrar o invertir, inflación, colchón y presupuesto, estafas y apuestas, interés compuesto, riesgo y plazo, diversificación, costes, renta fija, valoración (PER) y psicología del inversor. Cada curso mezcla teoría, mates con ejemplos calculados, gráficas claras, calculadoras con deslizadores (algunas con datos reales 2000-2024) y un test final; quien ya sabe puede saltar al test. El progreso se guarda y cuenta para la racha de estudio. La *Práctica de hoy* son 7 tarjetas en las que decides antes de ver la respuesta, con repetición espaciada (Leitner): vertical en el móvil y en horizontal (pregunta y opciones lado a lado) en el ordenador.
-- **Juegos**: cuatro minijuegos de adrenalina, en una sola fila, con datos reales aproximados (2000-2024) y dinero ficticio. Todos tienen reloj, combos y bonus de velocidad, y se juegan en un par de minutos.
-  - **Noticia al vuelo** (diario): diez titulares reales, siete segundos cada uno: ¿la bolsa acabó ese año arriba o abajo? Cada acierto seguido multiplica los puntos (hasta ×3) y cuanto antes aciertes, más sumas.
-  - **Silueta** (diario, 15 s por gráfica): cinco gráficas sin nombre; adivina qué inversión es cada una antes de que se acabe el tiempo.
-  - **Más o menos** (reto semanal): ¿qué acaba con más dinero? El tiempo por pregunta baja cada tres aciertos seguidos y un fallo (o quedarte sin tiempo) termina la racha.
-  - **Draft Night** (con amigos, 2-5 jugadores): elegís por turnos cartas de inversión y jugáis una década secreta año a año hasta el podio. En un solo móvil o **online con código de sala** (con Supabase funciona también en GitHub Pages).
-  - **Liga de amigos** (estilo LinkedIn): eliges un alias, añades a tus amigos por alias y ves sus puntuaciones de hoy y de la semana junto a las tuyas. Añadir es en un sentido: ves los resultados de quien añades. Solo cuenta la primera partida del día para la clasificación.
-- **Conecta**: tu dinero en el mundo real, en tres partes.
-  - **Tu voz**: tarjetas para deslizar con propuestas típicas de junta de accionistas (sueldo del CEO, emisiones, recompra de acciones…). Dices a la gestora qué preferirías y ves qué opina la comunidad (con Supabase, los votos se suman en la base de datos; sin sesión ves los totales y tu voto queda en tu dispositivo). Es una consulta: en un fondo, quien vota es la gestora. Más adelante puede pasar a ser un tablón de noticias de empresas.
-  - **Tu calle**: una caza de empresas al estilo Pokémon. Con tu ubicación (o una zona de ejemplo en Madrid) se buscan en un mapa de OpenStreetMap los locales cercanos de empresas cotizadas que aparecen en la app (Inditex, bancos del IBEX 35, McDonald's, Apple, Tesla, petroleras…). Te acercas a menos de 150 m, les haces una foto y ganas puntos (10, 20 o 30 según lo común que sea; la mitad si no se puede verificar la ubicación). Subes de nivel (Aprendiz → Analista → Estratega → Referente → Leyenda) y cada carta explica cómo gana dinero la empresa y cómo podrías tener un trocito con un fondo. También hay marcas famosas que **no** cotizan (Mercadona, El Corte Inglés, Lidl, Aldi) como lección sorpresa. Datos y mapa de terceros gratuitos (Overpass y OpenStreetMap, Leaflet); al servicio de mapas solo se envía una ubicación aproximada y no se guarda. Las fotos se quedan en tu dispositivo.
-  - **Tu proyecto**: cuentas tu proyecto en privado y ves qué empresas asociadas (de ejemplo) encajan para financiación, mentoría, primeros clientes o un socio tecnológico. Nada se comparte hasta que lo apruebas, y nunca se comparten tus datos personales.
-- **Objetivos**: crea objetivos por categoría, registra aportaciones, historial, estado «en plazo» y cuánto necesitas al mes. Conectados a **Tu dinero**: indicas el saldo de tu cuenta principal, apartas dinero hacia un objetivo (se descuenta de la cuenta) y, si al final no lo usas, lo devuelves a tu cuenta cuando quieras. También puedes registrar aportaciones que no salgan de la cuenta.
-- **Simulador**: 4 escenarios hipotéticos (0/2/5/8%), inflación, valor real vs nominal, efecto +20 €/mes, gráfica interactiva y datos de mercado de referencia.
-- **Círculo**: objetivo compartido con código de invitación; cada persona solo comparte lo que aporta al objetivo común (multiusuario real, actualización en vivo). Funciona con Supabase (tras ejecutar `schema-social.sql`) o con el servidor local.
-- **Hitos y constancia**: racha semanal de aportaciones y 8 hitos, sin elementos de juego.
-- **Asistente**: conversacional con IA gratuita (OpenRouter, Gemini o Pollinations; reglas locales si no hay conexión), recuerda la conversación y tiene guardarraíles: educativo, sin asesoramiento personalizado.
-- **Resumen / Tu perfil**: sin cuenta, el Resumen muestra la portada «El poder de empezar» y el test *Conoce tu perfil*. Al acceder, la pestaña pasa a llamarse **Tu perfil** y suma lo que solo existe con cuenta: el **historial de tests** de perfil de inversor, la calculadora **Distribuye tus ingresos** (regla 50/30/20, se guarda) y tus objetivos y estadísticas.
-- **Cuentas**: registro y acceso con correo y contraseña mediante Supabase (plan gratuito), que funciona también en GitHub Pages; el progreso se sincroniza entre dispositivos. Sin configurar Supabase se usa el servidor local (scrypt, cookie HttpOnly). Modo invitado en localStorage.
-
-## Diseño
-
-- Basado en el lenguaje de las webs oficiales de Apple y Meta: fondo blanco y gris claro, titulares grandes y centrados, baldosas sin borde con esquinas muy redondeadas, botones en forma de píldora, cabecera translúcida y cifras clave «en números».
-- Colores: azul CaixaBank (#007EAE) para las acciones y los enlaces; verde y rojo de trading para subidas y bajadas (proyecciones, estados de objetivos, votos a favor y en contra, resultados de los juegos).
-- Tipografía: la del sistema en dispositivos Apple (SF Pro) e Inter en el resto.
-- Logotipo con el mismo formato que el de caixabank.es: la estrella y la palabra «Horizonte» en serifa (Source Serif 4) subrayada, al mismo tamaño.
-- Índice de secciones como en apple.com: al pasar por una sección de la cabecera se despliega su mini índice (enlaces grandes a cada apartado y enlaces rápidos). En el móvil, una barra bajo la cabecera con el nombre de la sección abre ese mismo índice.
-- Contenido abierto: la información fluye sobre el fondo separada por líneas finas. Solo van en tarjeta las cosas que se eligen (juegos, accesos del día, votaciones, álbum).
-- El Inicio se centra en una sola idea, «Tu horizonte»: cuánto podrías tener invirtiendo frente a solo guardar, con la hipótesis siempre visible. Debajo van tus objetivos y tres accesos del día. Ningún dato aparece dos veces.
-- Juegos como baldosas de producto (negra, gris y azul CaixaBank) y pantallas inmersivas en negro. Etiquetas de código (USA, ORO, ESP…) en lugar de emojis en la interfaz.
-- Navegación de seis secciones (el simulador vive dentro de Objetivos), modo oscuro completo, barra inferior en móvil y modo privado (icono del ojo) que difumina los importes.
+El plan gratuito de Gemini es solo para pruebas y para la demo. Un lanzamiento real iría por el acuerdo de CaixaBank con Google Cloud (Vertex AI).
 
 ## Estructura
 
-- `server.js` API + estáticos (los datos viven en `data/`, ignorado por git)
-- `v1/` front-end de la versión 1 (`index.html`, `styles.css`, `app.js`, `games.js` y `arcade.js` con los minijuegos, la liga y el reloj, `social.js` con el cliente social de Supabase (alias, amigos, círculos, salas), `conecta.js` con Conecta, `cursos-data.js` con el contenido de los cursos, `cursos.js` con el reproductor y las gráficas, `coach-local.js` con las respuestas del asistente y `config.js` con la configuración pública de las cuentas)
-- `supabase/schema.sql` tabla y reglas de seguridad de las cuentas en la nube
-- `supabase/schema-social.sql` parte social: alias, amigos, puntuaciones, círculos, salas de Draft y votos de «Tu voz»
+| Archivo | Qué contiene |
+| --- | --- |
+| `index.html`, `styles.css` | La página y todo el diseño, con modo noche y versión para móvil |
+| `app.js` | La app: portada, pantallas, navegación y lógica |
+| `data.js` | Contenido: temas, juegos, fondos, preocupaciones del Antídoto y reglas (premio, protección, millas) |
+| `mercado.js` | El mercado simulado del prototipo |
+| `gemini.js`, `asistente.js` | El asistente: llamada a Gemini, respuestas locales y botón flotante |
+| `amigos.js` | Amigos y resultados de los juegos |
+| `comunidad.js` | Tu voz y Tu proyecto |
+| `cuenta.js` | Cuenta compartida entre familia y joven |
+| `regalos.js` | Regalos por enlace |
+| `config.js` | Configuración pública (Supabase y la función de Gemini) |
+| `manifest.webmanifest`, `sw.js`, `icons/` | Para instalarla como app (PWA) |
+| `brand/`, `logo/` | Logotipo e iconos |
+| `supabase/` | Scripts de base de datos y la función de Gemini |
+| `entrega/` | Entregables del concurso (presentaciones y vídeo del MVP) |
+| `redireccion/`, `v2/`, `public/` | Redirecciones de los enlaces antiguos |
+| `v1/`, `server.js` | La versión 1, guardada sin cambios |
 
-> Prototipo académico. Las simulaciones usan hipótesis ilustrativas; no son asesoramiento ni garantía de resultados.
+## Versión 1
+
+La primera versión (MVP del 30 de octubre) está guardada en [`/v1`](https://paulagutsan.github.io/Horizonte/v1/), sin cambios en su código, y no se enlaza desde la app. Los enlaces antiguos a `/public/` llevan a ella. Para arrancarla con su servidor propio: `npm start` (Node 18 o superior) y abre http://localhost:3000.
+
+> Prototipo académico. Las simulaciones usan hipótesis ilustrativas. No es asesoramiento financiero ni garantía de resultados.
