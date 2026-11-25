@@ -43,12 +43,12 @@ const catPct = (c, n) => { const v = catEur(n) / c.p * 100; return pct(v, v < 10
 const catBest = (c, have) => [...CAT_STEPS].reverse().find(n => n <= have && catFits(c, n));
 const milesReview = `Sujeto a revisión según la situación económica, los tipos de interés y las condiciones que ofrezca CaixaBank en cada momento. No es una oferta.`;
 
-const milesTabs = cur => `<nav class="ideas-tabs" aria-label="Tus millas"><a href="#/casa" class="${cur === "casa" ? "on" : ""}">${ic("house")}Tu casa</a><a href="#/catalogo" class="${cur === "catalogo" ? "on" : ""}">${ic("gift")}Catálogo</a></nav>`;
+const milesTabs = cur => `<nav class="ideas-tabs" aria-label="Tus millas"><a href="#/catalogo" class="${cur === "catalogo" ? "on" : ""}">${ic("gift")}Catálogo</a><a href="#/casa" class="${cur === "casa" ? "on" : ""}">${ic("house")}Tu casa</a></nav>`;
 function milesHead(cur) {
     const mi = miles(), next = CAT_STEPS.find(n => n > mi.total), best = [...CAT_STEPS].reverse().find(n => n <= mi.total);
-    return `${pageH("Tus millas", "Gánalas con tu constancia y úsalas en lo que quieras: tu primera casa o productos y servicios de CaixaBank.")}
+    return `${pageH("Tus millas", "Gánalas con tu constancia y úsalas en lo que quieras: productos y servicios de CaixaBank o tu primera casa.")}
     <div class="mls"><div class="mls-n"><b>${num(mi.total)}</b><span>millas disponibles</span></div>
-      <dl><div><dt>Si las guardas para tu casa</dt><dd>hasta −${pts(mi.cut)} puntos</dd></div><div><dt>Si las usas en el catálogo</dt><dd>${best ? `hasta ${eur(catEur(best))} de descuento` : `desde ${num(CAT_STEPS[0])} millas`}</dd></div>${next ? `<div><dt>Siguiente escalón</dt><dd>${num(next - mi.total)} millas más</dd></div>` : ""}</dl></div>
+      <dl><div><dt>Si las usas en el catálogo</dt><dd>${best ? `hasta ${eur(catEur(best))} de descuento` : `desde ${num(CAT_STEPS[0])} millas`}</dd></div><div><dt>Si las guardas para tu casa</dt><dd>hasta −${pts(mi.cut)} puntos</dd></div>${next ? `<div><dt>Siguiente escalón</dt><dd>${num(next - mi.total)} millas más</dd></div>` : ""}</dl></div>
     ${milesTabs(cur)}`;
 }
 

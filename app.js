@@ -745,8 +745,8 @@ function vInicio() {
         ["aprende", "Aprende", S.exam?.passed, S.exam?.passed ? "Certificado" : `${Object.keys(S.lessons).length} de ${LESSONS.length} temas`, "#/aprende"],
         ["invierte", "Invierte", !!m.firstOwn, m.firstOwn ? eur(m.value, true) : "Tu primer euro", "#/dinero"],
         ["entiende", "Anticípate", S.fears.length > 0, S.fears.length ? (m.al.active ? "Antídoto activo" : "Antídoto pendiente") : "Elige tu Antídoto", "#/antidoto"],
-        ["millas", "Gana millas", st.current >= 4, `${num(mi.total)} millas`, "#/casa"],
-        ["casa", "Tus objetivos", (S.redeem || []).length > 0, "Tu casa o el catálogo", "#/casa"],
+        ["millas", "Gana millas", st.current >= 4, `${num(mi.total)} millas`, "#/catalogo"],
+        ["casa", "Tus objetivos", (S.redeem || []).length > 0, "El catálogo o tu casa", "#/catalogo"],
     ];
     const cur = steps.findIndex(x => !x[2]);
     const tasks = [
@@ -1490,7 +1490,7 @@ function vAjustes() {
 }
 
 /* ------------------------------------------------------------------ estructura y rutas */
-const NAV_T = [["inicio", "Inicio", "home"], ["dinero", "Dinero", "chart"], ["aprende", "Aprende", "book"], ["antidoto", "Antídoto", "spark"], ["casa", "Tus millas", "star"]];
+const NAV_T = [["inicio", "Inicio", "home"], ["dinero", "Dinero", "chart"], ["aprende", "Aprende", "book"], ["antidoto", "Antídoto", "spark"], ["catalogo", "Tus millas", "star"]];
 const NAV_T3 = [["voz", "Tus ideas", "bulb"]];
 const NAV_T2 = [["familia", "Familia", "family"], ["ajustes", "Ajustes", "settings"]];
 const NAV_F = [["f/resumen", "Resumen", "home"], ["f/regalar", "Regalos", "gift"], ["f/permisos", "Permisos", "key"]];
@@ -1498,7 +1498,7 @@ const NAV_F2 = [["ajustes", "Ajustes", "settings"]];
 
 function shell(route, content) {
     const fam = S.role === "family", main = fam ? NAV_F : NAV_T, extra = fam ? NAV_F2 : NAV_T2;
-    const on = id => route === id || (id === "voz" && route === "proyecto") || (id === "casa" && route === "catalogo");
+    const on = id => route === id || (id === "voz" && route === "proyecto") || (id === "catalogo" && route === "casa");
     const item = ([id, l, i]) => `<a href="#/${id}" class="${on(id) ? "on" : ""}" ${on(id) ? 'aria-current="page"' : ""}>${ic(i)}<span>${l}</span></a>`;
     const who = (fam ? S.family?.name : teenName()) || "";
     const home = fam ? "#/f/resumen" : "#/inicio";
@@ -1657,7 +1657,7 @@ document.addEventListener("click", async e => {
     else if (/^(voz|pj)[A-Z]/.test(act)) cxAct(act, b);
     else if (act === "moreMenu") {
         const cur = (location.hash.replace(/^#\/?/, "").split(/[/?]/)[0]) || "inicio";
-        const grp = (t, items) => `<p class="more-h">${t}</p>${items.map(([id, l, i]) => `<a href="#/${id}" class="${cur === id || (id === "voz" && cur === "proyecto") || (id === "casa" && cur === "catalogo") ? "on" : ""}">${ic(i)}<span>${l}</span>${ic("chev", "chev")}</a>`).join("")}`;
+        const grp = (t, items) => `<p class="more-h">${t}</p>${items.map(([id, l, i]) => `<a href="#/${id}" class="${cur === id || (id === "voz" && cur === "proyecto") || (id === "catalogo" && cur === "casa") ? "on" : ""}">${ic(i)}<span>${l}</span>${ic("chev", "chev")}</a>`).join("")}`;
         sheet("Menú", `<nav class="more-nav" aria-label="Todas las secciones">${grp("Tu camino", NAV_T)}${grp("Comunidad", NAV_T3)}${grp("Cuenta", NAV_T2)}</nav>`);
     }
     else if (act === "vRange") {

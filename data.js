@@ -6,7 +6,7 @@
 
 const RULES = {
     prize: 20,                 // € invertidos a su nombre al superar Fundamentos
-    protectCap: 500,           // € protegidos durante el primer año
+    protectCap: 100,           // € protegidos durante el primer año
     protectMonths: 12,
     base: 0.75,                // reparto Base + Antídoto
     antidote: 0.25,
@@ -167,7 +167,7 @@ const FAQ = [
     { q: "¿Esto es un juego de apuestas?", a: "No. En los juegos no se apuesta dinero: se practica con datos reales de 25 años de mercados y se suman unas pocas millas al día por aprender." },
     { q: "¿Cuánto cuesta Horizonte?", a: `Horizonte no cobra comisión de apertura, pero invertir tiene un coste. Los fondos de CaixaBank Asset Management cobran una comisión de gestión; como referencia, en torno al ${feeTxt} % al año, es decir, unos ${feeTxt} € por cada 100 € invertidos. Te la mostramos siempre en euros, y el documento de datos fundamentales de cada fondo detalla su coste exacto.` },
 ];
-const LEGAL = "Horizonte es un servicio de CaixaBank Asset Management, propuesto en el reto CaixaBank AM × Google. Invertir conlleva riesgos, incluida la pérdida del capital invertido. Los valores que se muestran son estimaciones con fines informativos y no garantizan rentabilidades futuras. La protección del primer año es una promoción sujeta a condiciones: tope de 500 € por persona, 12 meses, solo si no se vende antes y hasta agotar la dotación publicada. Las millas pueden convertirse en una bonificación posible sobre las condiciones vigentes en el momento de la firma de una hipoteca, según las condiciones de vinculación voluntaria que entonces se ofrezcan, y no obligan a contratar ningún producto (Ley 5/2019). Antes de invertir, consulta el documento de datos fundamentales (DFI) de cada fondo.";
+const LEGAL = "Horizonte es un servicio de CaixaBank Asset Management, propuesto en el reto CaixaBank AM × Google. Invertir conlleva riesgos, incluida la pérdida del capital invertido. Los valores que se muestran son estimaciones con fines informativos y no garantizan rentabilidades futuras. La protección del primer año es una promoción sujeta a condiciones: tope de 100 € por persona, 12 meses, solo si no se vende antes y hasta agotar la dotación publicada. Las millas pueden convertirse en una bonificación posible sobre las condiciones vigentes en el momento de la firma de una hipoteca, según las condiciones de vinculación voluntaria que entonces se ofrezcan, y no obligan a contratar ningún producto (Ley 5/2019). Antes de invertir, consulta el documento de datos fundamentales (DFI) de cada fondo.";
 
 const SOURCES = {
     premio: { label: "Primera inversión (Fundamentos)", own: true },
@@ -225,7 +225,7 @@ const LESSONS = [
             "Por eso el dinero que necesitas pronto no se invierte en bolsa, y el de tu casa sí puede." ] },
         { h: "Qué hacer cuando cae", p: [
             "Lo peor que suele hacer un inversor es vender por miedo. Lo mejor: no tocarlo y seguir aportando.",
-            "Además, como promoción, tus primeros 500 € tienen protección el primer año: si valen menos al cumplir 12 meses y no has vendido, CaixaBank repone la diferencia, hasta ese máximo." ] },
+            "Además, como promoción, tus primeros 100 € tienen protección el primer año: si valen menos al cumplir 12 meses y no has vendido, CaixaBank repone la diferencia, hasta ese máximo." ] },
         { h: "Aportar en las caídas", p: [
             "Si aportas lo mismo cada mes, cuando los precios bajan compras más participaciones con el mismo dinero. Cuando vuelven a subir, tienes más.",
             "Por eso aportar cada mes, pase lo que pase, suaviza los vaivenes." ],
@@ -318,7 +318,7 @@ const LESSONS = [
       ],
       check: [
         { q: "¿Qué parte de tu dinero va a la cartera base?", o: ["El 25 %", "El 75 %", "Todo"], a: 1, why: "La base global (75 %) reparte el riesgo; el Antídoto es el otro 25 %." },
-        { q: "¿Qué cubre el primer año acompañado?", o: ["Todo tu dinero para siempre", "Tus primeros 500 € durante 12 meses, si no vendes", "Solo el dinero que te regalan"], a: 1, why: "Es una promoción con tope: 500 € y 12 meses, si no vendes antes." },
+        { q: "¿Qué cubre el primer año acompañado?", o: ["Todo tu dinero para siempre", "Tus primeros 100 € durante 12 meses, si no vendes", "Solo el dinero que te regalan"], a: 1, why: "Es una promoción con tope: 100 € y 12 meses, si no vendes antes." },
         { q: "¿Para qué sirven las millas?", o: ["Para ganar más rentabilidad", "Para rebajar tu futura hipoteca o conseguir descuentos", "Para pagar menos impuestos"], a: 1, why: "Puedes guardarlas para tu primera hipoteca con CaixaBank o usarlas en el catálogo." },
         { q: "Si tienes 16 años, ¿quién aprueba tu Antídoto?", o: ["Nadie", "Tu madre, padre o tutor", "Tus amigos"], a: 1, why: "Hasta los 18, tu familia aprueba las decisiones de la cuenta." },
       ] },
